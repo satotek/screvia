@@ -1,5 +1,6 @@
 import AppKit
 import KeyboardShortcuts
+import ServiceManagement
 import SwiftUI
 
 @MainActor
@@ -134,6 +135,8 @@ private struct PreferencesView: View {
 
 private struct GeneralPreferences: View {
     @ObservedObject var settings: ScreviaSettings
+    @State private var launchAtLoginStatus: SMAppService.Status = .notRegistered
+    @State private var launchAtLoginError: String?
 
     var body: some View {
         Form {
@@ -182,6 +185,41 @@ private struct GeneralPreferences: View {
                 Toggle(L10n.text("preferences.playSound"), isOn: $settings.playSound)
             }
 
+            Section(L10n.text("preferences.startup")) {
+                Toggle(
+                    L10n.text("preferences.launchAtLogin"),
+                    isOn: Binding(
+                        get: { isLaunchAtLoginEnabled },
+                        set: setLaunchAtLogin
+                    )
+                )
+
+                Text(L10n.text("preferences.launchAtLoginHint"))
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+
+                if LaunchAtLoginManager.requiresApproval {
+                    HStack(spacing: 8) {
+                        Image(systemName: "info.circle")
+                            .foregroundStyle(ScreviaTheme.accent)
+                        Text(L10n.text("preferences.launchAtLoginApprovalHint"))
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                        Spacer(minLength: 8)
+                        Button(L10n.text("preferences.openLoginItemsSettings")) {
+                            LaunchAtLoginManager.openSystemSettings()
+                        }
+                    }
+                }
+
+                if let launchAtLoginError {
+                    Text(launchAtLoginError)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.red)
+                        .textSelection(.enabled)
+                }
+            }
+
             Section(L10n.text("preferences.permissions")) {
                 Button(L10n.text("preferences.openScreenRecordingSettings")) {
                     guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") else {
@@ -200,6 +238,35 @@ private struct GeneralPreferences: View {
         .formStyle(.grouped)
         .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear {
+            refreshLaunchAtLoginStatus()
+        }
+    }
+
+    private var isLaunchAtLoginEnabled: Bool {
+        if case .enabled = launchAtLoginStatus {
+            return true
+        }
+        return false
+    }
+
+    private func setLaunchAtLogin(_ enabled: Bool) {
+        launchAtLoginError = nil
+
+        do {
+            try LaunchAtLoginManager.setEnabled(enabled)
+        } catch {
+            launchAtLoginError = L10n.format(
+                "preferences.launchAtLoginError",
+                error.localizedDescription
+            )
+        }
+
+        refreshLaunchAtLoginStatus()
+    }
+
+    private func refreshLaunchAtLoginStatus() {
+        launchAtLoginStatus = LaunchAtLoginManager.status
     }
 
     private func chooseFolder() {

@@ -82,6 +82,12 @@
 "preferences.copyToClipboard" = "Copy to clipboard";
 "preferences.showThumbnail" = "Show Quick Access thumbnail";
 "preferences.playSound" = "Play capture sound";
+"preferences.startup" = "Startup";
+"preferences.launchAtLogin" = "Launch Screvia at login";
+"preferences.launchAtLoginHint" = "Screvia starts automatically in the menu bar when you log in to your Mac.";
+"preferences.launchAtLoginApprovalHint" = "Allow Screvia in the Login Items section of System Settings.";
+"preferences.openLoginItemsSettings" = "Open Login Items…";
+"preferences.launchAtLoginError" = "Could not configure launch at login: %@";
 "preferences.permissions" = "Permissions";
 "preferences.openScreenRecordingSettings" = "Open Screen Recording Settings…";
 "preferences.openAccessibilitySettings" = "Open Accessibility Settings…";

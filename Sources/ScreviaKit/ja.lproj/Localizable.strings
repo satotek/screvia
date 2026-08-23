@@ -82,6 +82,12 @@
 "preferences.copyToClipboard" = "クリップボードにコピー";
 "preferences.showThumbnail" = "Quick Access サムネイルを表示";
 "preferences.playSound" = "撮影音を鳴らす";
+"preferences.startup" = "起動時の動作";
+"preferences.launchAtLogin" = "ログイン時にScreviaを起動";
+"preferences.launchAtLoginHint" = "Macにログインすると、メニューバーでScreviaを自動的に起動します。";
+"preferences.launchAtLoginApprovalHint" = "システム設定のログイン項目でScreviaの起動を許可してください。";
+"preferences.openLoginItemsSettings" = "ログイン項目を開く…";
+"preferences.launchAtLoginError" = "ログイン時の起動を設定できませんでした：%@";
 "preferences.permissions" = "権限";
 "preferences.openScreenRecordingSettings" = "画面収録の設定を開く…";
 "preferences.openAccessibilitySettings" = "アクセシビリティの設定を開く…";
