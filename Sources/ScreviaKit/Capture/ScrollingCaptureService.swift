@@ -179,13 +179,15 @@ struct ScrollingCaptureService {
     }
 }
 
-private struct ScrollFrame {
+// Internal rather than private so ImageStitcherTests can exercise the
+// stitching maths directly; nothing outside ScreviaKit sees these.
+struct ScrollFrame {
     let fileURL: URL
     let width: Int
     let height: Int
 }
 
-private enum ImageStitcher {
+enum ImageStitcher {
     private struct PixelBuffer {
         let width: Int
         let height: Int
@@ -273,7 +275,7 @@ private enum ImageStitcher {
         in directory: URL,
         index: Int
     ) throws -> ScrollFrame {
-        let fileURL = directory.appendingPathComponent("frame-(index).png")
+        let fileURL = directory.appendingPathComponent("frame-\(index).png")
         guard let destination = CGImageDestinationCreateWithURL(
             fileURL as CFURL,
             UTType.png.identifier as CFString,

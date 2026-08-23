@@ -19,7 +19,7 @@ enum HistoryThumbnailLoader {
     private static let cacheBox = CacheBox()
 
     static func pngData(for url: URL, maxPixelSize: Int = 256) -> Data? {
-        let cacheKey = "(url.standardizedFileURL.path)#(maxPixelSize)" as NSString
+        let cacheKey = "\(url.standardizedFileURL.path)#\(maxPixelSize)" as NSString
         if let cached = cacheBox.cache.object(forKey: cacheKey) {
             return cached as Data
         }
