@@ -55,16 +55,22 @@ app at all.
 ```sh
 export PLL_SOURCE_PACKAGES_PATH="$PWD/.build"
 swift build
-./scripts/build-app.sh
+
+swift scripts/BuildApp.swift              # assemble .build/Screvia.app and launch it
+swift scripts/BuildApp.swift --no-open    # assemble it only
+swift scripts/CreateDMG.swift             # build, then wrap it in dist/Screvia-<version>.dmg
 ```
 
-`swift build` checks that the executable compiles. `build-app.sh` assembles
-`Screvia.app` under `.build/` and launches it.
+Pass `--sign <identity>` to either script to use a Developer ID instead of the
+ad-hoc signature applied by default.
 
 `PLL_SOURCE_PACKAGES_PATH` points [LicenseList][licenselist]'s build plugin at
 SwiftPM's checkout directory. The plugin looks for Xcode's `SourcePackages`
 layout, which the command line puts under `.build` instead. Xcode resolves this
-on its own, and `build-app.sh` sets the variable itself.
+on its own, and the scripts set the variable themselves.
+
+The packaging scripts are Swift rather than shell, matching
+`generate-icons.swift` and `regrid-appicon.swift` in the same directory.
 
 Opening the package in Xcode requires trusting the `PrepareLicenseList` build
 plugin once, on the first build.
