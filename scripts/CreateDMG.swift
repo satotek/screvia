@@ -66,7 +66,7 @@ let repoRoot = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent()
 let appDir = repoRoot.appending(path: ".build/\(appName).app")
 let distDir = repoRoot.appending(path: "dist")
-let plistPath = repoRoot.appending(path: "Sources/ScreviaKit/Resources/Info.plist")
+let plistPath = repoRoot.appending(path: "AppBundle/Info.plist")
 
 do {
     // Read the version from the same Info.plist the app ships, so the image

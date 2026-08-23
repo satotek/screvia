@@ -100,6 +100,8 @@ let repoRoot = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent()
 let buildRoot = repoRoot.appending(path: ".build")
 let resources = repoRoot.appending(path: "Sources/ScreviaKit/Resources")
+// Bundle metadata the app needs but ScreviaKit never reads at runtime.
+let appBundle = repoRoot.appending(path: "AppBundle")
 let appDir = buildRoot.appending(path: "Screvia.app")
 
 let swiftBin = "/usr/bin/swift"
@@ -127,7 +129,7 @@ do {
     try fm.createDirectory(at: contents.appending(path: "Resources"), withIntermediateDirectories: true)
 
     try copy(binDir.appending(path: "Screvia"), to: contents.appending(path: "MacOS/Screvia"))
-    try copy(resources.appending(path: "Info.plist"), to: contents.appending(path: "Info.plist"))
+    try copy(appBundle.appending(path: "Info.plist"), to: contents.appending(path: "Info.plist"))
     try copy(
         resources.appending(path: "AppIcon.icns"),
         to: contents.appending(path: "Resources/AppIcon.icns")
