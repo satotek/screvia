@@ -1,0 +1,56 @@
+# The app shell. Everything but @main lives in the ScreviaKit package, which
+# this project embeds as a local dependency — the same split that lets Xcode
+# render SwiftUI previews and lets `swift test` run without an app target.
+#
+# Regenerate with: xcodegen generate
+# Screvia.xcodeproj is gitignored; this file is the source of truth.
+name: Screvia
+
+options:
+  bundleIdPrefix: dev.satotek
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+
+packages:
+  ScreviaKit:
+    path: .
+
+targets:
+  Screvia:
+    type: application
+    platform: macOS
+    sources:
+      - path: App
+    dependencies:
+      - package: ScreviaKit
+        product: ScreviaKit
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Screvia
+        CFBundleName: Screvia
+        CFBundleShortVersionString: "0.1.0"
+        CFBundleVersion: "1"
+        CFBundleDevelopmentRegion: en
+        # Keep the existing .icns rather than introducing an asset catalog:
+        # scripts/regrid-appicon.swift already produces it on Apple's grid.
+        CFBundleIconFile: AppIcon.icns
+        CFBundleLocalizations: [en, ja]
+        # A menu bar app: no Dock icon, no main window on launch.
+        LSUIElement: true
+        NSHumanReadableCopyright: "Copyright © 2026 satotek. MIT License."
+        NSScreenCaptureUsageDescription: >-
+          Screvia uses Screen Recording access to capture images from your Mac.
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.satotek.screvia
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.0"
+        # Ad-hoc locally; a Developer ID is supplied by the distributor.
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+        DEVELOPMENT_TEAM: ""
+        ENABLE_HARDENED_RUNTIME: true

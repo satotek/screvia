@@ -47,50 +47,60 @@ app at all.
 
 - macOS 14 or later
 - Xcode 26.5+ and Swift 6 to build
+- [XcodeGen][xcodegen] (`brew install xcodegen`) to generate `Screvia.xcodeproj`
 - Screen Recording permission; Accessibility permission is additionally
   required for scrolling capture
 
 ## Build
 
-```sh
-export PLL_SOURCE_PACKAGES_PATH="$PWD/.build"
-swift build
+`Screvia.xcodeproj` is generated from `project.yml` and gitignored, so the
+first step is always to generate it:
 
-swift scripts/BuildApp.swift              # assemble .build/Screvia.app and launch it
-swift scripts/BuildApp.swift --no-open    # assemble it only
+```sh
+xcodegen generate
+open Screvia.xcodeproj    # then run the Screvia scheme
+```
+
+Or from the command line:
+
+```sh
+swift scripts/BuildApp.swift              # generate, build, and open .build/Screvia.app
+swift scripts/BuildApp.swift --no-open    # build it only
 swift scripts/CreateDMG.swift             # build, then wrap it in dist/Screvia-<version>.dmg
 ```
 
 Pass `--sign <identity>` to either script to use a Developer ID instead of the
 ad-hoc signature applied by default.
 
-`PLL_SOURCE_PACKAGES_PATH` points [LicenseList][licenselist]'s build plugin at
-SwiftPM's checkout directory. The plugin looks for Xcode's `SourcePackages`
-layout, which the command line puts under `.build` instead. Xcode resolves this
-on its own, and the scripts set the variable themselves.
-
 The packaging scripts are Swift rather than shell, matching
 `generate-icons.swift` and `regrid-appicon.swift` in the same directory.
 
-Opening the package in Xcode requires trusting the `PrepareLicenseList` build
+Opening the project in Xcode requires trusting the `PrepareLicenseList` build
 plugin once, on the first build.
+
+`ScreviaKit` also builds standalone through the SwiftPM CLI (`swift build`,
+`swift test`) for CI and for editing outside Xcode. That path sets
+`PLL_SOURCE_PACKAGES_PATH="$PWD/.build"` so LicenseList's build plugin — which
+expects Xcode's `SourcePackages` layout — finds SwiftPM's checkout directory
+instead.
 
 ## Architecture
 
-Everything except `@main` lives in the `ScreviaKit` library target, with the
-executable target holding a single file. Xcode can only render SwiftUI previews
-for targets it builds as a dynamic library, which an executable target is not —
-so the split is what makes the previews work. Select the `ScreviaKit` scheme to
-use them.
+Everything except the app entry point lives in the `ScreviaKit` SwiftPM
+library, embedded as a local package dependency of the `Screvia.xcodeproj` app
+target. Xcode can only render SwiftUI previews for a target it builds as a
+dynamic library, which the `.xcodeproj` app target is not — so the split is
+what makes previews work. Select the `ScreviaKit` scheme in Xcode to use them.
 
 ```
-Sources/
-  Screvia/        @main only
-  ScreviaKit/
-    App/          AppDelegate, ScreviaModel — the app's side effects
-    Capture/      ScreenCaptureKit services and the selection overlays
-    UI/           SwiftUI views and the AppKit window controllers
-    Utilities/    Settings, image encoding, hotkeys, logging
+App/                @main, Info.plist (Screvia.xcodeproj's app target)
+Sources/ScreviaKit/
+  App/              AppDelegate, ScreviaModel — the app's side effects
+  Capture/          ScreenCaptureKit services and the selection overlays
+  UI/               SwiftUI views and the AppKit window controllers
+  System/           Launch-at-login, global hotkeys
+  Support/          Settings, logging, localization
+project.yml         Source of truth for Screvia.xcodeproj (XcodeGen)
 ```
 
 Views take plain values and closures rather than reaching for singletons, which
@@ -120,3 +130,4 @@ MIT — see [LICENSE](LICENSE).
 
 [keyboardshortcuts]: https://github.com/sindresorhus/KeyboardShortcuts
 [licenselist]: https://github.com/cybozu/LicenseList
+[xcodegen]: https://github.com/yonaskolb/XcodeGen

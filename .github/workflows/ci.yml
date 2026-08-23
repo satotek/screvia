@@ -18,29 +18,33 @@ jobs:
     env:
       DEVELOPER_DIR: "/Applications/Xcode_26.5.0.app/Contents/Developer"
       # LicenseList's build plugin looks for Xcode's SourcePackages layout;
-      # the SwiftPM CLI puts the same structure under .build instead.
+      # xcodebuild writes it under the custom DerivedData path BuildApp.swift
+      # passes it, so this only matters for the standalone `swift build`/
+      # `swift test` steps below, which use the SwiftPM CLI's own .build.
       PLL_SOURCE_PACKAGES_PATH: "${{ github.workspace }}/.build"
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
       - name: Show versions
         run: |
           xcodebuild -version
           swift --version
+          xcodegen --version
 
-      - name: Build (debug)
+      - name: Build ScreviaKit (debug)
         run: swift build
 
       - name: Test
         run: swift test --parallel
 
-      - name: Build (release)
-        run: swift build -c release
-
-      # Assembling and signing the .app is where packaging regressions show up,
-      # so exercise it rather than only compiling.
+      # Assembling and signing Screvia.app through Xcode is where packaging
+      # regressions show up, so exercise it rather than only compiling the
+      # library.
       - name: Assemble Screvia.app
         run: swift scripts/BuildApp.swift --no-open
 

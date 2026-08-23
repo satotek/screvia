@@ -66,18 +66,21 @@ let repoRoot = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent()
 let appDir = repoRoot.appending(path: ".build/\(appName).app")
 let distDir = repoRoot.appending(path: "dist")
-let plistPath = repoRoot.appending(path: "AppBundle/Info.plist")
+let projectYAMLPath = repoRoot.appending(path: "project.yml")
 
 do {
-    // Read the version from the same Info.plist the app ships, so the image
-    // name can never drift from what the app reports.
-    let plist = try PropertyListSerialization.propertyList(
-        from: Data(contentsOf: plistPath),
-        format: nil
-    ) as? [String: Any]
-    guard let version = plist?["CFBundleShortVersionString"] as? String else {
-        throw CommandError(command: "read CFBundleShortVersionString", status: 1)
+    // Read the version from project.yml — the same source XcodeGen uses to
+    // stamp Info.plist — so the image name can never drift from the app.
+    let projectYAML = try String(contentsOf: projectYAMLPath, encoding: .utf8)
+    guard let versionLine = projectYAML
+        .components(separatedBy: .newlines)
+        .first(where: { $0.contains("MARKETING_VERSION:") }) else {
+        throw CommandError(command: "find MARKETING_VERSION in project.yml", status: 1)
     }
+    let version = versionLine
+        .split(separator: ":", maxSplits: 1)[1]
+        .trimmingCharacters(in: .whitespaces)
+        .trimmingCharacters(in: CharacterSet(charactersIn: "\""))
 
     // Reuse the canonical app build, but never launch the app while preparing
     // a distributable image.
