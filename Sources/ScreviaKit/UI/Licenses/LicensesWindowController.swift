@@ -18,7 +18,7 @@ final class LicensesWindowController {
             backing: .buffered,
             defer: false
         )
-        window.title = L10n.text("about.openSource")
+        window.title = L10n.text("licenses.title")
         window.minSize = NSSize(width: 420, height: 320)
         window.contentView = NSHostingView(rootView: LicensesView())
         window.center()

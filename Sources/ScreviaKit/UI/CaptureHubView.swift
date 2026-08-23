@@ -50,7 +50,7 @@ struct CaptureHubView: View {
                 Divider()
 
                 Button(L10n.text("about.menuTitle"), systemImage: "info.circle", action: onOpenAbout)
-                Button(L10n.text("about.openSource"), systemImage: "building.columns", action: onOpenLicenses)
+                Button(L10n.text("licenses.title"), systemImage: "building.columns", action: onOpenLicenses)
             } label: {
                 Image(systemName: "line.3.horizontal")
                     .font(.system(size: 12, weight: .medium))
