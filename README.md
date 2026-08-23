@@ -92,14 +92,20 @@ target. Xcode can only render SwiftUI previews for a target it builds as a
 dynamic library, which the `.xcodeproj` app target is not — so the split is
 what makes previews work. Select the `ScreviaKit` scheme in Xcode to use them.
 
+`AppDelegate` holds two coordinators rather than one combined app model:
+`CaptureCoordinator` runs the capture -> process -> save -> present pipeline
+and owns capture history, and `WindowsCoordinator` owns the Preferences/About/
+Licenses windows. `SystemSettingsService` and `ErrorPresenter` are stateless
+and shared by both.
+
 ```
 App/                @main, Info.plist (Screvia.xcodeproj's app target)
 Sources/ScreviaKit/
-  App/              AppDelegate, ScreviaModel — the app's side effects
-  Capture/          ScreenCaptureKit services and the selection overlays
-  UI/               SwiftUI views and the AppKit window controllers
-  System/           Launch-at-login, global hotkeys
-  Support/          Settings, logging, localization
+  App/              AppDelegate — owns the menu bar item and the coordinators
+  Capture/          CaptureCoordinator, ScreenCaptureKit services, selection overlays
+  UI/               SwiftUI views, AppKit window controllers, WindowsCoordinator
+  System/           Launch-at-login, global hotkeys, system settings deep links
+  Support/          Settings, logging, localization, error presentation
 project.yml         Source of truth for Screvia.xcodeproj (XcodeGen)
 ```
 

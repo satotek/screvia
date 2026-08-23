@@ -5,9 +5,9 @@ struct CaptureProcessingPipelineResult {
     let savedImage: ImageStore.SavedImage
 }
 
-/// Keeps expensive image processing and encoding off ScreviaModel's main
-/// actor. The actor also serializes writes so concurrent shortcuts cannot race
-/// while choosing a unique destination filename.
+/// Keeps expensive image processing and encoding off CaptureCoordinator's
+/// main actor. This actor also serializes writes so concurrent shortcuts
+/// cannot race while choosing a unique destination filename.
 actor CaptureProcessingPipeline {
     private let imageProcessor = ImageProcessor()
     private let imageStore = ImageStore()

@@ -7,7 +7,9 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         super.init()
     }
 
-    private let model = ScreviaModel()
+    private let settings = ScreviaSettings()
+    private lazy var captureCoordinator = CaptureCoordinator(settings: settings)
+    private let windowsCoordinator = WindowsCoordinator()
     private var statusItem: NSStatusItem?
     private var capturePopover: NSPopover?
 
@@ -21,7 +23,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem.button?.action = #selector(toggleCaptureHub)
         self.statusItem = statusItem
 
-        model.start()
+        captureCoordinator.start()
     }
 
     /// The status bar glyph.
@@ -59,7 +61,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     public func applicationWillTerminate(_ notification: Notification) {
-        model.stop()
+        captureCoordinator.stop()
     }
 
     @objc private func toggleCaptureHub() {
@@ -78,59 +80,65 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         popover.contentSize = NSSize(width: 320, height: 560)
         popover.contentViewController = NSHostingController(
             rootView: CaptureHubView(
-                displays: model.displayInfos(),
-                history: model.captureHistory,
+                displays: captureCoordinator.displayInfos(),
+                history: captureCoordinator.captureHistory,
                 onCaptureFullScreen: { [weak self] displayID in
                     self?.closeCaptureHub()
-                    self?.model.captureFullScreen(displayID: displayID)
+                    self?.captureCoordinator.captureFullScreen(displayID: displayID)
                 },
                 onCaptureArea: { [weak self] in
                     self?.closeCaptureHub()
-                    self?.model.captureArea()
+                    self?.captureCoordinator.captureArea()
                 },
                 onCaptureWindow: { [weak self] in
                     self?.closeCaptureHub()
-                    self?.model.captureWindow()
+                    self?.captureCoordinator.captureWindow()
                 },
                 onCaptureScroll: { [weak self] in
                     self?.closeCaptureHub()
-                    self?.model.captureScroll()
+                    self?.captureCoordinator.captureScroll()
                 },
                 onEditHistory: { [weak self] entry in
                     self?.closeCaptureHub()
-                    self?.model.editHistoryEntry(entry)
+                    self?.captureCoordinator.editHistoryEntry(entry)
                 },
                 onCopyHistory: { [weak self] entry in
                     self?.closeCaptureHub()
-                    self?.model.copyHistoryEntry(entry)
+                    self?.captureCoordinator.copyHistoryEntry(entry)
                 },
                 onPinHistory: { [weak self] entry in
                     self?.closeCaptureHub()
-                    self?.model.pinHistoryEntry(entry)
+                    self?.captureCoordinator.pinHistoryEntry(entry)
                 },
                 onRemoveHistory: { [weak self] entry in
                     self?.closeCaptureHub()
-                    self?.model.removeHistoryEntry(entry)
+                    self?.captureCoordinator.removeHistoryEntry(entry)
                 },
                 onOpenPreferences: { [weak self] in
                     self?.closeCaptureHub()
-                    self?.model.openPreferences()
+                    guard let self else { return }
+                    self.windowsCoordinator.openPreferences(settings: self.settings)
                 },
                 onOpenAbout: { [weak self] in
                     self?.closeCaptureHub()
-                    self?.model.openAbout()
+                    self?.windowsCoordinator.openAbout()
                 },
                 onOpenLicenses: { [weak self] in
                     self?.closeCaptureHub()
-                    self?.model.openLicenses()
+                    self?.windowsCoordinator.openLicenses()
                 },
                 onOpenScreenRecordingSettings: { [weak self] in
                     self?.closeCaptureHub()
-                    self?.model.openScreenRecordingSettings()
+                    SystemSettingsService.openScreenRecordingSettings()
                 },
                 onRevealFolder: { [weak self] in
                     self?.closeCaptureHub()
-                    self?.model.revealCaptureFolder()
+                    guard let self else { return }
+                    do {
+                        try SystemSettingsService.revealFolder(at: self.settings.saveDirectoryURL)
+                    } catch {
+                        ErrorPresenter.present(error)
+                    }
                 },
                 onQuit: { [weak self] in
                     self?.closeCaptureHub()

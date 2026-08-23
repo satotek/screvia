@@ -1,30 +1,14 @@
 import AppKit
 import Combine
-import CoreGraphics
 import Foundation
 
-struct CaptureItem {
-    let image: NSImage
-    let fileURL: URL
-    let displayID: UInt32
-    let kind: CaptureKind
-
-    init(
-        image: NSImage,
-        fileURL: URL,
-        displayID: UInt32,
-        kind: CaptureKind = .standard
-    ) {
-        self.image = image
-        self.fileURL = fileURL
-        self.displayID = displayID
-        self.kind = kind
-    }
-}
-
+/// Orchestrates the capture -> process -> save -> present pipeline: taking a
+/// screenshot, running it through CaptureProcessingPipeline, updating
+/// history, and routing the result to the thumbnail, the editor, or the
+/// clipboard depending on what the caller and the user's settings ask for.
 @MainActor
-final class ScreviaModel: ObservableObject {
-    let settings = ScreviaSettings()
+final class CaptureCoordinator: ObservableObject {
+    private let settings: ScreviaSettings
 
     private let captureService = CaptureService()
     private let scrollingCaptureService = ScrollingCaptureService()
@@ -34,9 +18,6 @@ final class ScreviaModel: ObservableObject {
     private let thumbnailController = FloatingThumbnailController()
     private let pinnedImageController = PinnedImageController()
     private let editorController = AnnotationEditorController()
-    private let preferencesController = PreferencesWindowController()
-    private let aboutController = AboutWindowController()
-    private let licensesController = LicensesWindowController()
     private let historyStore = CaptureHistoryStore()
 
     private var areaSelectionController: AreaSelectionController?
@@ -44,7 +25,8 @@ final class ScreviaModel: ObservableObject {
 
     @Published private(set) var captureHistory: [CaptureHistoryEntry]
 
-    init() {
+    init(settings: ScreviaSettings) {
+        self.settings = settings
         captureHistory = historyStore.entries
     }
 
@@ -79,7 +61,7 @@ final class ScreviaModel: ObservableObject {
         guard let screen = displayID.flatMap(ScreenUtilities.screen(for:))
             ?? ScreenUtilities.screenAtMouse()
             ?? NSScreen.screens.first else {
-            showError(CaptureService.CaptureError.noScreenAvailable)
+            ErrorPresenter.present(CaptureService.CaptureError.noScreenAvailable)
             return
         }
 
@@ -87,7 +69,7 @@ final class ScreviaModel: ObservableObject {
             let image = try captureService.captureMainDisplay(on: screen)
             finishCapture(image, on: screen)
         } catch {
-            showError(error)
+            ErrorPresenter.present(error)
         }
     }
 
@@ -105,7 +87,7 @@ final class ScreviaModel: ObservableObject {
                 let image = try self.captureService.capture(selection: selection, on: screen)
                 self.finishCapture(image, on: screen)
             } catch {
-                self.showError(error)
+                ErrorPresenter.present(error)
             }
         }
     }
@@ -132,7 +114,7 @@ final class ScreviaModel: ObservableObject {
                     )
                     self.finishCapture(image, on: screen)
                 } catch {
-                    self.showError(error)
+                    ErrorPresenter.present(error)
                 }
             }
         }
@@ -172,47 +154,9 @@ final class ScreviaModel: ObservableObject {
                     )
                     self.finishCapture(image, on: screen, kind: .scrolling)
                 } catch {
-                    self.showError(error)
+                    ErrorPresenter.present(error)
                 }
             }
-        }
-    }
-
-    func openPreferences() {
-        preferencesController.show(settings: settings)
-    }
-
-    func openAbout() {
-        aboutController.show()
-    }
-
-    func openLicenses() {
-        licensesController.show()
-    }
-
-    func openScreenRecordingSettings() {
-        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") else {
-            return
-        }
-        NSWorkspace.shared.open(url)
-    }
-
-    func openAccessibilitySettings() {
-        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") else {
-            return
-        }
-        NSWorkspace.shared.open(url)
-    }
-
-    func revealCaptureFolder() {
-        do {
-            try FileManager.default.createDirectory(
-                at: settings.saveDirectoryURL,
-                withIntermediateDirectories: true
-            )
-            NSWorkspace.shared.open(settings.saveDirectoryURL)
-        } catch {
-            showError(error)
         }
     }
 
@@ -305,7 +249,7 @@ final class ScreviaModel: ObservableObject {
                     showThumbnail: showThumbnail
                 )
             } catch {
-                self?.showError(error)
+                ErrorPresenter.present(error)
             }
         }
     }
@@ -411,7 +355,7 @@ final class ScreviaModel: ObservableObject {
                             showThumbnail: showThumbnail
                         )
                     } catch {
-                        self?.showError(error)
+                        ErrorPresenter.present(error)
                     }
                 }
             },
@@ -419,33 +363,5 @@ final class ScreviaModel: ObservableObject {
                 self?.imageStore.copyToClipboard(annotatedImage)
             }
         )
-    }
-
-    private func showError(_ error: Error) {
-        // Every failure path in this file funnels through here, so this single
-        // call gives the alert a paper trail. The alert itself is transient;
-        // Console.app keeps this.
-        Log.app.error(
-            """
-            Surfaced error: \(String(describing: type(of: error)), privacy: .public) \
-            — \(error.localizedDescription, privacy: .public)
-            """
-        )
-
-        let alert = NSAlert()
-        alert.alertStyle = .warning
-        alert.messageText = "Screvia"
-        alert.informativeText = error.localizedDescription
-        alert.addButton(withTitle: L10n.text("app.ok"))
-
-        let captureError = error as? CaptureService.CaptureError
-        if captureError?.requiresAccessibilityPermission == true {
-            alert.addButton(withTitle: L10n.text("app.openSettings"))
-        }
-
-        let response = alert.runModal()
-        if response == .alertSecondButtonReturn {
-            openAccessibilitySettings()
-        }
     }
 }
