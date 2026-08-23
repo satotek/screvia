@@ -16,7 +16,7 @@ let package = Package(
         .library(name: "ScreviaKit", targets: ["ScreviaKit"])
     ],
     dependencies: [
-        .package(url: "https://github.com/sindresorhus/KeyboardShortcuts", from: "2.0.0"),
+        .package(url: "https://github.com/sindresorhus/KeyboardShortcuts", from: "3.0.1"),
         .package(url: "https://github.com/cybozu/LicenseList", from: "2.5.0")
     ],
     targets: [
