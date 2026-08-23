@@ -43,8 +43,12 @@ enum AppIconAsset {
                     "Contents/Resources/Screvia_ScreviaKit.bundle/Resources/AppIcon.icns"
                 )
                 .path(percentEncoded: false),
-            Bundle.module.path(forResource: "AppIcon", ofType: "icns"),
-            Bundle.module.path(forResource: "AppIcon", ofType: "icns", inDirectory: "Resources")
+            ScreviaBundle.resources.path(forResource: "AppIcon", ofType: "icns"),
+            ScreviaBundle.resources.path(
+                forResource: "AppIcon",
+                ofType: "icns",
+                inDirectory: "Resources"
+            )
         ].compactMap { $0 }
 
         for path in paths {
