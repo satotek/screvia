@@ -3,36 +3,7 @@ import KeyboardShortcuts
 import ServiceManagement
 import SwiftUI
 
-@MainActor
-final class PreferencesWindowController {
-    private var window: NSWindow?
-
-    func show(settings: ScreviaSettings) {
-        if let window {
-            window.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
-            return
-        }
-
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 720, height: 540),
-            styleMask: [.titled, .closable, .resizable],
-            backing: .buffered,
-            defer: false
-        )
-        window.title = L10n.text("preferences.title")
-        window.minSize = NSSize(width: 640, height: 500)
-        window.contentView = NSHostingView(rootView: PreferencesView(settings: settings))
-        window.center()
-        window.isReleasedWhenClosed = false
-
-        self.window = window
-        NSApp.activate(ignoringOtherApps: true)
-        window.makeKeyAndOrderFront(nil)
-    }
-}
-
-private enum PreferencesTab: String, CaseIterable, Identifiable {
+enum PreferencesTab: String, CaseIterable, Identifiable {
     case general
     case capture
     case appearance
@@ -55,7 +26,7 @@ private enum PreferencesTab: String, CaseIterable, Identifiable {
     }
 }
 
-private struct PreferencesView: View {
+struct PreferencesView: View {
     @ObservedObject var settings: ScreviaSettings
     @State private var selectedTab: PreferencesTab = .general
 
@@ -133,7 +104,7 @@ private struct PreferencesView: View {
     }
 }
 
-private struct GeneralPreferences: View {
+struct GeneralPreferences: View {
     @ObservedObject var settings: ScreviaSettings
     @State private var launchAtLoginStatus: SMAppService.Status = .notRegistered
     @State private var launchAtLoginError: String?
@@ -281,7 +252,7 @@ private struct GeneralPreferences: View {
     }
 }
 
-private struct CapturePreferences: View {
+struct CapturePreferences: View {
     @ObservedObject var settings: ScreviaSettings
 
     var body: some View {
@@ -325,7 +296,7 @@ private struct CapturePreferences: View {
     }
 }
 
-private struct AppearancePreferences: View {
+struct AppearancePreferences: View {
     @ObservedObject var settings: ScreviaSettings
 
     var body: some View {
@@ -371,7 +342,7 @@ private struct AppearancePreferences: View {
     }
 }
 
-private struct ShortcutRow: View {
+struct ShortcutRow: View {
     let action: ShortcutAction
 
     @State private var shortcut: KeyboardShortcuts.Shortcut?
@@ -425,7 +396,7 @@ private struct ShortcutRow: View {
     }
 }
 
-private struct FramedPreview: View {
+struct FramedPreview: View {
     @ObservedObject var settings: ScreviaSettings
 
     var body: some View {
@@ -465,7 +436,7 @@ private struct FramedPreview: View {
     }
 }
 
-private extension BackgroundStyle {
+extension BackgroundStyle {
     var previewColor: Color {
         switch self {
         case .none:
@@ -482,7 +453,7 @@ private extension BackgroundStyle {
     }
 }
 
-private extension Comparable {
+extension Comparable {
     func clamped(to range: ClosedRange<Self>) -> Self {
         min(max(self, range.lowerBound), range.upperBound)
     }
