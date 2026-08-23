@@ -377,7 +377,7 @@ private struct ShortcutRow: View {
     @State private var shortcut: KeyboardShortcuts.Shortcut?
 
     private var isCustomized: Bool {
-        shortcut != action.shortcutName.defaultShortcut
+        shortcut != action.shortcutName.initialShortcut
     }
 
     var body: some View {
@@ -399,7 +399,7 @@ private struct ShortcutRow: View {
             // in a column rather than shifting as rows are customized.
             Button {
                 KeyboardShortcuts.reset(action.shortcutName)
-                shortcut = action.shortcutName.defaultShortcut
+                shortcut = action.shortcutName.initialShortcut
             } label: {
                 Image(systemName: "arrow.uturn.backward")
                     .font(.system(size: 10, weight: .semibold))
