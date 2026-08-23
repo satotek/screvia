@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build
+    runs-on: macos-26
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: "/Applications/Xcode_26.5.0.app/Contents/Developer"
+      # LicenseList's build plugin looks for Xcode's SourcePackages layout;
+      # the SwiftPM CLI puts the same structure under .build instead.
+      PLL_SOURCE_PACKAGES_PATH: "${{ github.workspace }}/.build"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show versions
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Build (debug)
+        run: swift build
+
+      - name: Build (release)
+        run: swift build -c release
+
+      # Assembling and signing the .app is where packaging regressions show up,
+      # so exercise it rather than only compiling.
+      - name: Assemble Screvia.app
+        run: swift scripts/BuildApp.swift --no-open
+
+      - name: Verify code signature
+        run: codesign --verify --deep --strict --verbose=2 .build/Screvia.app
