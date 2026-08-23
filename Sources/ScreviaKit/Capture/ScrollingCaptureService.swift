@@ -1,5 +1,9 @@
 import AppKit
-import ApplicationServices
+// kAXTrustedCheckOptionPrompt imports as a global var because ApplicationServices
+// predates Swift's Sendable auditing, even though it's an immutable CFString
+// constant. @preconcurrency tells the compiler to trust that, same as it
+// would for any other un-audited system header.
+@preconcurrency import ApplicationServices
 import CoreGraphics
 import Foundation
 import ImageIO
