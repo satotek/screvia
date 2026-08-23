@@ -161,7 +161,7 @@ struct GeneralPreferences: View {
                     L10n.text("preferences.launchAtLogin"),
                     isOn: Binding(
                         get: { isLaunchAtLoginEnabled },
-                        set: setLaunchAtLogin
+                        set: { setLaunchAtLogin($0) }
                     )
                 )
 

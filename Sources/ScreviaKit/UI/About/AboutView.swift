@@ -26,6 +26,7 @@ enum AppInfo {
 }
 
 enum AppIconAsset {
+    @MainActor
     static func load() -> NSImage? {
         let paths = [
             Bundle.main.path(forResource: "AppIcon", ofType: "icns"),
