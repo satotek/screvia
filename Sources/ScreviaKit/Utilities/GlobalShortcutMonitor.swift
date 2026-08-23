@@ -49,25 +49,25 @@ enum ShortcutAction: CaseIterable {
     }
 }
 
-// The defaults match what the app shipped with while these were hardcoded, so
-// existing muscle memory keeps working. A user-set shortcut is stored in
-// UserDefaults by KeyboardShortcuts and wins over the default.
+// The initial shortcuts match what the app shipped with while these were
+// hardcoded, so existing muscle memory keeps working. A user-set shortcut is
+// stored in UserDefaults by KeyboardShortcuts and wins over the initial one.
 extension KeyboardShortcuts.Name {
     static let captureFullScreen = Self(
         "captureFullScreen",
-        default: .init(.three, modifiers: [.control, .shift])
+        initial: .init(.three, modifiers: [.control, .shift])
     )
     static let captureArea = Self(
         "captureArea",
-        default: .init(.four, modifiers: [.control, .shift])
+        initial: .init(.four, modifiers: [.control, .shift])
     )
     static let captureWindow = Self(
         "captureWindow",
-        default: .init(.five, modifiers: [.control, .shift])
+        initial: .init(.five, modifiers: [.control, .shift])
     )
     static let captureScroll = Self(
         "captureScroll",
-        default: .init(.six, modifiers: [.control, .shift])
+        initial: .init(.six, modifiers: [.control, .shift])
     )
 }
 
