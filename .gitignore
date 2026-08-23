@@ -1,0 +1,17 @@
+# SwiftPM build output
+/.build/
+/dist/
+/.swiftpm/
+*.xcodeproj
+*.xcworkspace
+
+# Distribution artifacts
+/dist/
+
+# Xcode
+xcuserdata/
+DerivedData/
+*.xcuserstate
+
+# macOS
+.DS_Store
