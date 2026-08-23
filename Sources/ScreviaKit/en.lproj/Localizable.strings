@@ -128,9 +128,9 @@
 "preferences.shortcutsHint" = "Click a shortcut to record a new key combination.";
 "preferences.shortcutRevert" = "Restore default";
 "preferences.about" = "About";
-"about.versionFormat" = "Version %@ (%@)";
-"about.developmentBuild" = "Development build";
-"about.openSource" = "Open Source Licenses";
-"about.frameworksNote" = "Everything else is built on Apple frameworks only.";
 "app.menu" = "Menu";
+
 "about.menuTitle" = "About Screvia";
+"about.versionFormat" = "Version %@ (%@)";
+"licenses.title" = "Open Source Licenses";
+"licenses.frameworksNote" = "Everything else is built on Apple frameworks only.";

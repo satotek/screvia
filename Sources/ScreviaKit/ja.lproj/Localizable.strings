@@ -128,9 +128,9 @@
 "preferences.shortcutsHint" = "ショートカットをクリックすると新しいキーを記録できます。";
 "preferences.shortcutRevert" = "デフォルトに戻す";
 "preferences.about" = "このアプリについて";
-"about.versionFormat" = "バージョン %@ (%@)";
-"about.developmentBuild" = "開発ビルド";
-"about.openSource" = "オープンソースライセンス";
-"about.frameworksNote" = "これ以外はすべて Apple 標準フレームワークのみで構成されています。";
 "app.menu" = "メニュー";
+
 "about.menuTitle" = "Screvia について";
+"about.versionFormat" = "バージョン %@ (%@)";
+"licenses.title" = "オープンソースライセンス";
+"licenses.frameworksNote" = "これ以外はすべて Apple 標準フレームワークのみで構成されています。";

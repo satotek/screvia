@@ -10,7 +10,7 @@ struct LicensesView: View {
                     LicenseRow(library: library)
                 }
             } footer: {
-                Text(L10n.text("about.frameworksNote"))
+                Text(L10n.text("licenses.frameworksNote"))
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
