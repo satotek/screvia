@@ -84,6 +84,21 @@ plugin once, on the first build.
 expects Xcode's `SourcePackages` layout — finds SwiftPM's checkout directory
 instead.
 
+## Tests
+
+```sh
+export PLL_SOURCE_PACKAGES_PATH="$PWD/.build"
+swift test
+```
+
+The suite covers the parts that are deterministic without a screen or a user:
+settings persistence and defaults, capture history (ordering, deduplication,
+the 30-entry cap, decoding older entries), the scrolling-capture stitcher
+(frame storage, overlap detection, canvas geometry), image processing
+geometry, saving and clipboard encoding, and thumbnail generation. Capture
+itself needs Screen Recording permission and a real display, so it is
+exercised by running the app rather than by the suite.
+
 ## Architecture
 
 Everything except the app entry point lives in the `ScreviaKit` SwiftPM
