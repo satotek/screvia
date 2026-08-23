@@ -106,6 +106,15 @@ project.yml         Source of truth for Screvia.xcodeproj (XcodeGen)
 Views take plain values and closures rather than reaching for singletons, which
 keeps them previewable; `PreviewFixtures.swift` supplies the sample data.
 
+UI strings live in a single String Catalog,
+`Sources/ScreviaKit/Resources/Localizable.xcstrings`, compiled by both
+`xcodebuild` and the SwiftPM CLI into per-language `.strings`. Keeping it
+inside `ScreviaKit` rather than the app target means previews — which load
+`ScreviaKit` as a standalone dylib — see the same localized strings the app
+does; `App/en.lproj` and `App/ja.lproj` hold only the localized
+`NSScreenCaptureUsageDescription` for the system permission prompt, which
+belongs to `App/Info.plist` and can't live in the package.
+
 ## Logging
 
 Screvia logs through the unified logging system. Capture paths stay private;

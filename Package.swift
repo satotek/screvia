@@ -4,6 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "Screvia",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
@@ -26,9 +27,11 @@ let package = Package(
             ],
             path: "Sources/ScreviaKit",
             resources: [
-                .copy("Resources"),
-                .copy("en.lproj"),
-                .copy("ja.lproj")
+                // .process rather than .copy so Xcode's build system compiles
+                // Localizable.xcstrings into per-language .strings when this
+                // target builds as an embedded local package; the SwiftPM CLI
+                // build (swift build/test) just copies it as-is instead.
+                .process("Resources")
             ]
         ),
         .testTarget(
