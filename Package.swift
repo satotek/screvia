@@ -40,6 +40,11 @@ let package = Package(
             name: "Screvia",
             dependencies: ["ScreviaKit"],
             path: "Sources/Screvia"
+        ),
+        .testTarget(
+            name: "ScreviaKitTests",
+            dependencies: ["ScreviaKit"],
+            path: "Tests/ScreviaKitTests"
         )
     ],
     swiftLanguageModes: [.v5]
