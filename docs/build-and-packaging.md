@@ -51,15 +51,52 @@ swift scripts/BuildApp.swift --no-open    # build only
 swift scripts/CreateDMG.swift             # build, then wrap in dist/Screvia-<version>.dmg
 ```
 
-By default they sign with the "Apple Development" certificate when the Mac has
-one (a free Apple ID can create it under Xcode → Settings → Accounts), and
-ad-hoc otherwise, as on CI. The difference matters for privacy permissions:
-an ad-hoc signature identifies the app by its binary hash, so macOS asks for
-Screen Recording again after every rebuild, while a certificate-based one
-keeps the grant. `--sign <identity>` picks another certificate, such as a
-Developer ID, and `--sign -` forces ad-hoc. The team ID xcodebuild needs is
-read from the certificate. `SMAppService` (launch at login) requires a signed
-app, which is why even local builds are signed.
+### Signing
+
+The signature decides whether macOS remembers privacy permissions. An ad-hoc
+signature identifies the app by its binary hash, so macOS asks for Screen
+Recording again after every rebuild or update. A certificate ties the identity
+to the bundle ID and certificate instead, and the grant survives.
+
+Without `--sign`, the scripts use the first of these the Mac has:
+
+1. **`Screvia Code Signing`** — a self-signed certificate, valid until 2036,
+   that releases are signed with. Needs no Apple Developer Program membership;
+   Gatekeeper treats the app as unnotarized either way. Using it locally too
+   means a local build and an installed release count as the same app.
+2. **`Apple Development`** — free with an Apple ID (Xcode → Settings →
+   Accounts).
+3. **Ad-hoc**, as on CI.
+
+`--sign <identity>` picks another certificate and `--sign -` forces ad-hoc.
+Apple-issued certificates go through xcodebuild's own signing, with the team
+ID read from the certificate. Anything else is built ad-hoc and re-signed with
+`codesign` afterwards, inside out, because xcodebuild requires a team.
+
+If xcodebuild's signer differs from the previous build, the script discards
+`.build/DerivedData/Build` first: an incremental build would re-sign the
+nested resource bundles without resealing the app around them.
+
+The certificate and its private key live in the maintainer's login keychain.
+Back them up (Keychain Access → export as .p12); losing them means every user
+grants Screen Recording once more after the next update.
+
+`SMAppService` (launch at login) requires a signed app, which is why even
+local builds are signed.
+
+### Releases
+
+Pushing a `v*` tag runs `.github/workflows/release.yml`. It checks the tag
+against `MARKETING_VERSION`, imports the certificate from the
+`SCREVIA_SIGNING_P12` and `SCREVIA_SIGNING_P12_PASSWORD` secrets into a
+throwaway keychain, runs `CreateDMG.swift`, and publishes the image and its
+SHA-256 to GitHub Releases with `.github/release-notes.md` above the generated
+notes.
+
+```sh
+# after bumping MARKETING_VERSION in project.yml
+git tag v0.2.0 && git push origin v0.2.0
+```
 
 `BuildApp.swift` runs `xcodegen generate`, then `xcodebuild` with a
 `-derivedDataPath` under `.build`, then `ditto`s the result to

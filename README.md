@@ -43,6 +43,22 @@ app at all.
   otherwise hand over
 - Background, padding, corner radius and shadow styling
 
+## Install
+
+Download the `.dmg` from [Releases](https://github.com/satotek/screvia/releases)
+and drag Screvia to Applications.
+
+Screvia is signed but not notarized, so macOS blocks the first launch. Open it
+once, then allow it under System Settings → Privacy & Security → **Open
+Anyway**. Or, from Terminal:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/Screvia.app
+```
+
+Every release is signed with the same certificate, so updating keeps the
+Screen Recording and Accessibility permissions you already granted.
+
 ## Requirements
 
 - macOS 14 or later
