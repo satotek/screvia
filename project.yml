@@ -12,6 +12,19 @@ options:
     macOS: "14.0"
   createIntermediateGroups: true
   generateEmptyDirectories: true
+  # Becomes LastUpgradeCheck. Raise it only together with the settings below,
+  # after diffing them against a fresh project from the new Xcode's template.
+  xcodeVersion: "27.0"
+
+# What Xcode 27's project template sets and XcodeGen's presets don't.
+settings:
+  base:
+    CLANG_CXX_LANGUAGE_STANDARD: gnu++20
+    GCC_C_LANGUAGE_STANDARD: gnu17
+    DEAD_CODE_STRIPPING: true
+    ENABLE_USER_SCRIPT_SANDBOXING: true
+    LOCALIZATION_PREFERS_STRING_CATALOGS: true
+    ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: true
 
 packages:
   ScreviaKit:
@@ -48,7 +61,11 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: dev.satotek.screvia
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
-        SWIFT_VERSION: "5.0"
+        # Match ScreviaKit's language mode rather than the template's 5.0.
+        SWIFT_VERSION: "6.0"
+        SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+        SWIFT_APPROACHABLE_CONCURRENCY: true
+        SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY: true
         # Ad-hoc locally; a Developer ID is supplied by the distributor.
         CODE_SIGN_IDENTITY: "-"
         CODE_SIGN_STYLE: Manual
