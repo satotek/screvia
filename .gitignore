@@ -1,6 +1,5 @@
 # SwiftPM build output
 /.build/
-/dist/
 /.swiftpm/
 *.xcodeproj
 *.xcworkspace
