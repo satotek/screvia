@@ -1,7 +1,6 @@
 import AppKit
 import Foundation
 
-@MainActor
 enum SystemSettingsService {
     static func openScreenRecordingSettings() {
         guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") else {

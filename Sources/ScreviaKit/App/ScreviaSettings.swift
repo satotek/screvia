@@ -2,7 +2,7 @@ import AppKit
 import Combine
 import Foundation
 
-enum ImageFormat: String, CaseIterable, Identifiable {
+nonisolated enum ImageFormat: String, CaseIterable, Identifiable {
     case png
     case jpeg
     case tiff
@@ -25,7 +25,7 @@ enum ImageFormat: String, CaseIterable, Identifiable {
     }
 }
 
-enum BackgroundStyle: String, CaseIterable, Identifiable {
+nonisolated enum BackgroundStyle: String, CaseIterable, Identifiable {
     case none
     case paper
     case mist
@@ -67,14 +67,13 @@ enum ThumbnailPosition: String, CaseIterable, Identifiable {
     }
 }
 
-struct CaptureStyleOptions {
+nonisolated struct CaptureStyleOptions {
     let backgroundStyle: BackgroundStyle
     let padding: CGFloat
     let cornerRadius: CGFloat
     let shadowEnabled: Bool
 }
 
-@MainActor
 final class ScreviaSettings: ObservableObject {
     private enum Key {
         static let saveDirectoryPath = "saveDirectoryPath"

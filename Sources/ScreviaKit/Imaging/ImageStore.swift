@@ -3,7 +3,7 @@ import Foundation
 import ImageIO
 import UniformTypeIdentifiers
 
-struct ImageStore {
+nonisolated struct ImageStore {
     struct SavedImage {
         let fileURL: URL
         let data: Data?
@@ -127,6 +127,13 @@ struct ImageStore {
         return (data, format)
     }
 
+    /// `readImageData(at:)` off the caller's actor, for callers on the main
+    /// actor that must not block on disk I/O.
+    @concurrent
+    func loadImageData(at fileURL: URL) async -> (data: Data, format: ImageFormat)? {
+        readImageData(at: fileURL)
+    }
+
     private func encodedData(
         for image: NSImage,
         format: ImageFormat,
@@ -160,7 +167,7 @@ struct ImageStore {
     }
 }
 
-private extension ImageFormat {
+private nonisolated extension ImageFormat {
     var uniformTypeIdentifier: String {
         switch self {
         case .png:

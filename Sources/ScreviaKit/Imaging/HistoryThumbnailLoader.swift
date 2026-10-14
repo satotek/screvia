@@ -4,7 +4,7 @@ import UniformTypeIdentifiers
 
 /// Creates a small preview without decoding a full-size screenshot into an
 /// NSImage. This is especially important for very tall scrolling captures.
-enum HistoryThumbnailLoader {
+nonisolated enum HistoryThumbnailLoader {
     // NSCache is documented as safe to share across threads without external
     // locking, so this box's @unchecked Sendable just asserts what Apple
     // already guarantees — Swift 6 can't see that from the type alone.
@@ -17,6 +17,13 @@ enum HistoryThumbnailLoader {
     }
 
     private static let cacheBox = CacheBox()
+
+    /// `pngData(for:maxPixelSize:)` off the caller's actor: decoding a tall
+    /// scrolling capture is too slow to run on the main actor.
+    @concurrent
+    static func loadPNGData(for url: URL, maxPixelSize: Int = 256) async -> Data? {
+        pngData(for: url, maxPixelSize: maxPixelSize)
+    }
 
     static func pngData(for url: URL, maxPixelSize: Int = 256) -> Data? {
         let cacheKey = "\(url.standardizedFileURL.path)#\(maxPixelSize)" as NSString

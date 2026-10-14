@@ -2,7 +2,7 @@ import AppKit
 import CoreGraphics
 import ScreenCaptureKit
 
-struct WindowCaptureSession {
+nonisolated struct WindowCaptureSession {
     private let contentFilter: SCContentFilter
     private let configuration: SCStreamConfiguration
 
@@ -35,7 +35,7 @@ struct WindowCaptureSession {
     }
 }
 
-struct CaptureService {
+nonisolated struct CaptureService {
     enum CaptureError: LocalizedError {
         case screenRecordingPermissionRequired
         case accessibilityPermissionRequired
@@ -72,6 +72,9 @@ struct CaptureService {
         }
     }
 
+    // The only method here that reads the mouse location, so the only one
+    // pinned to the main actor; the rest are callable from anywhere.
+    @MainActor
     func captureMainDisplay() throws -> NSImage {
         guard let screen = ScreenUtilities.screenAtMouse() ?? NSScreen.screens.first else {
             throw CaptureError.noScreenAvailable

@@ -1,7 +1,6 @@
 import AppKit
 import ServiceManagement
 
-@MainActor
 protocol LaunchAtLoginService {
     var status: SMAppService.Status { get }
 
@@ -10,7 +9,6 @@ protocol LaunchAtLoginService {
     func openSystemSettings()
 }
 
-@MainActor
 private struct SystemLaunchAtLoginService: LaunchAtLoginService {
     var status: SMAppService.Status {
         SMAppService.mainApp.status
@@ -29,7 +27,6 @@ private struct SystemLaunchAtLoginService: LaunchAtLoginService {
     }
 }
 
-@MainActor
 final class LaunchAtLoginController {
     private let service: any LaunchAtLoginService
 
@@ -82,7 +79,6 @@ final class LaunchAtLoginController {
 ///
 /// The system owns this state. Keeping it out of UserDefaults means the
 /// Preferences window reflects changes made directly in System Settings too.
-@MainActor
 enum LaunchAtLoginManager {
     private static let controller = LaunchAtLoginController()
 

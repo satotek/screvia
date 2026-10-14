@@ -11,7 +11,7 @@ import OSLog
 /// and shows as `<private>` in Console. That default is right for us — capture
 /// paths contain the user's home directory — so mark a value `.public` only
 /// when it carries no personal information.
-enum Log {
+nonisolated enum Log {
     private static let subsystem = "dev.satotek.screvia"
 
     /// Screen, area, window and scrolling capture.
