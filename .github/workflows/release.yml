@@ -15,6 +15,8 @@ jobs:
     env:
       DEVELOPER_DIR: "/Applications/Xcode_27.0.app/Contents/Developer"
       SIGNING_IDENTITY: "Screvia Code Signing"
+      # For `swift test`; BuildApp.swift sets its own. See ci.yml.
+      PLL_SOURCE_PACKAGES_PATH: "${{ github.workspace }}/.build"
 
     steps:
       - name: Checkout
@@ -36,6 +38,11 @@ jobs:
 
       - name: Install XcodeGen
         run: brew install xcodegen
+
+      # A tag pushed together with its commit races CI, so a release cannot
+      # rely on CI having passed first.
+      - name: Test
+        run: swift test --parallel
 
       # The certificate is self-signed rather than Apple-issued, so this needs
       # no Developer Program membership. Its only job is a designated
