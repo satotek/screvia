@@ -27,6 +27,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          # BuildApp derives the build number from the commit count.
+          fetch-depth: 0
 
       - name: Install XcodeGen
         run: brew install xcodegen

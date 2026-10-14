@@ -202,15 +202,40 @@ do {
         try? fm.removeItem(at: productsDir)
     }
 
+    // CFBundleVersion only has to grow from one release to the next, and the
+    // commit count does that along main without anyone remembering to bump
+    // it. A shallow clone would count 1, so refuse that instead of shipping
+    // a build number that goes backwards.
+    var versionSettings: [String] = []
+    if let isShallow = try? run(
+        "/usr/bin/git",
+        ["-C", repoRoot.path, "rev-parse", "--is-shallow-repository"],
+        captureOutput: true
+    ) {
+        guard isShallow == "false" else {
+            throw CommandError(command: "build number from a shallow clone (fetch full history)", status: 1)
+        }
+        let commitCount = try run(
+            "/usr/bin/git",
+            ["-C", repoRoot.path, "rev-list", "--count", "HEAD"],
+            captureOutput: true
+        )
+        versionSettings = ["CURRENT_PROJECT_VERSION=\(commitCount)"]
+        print("Build number \(commitCount)")
+    }
+
     try run(
         "/usr/bin/xcodebuild",
         [
             "-project", "Screvia.xcodeproj",
             "-scheme", "Screvia",
             "-configuration", "Release",
+            // Generic, so the app is universal. Without it xcodebuild picks
+            // this Mac as the destination and builds only its architecture.
+            "-destination", "generic/platform=macOS",
             "-derivedDataPath", derivedDataDir.path,
             "-skipPackagePluginValidation"
-        ] + signingSettings + ["build"],
+        ] + signingSettings + versionSettings + ["build"],
         environment: buildEnvironment
     )
     try Data(signer.utf8).write(to: signerMarker)
