@@ -1,0 +1,5 @@
+self-hosted-runner:
+  # GitHub's preview image for Xcode 27, which actionlint does not know yet.
+  # Drop this once the workflows move to macos-27.
+  labels:
+    - xcode-27
