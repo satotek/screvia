@@ -108,14 +108,28 @@ do {
 
     // UDZO is a compressed, read-only image, the usual shape for drag-and-drop
     // distribution.
-    try run("/usr/bin/hdiutil", [
-        "create",
-        "-volname", appName,
-        "-srcfolder", staging.path,
-        "-ov",
-        "-format", "UDZO",
-        dmgPath.path
-    ])
+    //
+    // macOS 27 deprecates `hdiutil create` in favour of `diskutil image`,
+    // which older systems lack, so probe for it rather than assume.
+    // `diskutil image` will not overwrite, unlike hdiutil's -ov.
+    try? fm.removeItem(at: dmgPath)
+    if (try? run("/usr/sbin/diskutil", ["image", "create", "from", "--help"], captureOutput: true)) != nil {
+        try run("/usr/sbin/diskutil", [
+            "image", "create", "from",
+            "--format", "UDZO",
+            "--volumeName", appName,
+            staging.path,
+            dmgPath.path
+        ])
+    } else {
+        try run("/usr/bin/hdiutil", [
+            "create",
+            "-volname", appName,
+            "-srcfolder", staging.path,
+            "-format", "UDZO",
+            dmgPath.path
+        ])
+    }
 
     print("Created \(dmgPath.path)")
 } catch {
