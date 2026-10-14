@@ -46,7 +46,7 @@ app at all.
 ## Requirements
 
 - macOS 14 or later
-- Xcode 26.5+ and Swift 6 to build
+- Xcode 27+ and Swift 6 to build
 - [XcodeGen][xcodegen] (`brew install xcodegen`) to generate `Screvia.xcodeproj`
 - Screen Recording permission; Accessibility permission is additionally
   required for scrolling capture
