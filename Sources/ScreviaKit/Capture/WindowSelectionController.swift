@@ -80,7 +80,6 @@ enum WindowCatalog {
     }
 }
 
-@MainActor
 final class WindowSelectionController {
     private var entries: [(window: SelectionWindow, screen: NSScreen)] = []
     private var completion: ((CapturableWindow, NSScreen) -> Void)?

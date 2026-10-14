@@ -6,7 +6,6 @@ import Foundation
 /// screenshot, running it through CaptureProcessingPipeline, updating
 /// history, and routing the result to the thumbnail, the editor, or the
 /// clipboard depending on what the caller and the user's settings ask for.
-@MainActor
 final class CaptureCoordinator: ObservableObject {
     private let settings: ScreviaSettings
 
@@ -102,7 +101,7 @@ final class CaptureCoordinator: ObservableObject {
 
             self.windowSelectionController = nil
 
-            Task { @MainActor [weak self] in
+            Task { [weak self] in
                 guard let self else {
                     return
                 }
@@ -141,7 +140,7 @@ final class CaptureCoordinator: ObservableObject {
                 _ = targetApplication.activate(options: [])
             }
 
-            Task { @MainActor [weak self] in
+            Task { [weak self] in
                 guard let self else {
                     return
                 }
@@ -161,7 +160,7 @@ final class CaptureCoordinator: ObservableObject {
     }
 
     func editHistoryEntry(_ entry: CaptureHistoryEntry) {
-        Task { @MainActor [weak self] in
+        Task { [weak self] in
             guard let self, let capture = await self.capture(from: entry) else {
                 return
             }
@@ -172,10 +171,8 @@ final class CaptureCoordinator: ObservableObject {
     func copyHistoryEntry(_ entry: CaptureHistoryEntry) {
         let fileURL = entry.fileURL
         let imageStore = self.imageStore
-        Task { @MainActor [weak self] in
-            let imageData = await Task.detached(priority: .utility) {
-                imageStore.readImageData(at: fileURL)
-            }.value
+        Task { [weak self] in
+            let imageData = await imageStore.loadImageData(at: fileURL)
 
             guard let self, let imageData else {
                 return
@@ -185,7 +182,7 @@ final class CaptureCoordinator: ObservableObject {
     }
 
     func pinHistoryEntry(_ entry: CaptureHistoryEntry) {
-        Task { @MainActor [weak self] in
+        Task { [weak self] in
             guard let self, let capture = await self.capture(from: entry) else {
                 return
             }
@@ -213,7 +210,7 @@ final class CaptureCoordinator: ObservableObject {
         let playSound = settings.playSound
         let pipeline = captureProcessingPipeline
 
-        Task { @MainActor [weak self] in
+        Task { [weak self] in
             do {
                 let result = try await pipeline.processAndSave(
                     image: image,
@@ -282,12 +279,10 @@ final class CaptureCoordinator: ObservableObject {
     }
 
     private func capture(from entry: CaptureHistoryEntry) async -> CaptureItem? {
-        let fileURL = entry.fileURL
-        let data = await Task.detached(priority: .userInitiated) {
-            try? Data(contentsOf: fileURL)
-        }.value
-
-        guard let data, let image = NSImage(data: data) else {
+        guard
+            let data = await Self.readData(at: entry.fileURL),
+            let image = NSImage(data: data)
+        else {
             removeHistoryEntry(entry)
             return nil
         }
@@ -298,6 +293,11 @@ final class CaptureCoordinator: ObservableObject {
             displayID: entry.displayID,
             kind: entry.kind
         )
+    }
+
+    @concurrent
+    private nonisolated static func readData(at fileURL: URL) async -> Data? {
+        try? Data(contentsOf: fileURL)
     }
 
     private func openEditor(for capture: CaptureItem) {
@@ -317,7 +317,7 @@ final class CaptureCoordinator: ObservableObject {
                 let kind = capture.kind
                 let pipeline = self.captureProcessingPipeline
 
-                Task { @MainActor [weak self] in
+                Task { [weak self] in
                     do {
                         let result = try await pipeline.processAndSave(
                             image: annotatedImage,

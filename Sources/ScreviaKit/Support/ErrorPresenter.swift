@@ -1,6 +1,5 @@
 import AppKit
 
-@MainActor
 enum ErrorPresenter {
     static func present(_ error: Error) {
         // Every failure path in the app funnels through here, so this single

@@ -68,7 +68,6 @@ struct CaptureHistoryEntry: Codable, Equatable, Identifiable {
 
 }
 
-@MainActor
 final class CaptureHistoryStore {
     private enum Key {
         static let entries = "captureHistory.entries"

@@ -1,4 +1,4 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 6.2
 
 import PackageDescription
 
@@ -32,6 +32,15 @@ let package = Package(
                 // target builds as an embedded local package; the SwiftPM CLI
                 // build (swift build/test) just copies it as-is instead.
                 .process("Resources")
+            ],
+            // Xcode 27's defaults for an app target: code is main-actor
+            // unless it says otherwise, and async functions stay on their
+            // caller's actor unless marked @concurrent. Work that has to
+            // leave the main actor is therefore spelled out at the site.
+            swiftSettings: [
+                .defaultIsolation(MainActor.self),
+                .enableUpcomingFeature("NonisolatedNonsendingByDefault"),
+                .enableUpcomingFeature("InferIsolatedConformances")
             ]
         ),
         .testTarget(

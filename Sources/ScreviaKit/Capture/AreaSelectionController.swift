@@ -1,6 +1,5 @@
 import AppKit
 
-@MainActor
 final class AreaSelectionController {
     private var windows: [SelectionWindow] = []
     private var completion: ((CGRect, NSScreen) -> Void)?

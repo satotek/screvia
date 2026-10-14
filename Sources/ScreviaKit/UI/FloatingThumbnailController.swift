@@ -1,7 +1,6 @@
 import AppKit
 import SwiftUI
 
-@MainActor
 final class FloatingThumbnailController {
     private var panel: NSPanel?
     private var dismissTask: Task<Void, Never>?

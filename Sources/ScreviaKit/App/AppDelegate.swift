@@ -1,7 +1,6 @@
 import AppKit
 import SwiftUI
 
-@MainActor
 public final class AppDelegate: NSObject, NSApplicationDelegate {
     public override init() {
         super.init()

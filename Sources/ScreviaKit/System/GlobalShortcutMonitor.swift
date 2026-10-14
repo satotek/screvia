@@ -71,7 +71,6 @@ extension KeyboardShortcuts.Name {
     )
 }
 
-@MainActor
 final class GlobalShortcutMonitor {
     func start(handler: @escaping (ShortcutAction) -> Void) {
         stop()

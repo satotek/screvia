@@ -15,7 +15,7 @@ import UniformTypeIdentifiers
 /// The first version intentionally uses Quartz scroll events instead of
 /// app-specific scripting. That keeps the feature useful across browsers,
 /// document readers, terminals, and native AppKit applications.
-struct ScrollingCaptureService {
+nonisolated struct ScrollingCaptureService {
     private let captureService = CaptureService()
 
     private let maxFrames = 18
@@ -23,6 +23,9 @@ struct ScrollingCaptureService {
     private let settleMilliseconds = 220
     private let sameFrameThreshold = 0.006
 
+    // Frame comparison, PNG encoding and stitching all run inside this loop,
+    // so it must not inherit the main actor from CaptureCoordinator.
+    @concurrent
     func capture(
         windowID: CGWindowID,
         processID: pid_t,
@@ -181,13 +184,13 @@ struct ScrollingCaptureService {
 
 // Internal rather than private so ImageStitcherTests can exercise the
 // stitching maths directly; nothing outside ScreviaKit sees these.
-struct ScrollFrame {
+nonisolated struct ScrollFrame {
     let fileURL: URL
     let width: Int
     let height: Int
 }
 
-enum ImageStitcher {
+nonisolated enum ImageStitcher {
     private struct PixelBuffer {
         let width: Int
         let height: Int

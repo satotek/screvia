@@ -363,10 +363,7 @@ private struct RecentCaptureCard: View {
         .animation(.easeOut(duration: 0.12), value: isHovering)
         .help(L10n.text("app.edit"))
         .task(id: entry.filePath) {
-            let fileURL = entry.fileURL
-            let data = await Task.detached(priority: .utility) {
-                HistoryThumbnailLoader.pngData(for: fileURL)
-            }.value
+            let data = await HistoryThumbnailLoader.loadPNGData(for: entry.fileURL)
 
             guard !Task.isCancelled else {
                 return

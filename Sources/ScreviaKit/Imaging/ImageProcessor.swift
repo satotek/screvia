@@ -1,6 +1,6 @@
 import AppKit
 
-struct ImageProcessor {
+nonisolated struct ImageProcessor {
     func process(_ image: NSImage, options: CaptureStyleOptions) -> NSImage {
         let hasFrame = options.backgroundStyle != .none
             || options.padding > 0

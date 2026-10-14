@@ -8,7 +8,7 @@ import Foundation
 /// because anything sitting beside `Contents` is unsealed content that codesign
 /// refuses to sign. On this machine the accessor's hard-coded `.build` fallback
 /// hides the mismatch; on any other machine it would crash on first use.
-enum ScreviaBundle {
+nonisolated enum ScreviaBundle {
     /// SwiftPM names resource bundles `{package}_{target}.bundle`.
     private static let bundleName = "Screvia_ScreviaKit.bundle"
 

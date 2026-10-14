@@ -1,6 +1,6 @@
 import AppKit
 
-struct CaptureProcessingPipelineResult {
+nonisolated struct CaptureProcessingPipelineResult {
     let image: NSImage
     let savedImage: ImageStore.SavedImage
 }

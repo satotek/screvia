@@ -1,7 +1,6 @@
 import AppKit
 import SwiftUI
 
-@MainActor
 final class PinnedImageController {
     private var panels: [NSPanel] = []
 
