@@ -4,8 +4,8 @@
 //
 //   swift scripts/CreateDMG.swift [--sign <identity>]
 //
-// Signing and notarization for distribution are deliberately separate steps;
-// this only produces the image.
+// --sign is passed through to BuildApp.swift, which signs the app; the image
+// itself is left unsigned. Notarization is out of scope.
 
 import Foundation
 
@@ -69,8 +69,8 @@ let distDir = repoRoot.appending(path: "dist")
 let projectYAMLPath = repoRoot.appending(path: "project.yml")
 
 do {
-    // Read the version from project.yml — the same source XcodeGen uses to
-    // stamp Info.plist — so the image name can never drift from the app.
+    // Read the version from project.yml — the build setting Info.plist
+    // expands — so the image name can never drift from the app.
     let projectYAML = try String(contentsOf: projectYAMLPath, encoding: .utf8)
     guard let versionLine = projectYAML
         .components(separatedBy: .newlines)
