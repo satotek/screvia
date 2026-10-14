@@ -1,0 +1,85 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Release
+    runs-on: xcode-27
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: "/Applications/Xcode_27.0.app/Contents/Developer"
+      SIGNING_IDENTITY: "Screvia Code Signing"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # CreateDMG names the image after project.yml's MARKETING_VERSION, so a
+      # tag that disagrees with it would publish a mislabelled release.
+      - name: Check the tag matches the app version
+        run: |
+          version=$(sed -nE 's/^ *MARKETING_VERSION: *"?([^"]+)"?$/\1/p' project.yml)
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match MARKETING_VERSION $version"
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      # The certificate is self-signed rather than Apple-issued, so this needs
+      # no Developer Program membership. Its only job is a designated
+      # requirement that stays the same across releases, which is what lets
+      # an update keep the user's Screen Recording grant.
+      - name: Import the signing certificate
+        env:
+          SIGNING_P12: ${{ secrets.SCREVIA_SIGNING_P12 }}
+          SIGNING_P12_PASSWORD: ${{ secrets.SCREVIA_SIGNING_P12_PASSWORD }}
+        run: |
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          keychain_password=$(openssl rand -hex 24)
+          printf '%s' "$SIGNING_P12" | base64 --decode > "$RUNNER_TEMP/signing.p12"
+
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 3600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          security import "$RUNNER_TEMP/signing.p12" -k "$keychain" \
+            -P "$SIGNING_P12_PASSWORD" -T /usr/bin/codesign
+          # Lets codesign use the key without a GUI prompt.
+          security set-key-partition-list -S apple-tool:,apple: \
+            -s -k "$keychain_password" "$keychain" > /dev/null
+          # The existing search list is split into one argument per keychain.
+          # shellcheck disable=SC2046
+          security list-keychains -d user -s "$keychain" \
+            $(security list-keychains -d user | tr -d '"')
+          rm "$RUNNER_TEMP/signing.p12"
+
+      - name: Build the disk image
+        run: swift scripts/CreateDMG.swift --sign "$SIGNING_IDENTITY"
+
+      - name: Verify the signature
+        run: |
+          codesign --verify --deep --strict --verbose=2 .build/Screvia.app
+          codesign -dr - .build/Screvia.app
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          dmg="dist/Screvia-$VERSION.dmg"
+          shasum -a 256 "$dmg" | sed "s|dist/||" > "$dmg.sha256"
+          gh release create "$GITHUB_REF_NAME" "$dmg" "$dmg.sha256" \
+            --title "Screvia $VERSION" \
+            --generate-notes \
+            --notes-file .github/release-notes.md
+
+      - name: Remove the signing keychain
+        if: always()
+        run: security delete-keychain "$RUNNER_TEMP/signing.keychain-db" || true
