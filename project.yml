@@ -70,7 +70,8 @@ targets:
         SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
         SWIFT_APPROACHABLE_CONCURRENCY: true
         SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY: true
-        # Ad-hoc locally; a Developer ID is supplied by the distributor.
+        # Ad-hoc from Xcode. BuildApp signs with a certificate instead when
+        # this Mac has one; see docs/build-and-packaging.md#signing.
         CODE_SIGN_IDENTITY: "-"
         CODE_SIGN_STYLE: Manual
         DEVELOPMENT_TEAM: ""
