@@ -93,7 +93,8 @@ let appDir = buildRoot.appending(path: "Screvia.app")
 let buildEnvironment = ["PLL_SOURCE_PACKAGES_PATH": derivedDataDir.appending(path: "SourcePackages").path]
 
 do {
-    try run("/opt/homebrew/bin/xcodegen", ["generate"], environment: buildEnvironment)
+    // Resolved through PATH: XcodeGen may come from Homebrew or Nix.
+    try run("/usr/bin/env", ["xcodegen", "generate"], environment: buildEnvironment)
 
     try run(
         "/usr/bin/xcodebuild",
