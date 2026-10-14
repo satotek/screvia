@@ -1,5 +1,7 @@
 ## Install
 
+Requires macOS 14 or later, on Apple silicon or Intel.
+
 1. Download `Screvia-<version>.dmg`, open it, and drag Screvia to Applications.
 2. Open Screvia once. macOS blocks it because the app is not notarized.
 3. Go to System Settings → Privacy & Security, scroll to Security, and click

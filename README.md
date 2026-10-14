@@ -61,7 +61,7 @@ Screen Recording and Accessibility permissions you already granted.
 
 ## Requirements
 
-- macOS 14 or later
+- macOS 14 or later, on Apple silicon or Intel
 - Xcode 27+ and Swift 6 to build
 - [XcodeGen][xcodegen] (`brew install xcodegen`) to generate `Screvia.xcodeproj`
 - Screen Recording permission; Accessibility permission is additionally
