@@ -44,8 +44,10 @@ targets:
       properties:
         CFBundleDisplayName: Screvia
         CFBundleName: Screvia
-        CFBundleShortVersionString: "0.1.0"
-        CFBundleVersion: "1"
+        # Expanded from the build settings below, so the version lives in one
+        # place: CreateDMG and the release workflow read MARKETING_VERSION too.
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         CFBundleDevelopmentRegion: en
         # Keep the existing .icns rather than introducing an asset catalog:
         # scripts/regrid-appicon.swift already produces it on Apple's grid.
@@ -60,6 +62,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.satotek.screvia
         MARKETING_VERSION: "0.1.0"
+        # Only for builds run from Xcode. BuildApp overrides it with the
+        # commit count, which only ever grows along main.
         CURRENT_PROJECT_VERSION: "1"
         # Match ScreviaKit's language mode rather than the template's 5.0.
         SWIFT_VERSION: "6.0"

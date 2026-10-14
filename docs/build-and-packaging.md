@@ -89,21 +89,40 @@ local builds are signed.
 Pushing a `v*` tag runs `.github/workflows/release.yml`. It checks the tag
 against `MARKETING_VERSION`, imports the certificate from the
 `SCREVIA_SIGNING_P12` and `SCREVIA_SIGNING_P12_PASSWORD` secrets into a
-throwaway keychain, runs `CreateDMG.swift`, and publishes the image and its
-SHA-256 to GitHub Releases with `.github/release-notes.md` above the generated
-notes.
+throwaway keychain, runs `CreateDMG.swift`, checks that the built app reports
+the tagged version and contains both arm64 and x86_64, and publishes the image
+and its SHA-256 to GitHub Releases with `.github/release-notes.md` above the
+generated notes.
 
 ```sh
 # after bumping MARKETING_VERSION in project.yml
-git tag v0.2.0 && git push origin v0.2.0
+git tag -a v0.2.0 -m "Screvia 0.2.0" && git push origin v0.2.0
 ```
 
-`BuildApp.swift` runs `xcodegen generate`, then `xcodebuild` with a
-`-derivedDataPath` under `.build`, then `ditto`s the result to
-`.build/Screvia.app`.
+### Versions
 
-`CreateDMG.swift` reads the version from `MARKETING_VERSION` in `project.yml`,
-so the image name cannot drift from what the app reports.
+`MARKETING_VERSION` in `project.yml` is the only place the version is written.
+Info.plist's `CFBundleShortVersionString` expands it, `CreateDMG.swift` names
+the image after it, and the release workflow checks the tag against it.
+
+The build number (`CFBundleVersion`) is the commit count, which
+`BuildApp.swift` passes as `CURRENT_PROJECT_VERSION`. It grows along `main`
+without anyone bumping it, which is all a build number has to do. Counting
+needs the full history, so both workflows check out with `fetch-depth: 0` and
+the script refuses a shallow clone rather than produce build 1. A build run
+from Xcode itself falls back to `project.yml`'s `1`.
+
+### What the scripts do
+
+`BuildApp.swift` runs `xcodegen generate`, then `xcodebuild` for
+`generic/platform=macOS` — without a generic destination xcodebuild builds
+only the host Mac's architecture — with a `-derivedDataPath` under `.build`,
+then `ditto`s the result to `.build/Screvia.app`.
+
+`CreateDMG.swift` stages the app beside an `/Applications` link and makes a
+UDZO image with `diskutil image create from`. macOS 27 deprecates
+`hdiutil create`, but older systems may lack `diskutil image`, so the script
+probes for it and falls back to `hdiutil` when it is missing.
 
 ### Why the scripts are Swift
 

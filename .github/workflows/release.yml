@@ -19,6 +19,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          # BuildApp derives the build number from the commit count.
+          fetch-depth: 0
 
       # CreateDMG names the image after project.yml's MARKETING_VERSION, so a
       # tag that disagrees with it would publish a mislabelled release.
@@ -64,10 +67,27 @@ jobs:
       - name: Build the disk image
         run: swift scripts/CreateDMG.swift --sign "$SIGNING_IDENTITY"
 
-      - name: Verify the signature
+      - name: Verify the app
         run: |
           codesign --verify --deep --strict --verbose=2 .build/Screvia.app
           codesign -dr - .build/Screvia.app
+          # The About window shows CFBundleShortVersionString, so check the
+          # built app rather than trusting project.yml alone.
+          plist=.build/Screvia.app/Contents/Info.plist
+          shown=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist")
+          if [ "$shown" != "$VERSION" ]; then
+            echo "::error::the app reports $shown, expected $VERSION"
+            exit 1
+          fi
+          echo "version $shown, build $(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$plist")"
+          # Intel Macs still run macOS 14, the minimum.
+          archs=$(lipo -archs .build/Screvia.app/Contents/MacOS/Screvia)
+          for arch in arm64 x86_64; do
+            case " $archs " in
+              *" $arch "*) ;;
+              *) echo "::error::the app lacks $arch (has: $archs)"; exit 1 ;;
+            esac
+          done
 
       - name: Publish the release
         env:
