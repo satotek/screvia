@@ -54,7 +54,7 @@ app at all.
 ## Build
 
 `Screvia.xcodeproj` is generated from `project.yml` and gitignored, so the
-first step is always to generate it:
+first step on a fresh clone is always to generate it:
 
 ```sh
 xcodegen generate
@@ -64,86 +64,23 @@ open Screvia.xcodeproj    # then run the Screvia scheme
 Or from the command line:
 
 ```sh
-swift scripts/BuildApp.swift              # generate, build, and open .build/Screvia.app
-swift scripts/BuildApp.swift --no-open    # build it only
-swift scripts/CreateDMG.swift             # build, then wrap it in dist/Screvia-<version>.dmg
+swift scripts/BuildApp.swift    # generate, build, and open .build/Screvia.app
+swift scripts/CreateDMG.swift   # build, then wrap it in dist/Screvia-<version>.dmg
 ```
 
-Pass `--sign <identity>` to either script to use a Developer ID instead of the
-ad-hoc signature applied by default.
+See [docs/build-and-packaging.md](docs/build-and-packaging.md) for signing,
+previews, CI and troubleshooting.
 
-The packaging scripts are Swift rather than shell, matching
-`generate-icons.swift` and `regrid-appicon.swift` in the same directory.
+## Documentation
 
-Opening the project in Xcode requires trusting the `PrepareLicenseList` build
-plugin once, on the first build.
+- [Architecture](docs/architecture.md) — how the app is structured and why
+- [Build and packaging](docs/build-and-packaging.md) — the hybrid
+  XcodeGen/SwiftPM setup, scripts, CI
+- [Testing](docs/testing.md) — what is covered, what deliberately is not, and
+  the conventions for adding more
 
-`ScreviaKit` also builds standalone through the SwiftPM CLI (`swift build`,
-`swift test`) for CI and for editing outside Xcode. That path sets
-`PLL_SOURCE_PACKAGES_PATH="$PWD/.build"` so LicenseList's build plugin — which
-expects Xcode's `SourcePackages` layout — finds SwiftPM's checkout directory
-instead.
-
-## Tests
-
-```sh
-export PLL_SOURCE_PACKAGES_PATH="$PWD/.build"
-swift test
-```
-
-The suite covers the parts that are deterministic without a screen or a user:
-settings persistence and defaults, capture history (ordering, deduplication,
-the 30-entry cap, decoding older entries), the scrolling-capture stitcher
-(frame storage, overlap detection, canvas geometry), image processing
-geometry, saving and clipboard encoding, and thumbnail generation. Capture
-itself needs Screen Recording permission and a real display, so it is
-exercised by running the app rather than by the suite.
-
-## Architecture
-
-Everything except the app entry point lives in the `ScreviaKit` SwiftPM
-library, embedded as a local package dependency of the `Screvia.xcodeproj` app
-target. Xcode can only render SwiftUI previews for a target it builds as a
-dynamic library, which the `.xcodeproj` app target is not — so the split is
-what makes previews work. Select the `ScreviaKit` scheme in Xcode to use them.
-
-`AppDelegate` holds two coordinators rather than one combined app model:
-`CaptureCoordinator` runs the capture -> process -> save -> present pipeline
-and owns capture history, and `WindowsCoordinator` owns the Preferences/About/
-Licenses windows. `SystemSettingsService` and `ErrorPresenter` are stateless
-and shared by both.
-
-```
-App/                @main, Info.plist (Screvia.xcodeproj's app target)
-Sources/ScreviaKit/
-  App/              AppDelegate — owns the menu bar item and the coordinators
-  Capture/          CaptureCoordinator, ScreenCaptureKit services, selection overlays
-  UI/               SwiftUI views, AppKit window controllers, WindowsCoordinator
-  System/           Launch-at-login, global hotkeys, system settings deep links
-  Support/          Settings, logging, localization, error presentation
-project.yml         Source of truth for Screvia.xcodeproj (XcodeGen)
-```
-
-Views take plain values and closures rather than reaching for singletons, which
-keeps them previewable; `PreviewFixtures.swift` supplies the sample data.
-
-UI strings live in a single String Catalog,
-`Sources/ScreviaKit/Resources/Localizable.xcstrings`, compiled by both
-`xcodebuild` and the SwiftPM CLI into per-language `.strings`. Keeping it
-inside `ScreviaKit` rather than the app target means previews — which load
-`ScreviaKit` as a standalone dylib — see the same localized strings the app
-does; `App/en.lproj` and `App/ja.lproj` hold only the localized
-`NSScreenCaptureUsageDescription` for the system permission prompt, which
-belongs to `App/Info.plist` and can't live in the package.
-
-## Logging
-
-Screvia logs through the unified logging system. Capture paths stay private;
-error types, formats and hotkey names are public.
-
-```sh
-log stream --predicate 'subsystem == "dev.satotek.screvia"' --level info
-```
+Contributors should also read [AGENTS.md](AGENTS.md) for the working
+conventions.
 
 ## Dependencies
 
