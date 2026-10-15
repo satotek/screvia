@@ -21,11 +21,12 @@ Compared with the common alternatives (as of October 2026):
 
 ## Order
 
-1. **Edit any image**, not only Screvia's own captures: from the clipboard,
-   from a file, dropped on the menu bar icon, or via Finder's Open With.
-   The editor is the strongest feature and this widens where it applies.
-2. **Small, high-value capture features**: OCR (Vision, on device), a
-   self-timer, and capturing the previous area again.
+1. **Edit any image** (done in 0.2.0), not only Screvia's own captures:
+   from the clipboard, from a file, dropped on the menu bar icon, or via
+   Finder's Open With.
+2. **Small, high-value capture features** (done): OCR with Vision on
+   device, as a capture mode and in the editor; a self-timer counting down
+   in the menu bar; and capturing the previous area again.
 3. **Re-editing after saving**: keep the annotation document beside the
    image so annotations stay editable.
 4. **The rest of the editor's phase 2**: speech balloons, magnifier, image
