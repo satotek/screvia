@@ -124,6 +124,12 @@ nonisolated struct ImageStore {
         copyToClipboard(data: pngData, format: .png)
     }
 
+    func copyToClipboard(text: String) {
+        let pasteboard = pasteboard
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+    }
+
     func copyToClipboard(data: Data, format: ImageFormat) {
         let pasteboard = pasteboard
         pasteboard.clearContents()

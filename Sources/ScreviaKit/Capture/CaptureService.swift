@@ -44,6 +44,7 @@ nonisolated struct CaptureService {
         case cropFailed
         case scrollCaptureTargetUnavailable
         case scrollCaptureFailed
+        case noPreviousArea
 
         var errorDescription: String? {
             switch self {
@@ -61,6 +62,8 @@ nonisolated struct CaptureService {
                 return L10n.text("error.scrollCaptureTargetUnavailable")
             case .scrollCaptureFailed:
                 return L10n.text("error.scrollCaptureFailed")
+            case .noPreviousArea:
+                return L10n.text("error.noPreviousArea")
             }
         }
     }

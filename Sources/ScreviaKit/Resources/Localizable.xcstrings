@@ -65,6 +65,38 @@
         }
       }
     },
+    "annotation.copyText": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy Text"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "テキストをコピー"
+          }
+        }
+      }
+    },
+    "annotation.copyTextHelp": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy the text in the image"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画像の中の文字をコピー"
+          }
+        }
+      }
+    },
     "annotation.count.many": {
       "localizations": {
         "en": {
@@ -545,6 +577,38 @@
         }
       }
     },
+    "app.captureLastArea": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous Area"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前回の範囲"
+          }
+        }
+      }
+    },
+    "app.captureText": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Text"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "テキスト"
+          }
+        }
+      }
+    },
     "app.captured": {
       "localizations": {
         "en": {
@@ -993,6 +1057,70 @@
         }
       }
     },
+    "app.timer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timer"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "タイマー"
+          }
+        }
+      }
+    },
+    "app.timerHelp": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wait before capturing, to open a menu or hover first"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "撮影まで待つ時間。メニューを開いたり、マウスを重ねたりしておけます"
+          }
+        }
+      }
+    },
+    "app.timerOff": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Off"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "オフ"
+          }
+        }
+      }
+    },
+    "app.timerSeconds": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d s"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d 秒"
+          }
+        }
+      }
+    },
     "app.undo": {
       "localizations": {
         "en": {
@@ -1217,6 +1345,22 @@
         }
       }
     },
+    "error.noPreviousArea": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No area has been captured yet. Capture an area first."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "まだ範囲を撮影していません。先に範囲を選んで撮影してください。"
+          }
+        }
+      }
+    },
     "error.noScreen": {
       "localizations": {
         "en": {
@@ -1229,6 +1373,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "キャプチャ対象のディスプレイが見つかりませんでした。"
+          }
+        }
+      }
+    },
+    "error.noTextFound": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No text was found in the image."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画像の中に文字が見つかりませんでした。"
           }
         }
       }
@@ -1713,6 +1873,22 @@
         }
       }
     },
+    "preferences.captureLastArea": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capture Previous Area"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前回の範囲を撮影"
+          }
+        }
+      }
+    },
     "preferences.captureScroll": {
       "localizations": {
         "en": {
@@ -1725,6 +1901,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "スクロール撮影"
+          }
+        }
+      }
+    },
+    "preferences.captureText": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capture Text"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "テキストを撮影"
           }
         }
       }
@@ -2605,6 +2797,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "右上"
+          }
+        }
+      }
+    },
+    "toast.textCopied": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copied %d characters"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d 文字をコピーしました"
           }
         }
       }

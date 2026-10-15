@@ -9,6 +9,7 @@ struct AnnotationEditorView: View {
     let onSave: (NSImage) -> Void
     let onSaveAs: (NSImage) -> Void
     let onCopy: (NSImage) -> Void
+    let onCopyText: (NSImage) -> Void
 
     @State private var selectedTool: AnnotationTool = .rectangle
     @State private var document = AnnotationDocument()
@@ -26,7 +27,8 @@ struct AnnotationEditorView: View {
         onStyleChange: @escaping (AnnotationStyle) -> Void,
         onSave: @escaping (NSImage) -> Void,
         onSaveAs: @escaping (NSImage) -> Void,
-        onCopy: @escaping (NSImage) -> Void
+        onCopy: @escaping (NSImage) -> Void,
+        onCopyText: @escaping (NSImage) -> Void
     ) {
         self.image = image
         self.previewImage = previewImage
@@ -35,6 +37,7 @@ struct AnnotationEditorView: View {
         self.onSave = onSave
         self.onSaveAs = onSaveAs
         self.onCopy = onCopy
+        self.onCopyText = onCopyText
         _style = State(initialValue: initialStyle)
     }
 
@@ -310,6 +313,11 @@ struct AnnotationEditorView: View {
 
             Spacer()
 
+            Button(L10n.text("annotation.copyText")) {
+                onCopyText(flattenedImage())
+            }
+            .help(L10n.text("annotation.copyTextHelp"))
+
             Button(L10n.text("app.copy")) {
                 onCopy(flattenedImage())
             }
@@ -345,7 +353,8 @@ struct AnnotationEditorView: View {
         onStyleChange: { _ in },
         onSave: { _ in },
         onSaveAs: { _ in },
-        onCopy: { _ in }
+        onCopy: { _ in },
+        onCopyText: { _ in }
     )
 }
 #endif
