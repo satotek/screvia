@@ -14,6 +14,8 @@ nonisolated enum AnnotationTool: String, CaseIterable, Identifiable {
     case blur
     case pixelate
     case crop
+    /// Not an annotation: selects text in the image, through Live Text.
+    case liveText
 
     var id: String { rawValue }
 
@@ -43,6 +45,8 @@ nonisolated enum AnnotationTool: String, CaseIterable, Identifiable {
             return "square.grid.3x3"
         case .crop:
             return "crop"
+        case .liveText:
+            return "text.viewfinder"
         }
     }
 

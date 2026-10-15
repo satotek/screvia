@@ -225,7 +225,8 @@ struct AnnotationEditorView: View {
         HStack {
             AnnotationStyleBar(
                 style: selectedAnnotation?.style ?? style,
-                tool: selectedAnnotation?.tool ?? selectedTool,
+                // Live Text shows its hint even with a shape still selected.
+                tool: selectedTool == .liveText ? .liveText : (selectedAnnotation?.tool ?? selectedTool),
                 onChange: applyStyle
             )
 
@@ -322,7 +323,8 @@ struct AnnotationEditorView: View {
                 onCopy(flattenedImage())
             }
             .keyboardShortcut("c", modifiers: [.command])
-            .disabled(isEditingText)
+            // ⌘C belongs to the selected text while typing, and in Live Text.
+            .disabled(isEditingText || selectedTool == .liveText)
 
             Button(L10n.text("app.saveAs")) {
                 onSaveAs(flattenedImage())

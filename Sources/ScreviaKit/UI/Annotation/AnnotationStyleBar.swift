@@ -65,6 +65,11 @@ struct AnnotationStyleBar: View {
                 Text(L10n.text("annotation.cropHint"))
                     .foregroundStyle(.secondary)
             }
+
+            if tool == .liveText {
+                Text(L10n.text("annotation.liveTextHint"))
+                    .foregroundStyle(.secondary)
+            }
         }
         .font(.callout)
         .controlSize(.small)
