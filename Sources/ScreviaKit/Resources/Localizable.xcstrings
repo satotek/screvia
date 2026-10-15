@@ -1057,6 +1057,22 @@
         }
       }
     },
+    "background.none": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transparent"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "透明"
+          }
+        }
+      }
+    },
     "background.paper": {
       "localizations": {
         "en": {
@@ -1085,22 +1101,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "セージ"
-          }
-        }
-      }
-    },
-    "background.transparent": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transparent"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "透明"
           }
         }
       }
