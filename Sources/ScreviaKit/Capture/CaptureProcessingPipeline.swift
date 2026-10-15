@@ -18,15 +18,21 @@ actor CaptureProcessingPipeline {
         directory: URL,
         format: ImageFormat,
         jpegQuality: Double,
-        includeClipboardData: Bool
+        includeClipboardData: Bool,
+        baseName: String? = nil,
+        downscaleToPointSize: Bool = false
     ) throws -> CaptureProcessingPipelineResult {
-        let processedImage = imageProcessor.process(image, options: styleOptions)
+        // Downscaled first, so padding and shadow are drawn at the size
+        // that is saved rather than shrunk along with the capture.
+        let sized = downscaleToPointSize ? imageProcessor.downscaledToPointSize(image) : image
+        let processedImage = imageProcessor.process(sized, options: styleOptions)
         let savedImage = try imageStore.saveAndEncode(
             processedImage,
             directory: directory,
             format: format,
             jpegQuality: jpegQuality,
-            includeData: includeClipboardData
+            includeData: includeClipboardData,
+            baseName: baseName
         )
         return CaptureProcessingPipelineResult(
             image: processedImage,

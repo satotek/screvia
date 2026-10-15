@@ -33,12 +33,14 @@ app.
 **`ScreviaSettingsTests`** — defaults, round-tripping every property through
 `UserDefaults` (the editor's style included, with unreadable JSON falling back
 to the standard style; the self-timer, with values outside its choices
-falling back to off), unknown stored enum values falling back instead of crashing,
+falling back to off; the history size likewise falling back to 30), the file
+number advancing only for templates that show it and surviving a relaunch,
+unknown stored enum values falling back instead of crashing,
 `styleOptions` clamping negative geometry, and `reset` persisting rather than
 only changing memory.
 
 **`CaptureHistoryStoreTests`** — newest-first ordering, path-standardized
-deduplication, the 30-entry cap, removal, session scoping, pruning entries
+deduplication, the 30-entry cap and a lower one, removal, session scoping, pruning entries
 whose file is gone, and decoding history written before capture kinds existed.
 
 **`ImageStitcherTests`** — per-index frame storage, difference scoring,
@@ -46,7 +48,8 @@ recovering a known scroll distance through overlap detection, and the stitched
 canvas excluding overlapping strips.
 
 **`ImageProcessorTests`** — the unstyled pass-through, padding and shadow
-margin geometry, and every background style producing a drawable image.
+margin geometry, every background style producing a drawable image, and
+Retina images downscaled to one pixel per point while 1× ones pass through.
 
 **`ImageStoreTests`** — Save As writing the format its extension names and
 replacing an existing file, directory creation, per-format extensions, the numeric
@@ -81,8 +84,16 @@ the user's clipboard is untouched).
 
 **`TextRecognizerTests`** — English lines read top to bottom, Japanese read
 as Japanese (it fails if English is listed first), and an image with no text
-reported as such. The first run of the suite loads Vision's model and takes
+reported as such, and lines joined without spaces between Japanese and
+with them between Latin text. The first run of the suite loads Vision's model and takes
 several seconds; later runs are fast.
+
+**`FileNameTemplateTests`** — the standard template reproducing the names
+Screvia always used, every token filled in, a blank template falling back,
+and characters that break file names replaced.
+
+**`CursorSnapshotTests`** — the pointer drawn at its hot spot, in pixels, on
+a 2× screen capture.
 
 **`LocalizationKeyTests`** — every enum case whose title is looked up as
 `"prefix.\(rawValue)"` has an en and a ja string in the catalog. Such keys

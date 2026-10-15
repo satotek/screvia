@@ -80,15 +80,27 @@ final class CaptureHistoryStoreTests: XCTestCase {
 
     // MARK: - Capacity
 
+    func testALowerLimitKeepsFewerEntries() {
+        let store = makeStore()
+        store.limit = 10
+
+        for index in 0..<15 {
+            store.record(fileURL: url("shot-\(index).png"), displayID: 1)
+        }
+
+        XCTAssertEqual(store.entries.count, 10)
+        XCTAssertEqual(store.entries.first?.fileURL.lastPathComponent, "shot-14.png")
+    }
+
     func testHistoryIsCappedAtTheMaximumKeepingTheNewest() {
         let store = makeStore()
-        let overflow = CaptureHistoryStore.maximumEntries + 5
+        let overflow = CaptureHistoryStore.defaultLimit + 5
 
         for index in 0..<overflow {
             store.record(fileURL: url("shot-\(index).png"), displayID: 1)
         }
 
-        XCTAssertEqual(store.entries.count, CaptureHistoryStore.maximumEntries)
+        XCTAssertEqual(store.entries.count, CaptureHistoryStore.defaultLimit)
         XCTAssertEqual(store.entries.first?.fileURL.lastPathComponent, "shot-\(overflow - 1).png")
         // The five oldest fell off the end.
         XCTAssertFalse(store.entries.contains { $0.fileURL.lastPathComponent == "shot-0.png" })

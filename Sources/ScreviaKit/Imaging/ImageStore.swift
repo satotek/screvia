@@ -52,7 +52,8 @@ nonisolated struct ImageStore {
         directory: URL,
         format: ImageFormat,
         jpegQuality: Double,
-        includeData: Bool
+        includeData: Bool,
+        baseName: String? = nil
     ) throws -> SavedImage {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
@@ -67,10 +68,8 @@ nonisolated struct ImageStore {
             throw StoreError.imageEncodingFailed
         }
 
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd-HH.mm.ss"
-        let baseName = "Screenshot-\(formatter.string(from: Date()))"
+        let baseName = baseName
+            ?? FileNameTemplate(FileNameTemplate.standard).render(date: Date(), app: nil, counter: 0)
         var destination = directory.appendingPathComponent("\(baseName).\(format.fileExtension)")
         var suffix = 2
 

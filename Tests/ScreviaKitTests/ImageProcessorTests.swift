@@ -121,4 +121,23 @@ final class ImageProcessorTests: XCTestCase {
             )
         }
     }
+
+    // MARK: - Downscaling
+
+    func testRetinaImagesAreSavedAtOnePixelPerPoint() {
+        let image = NSImage(cgImage: TestImages.solidCGImage(width: 200, height: 100), size: NSSize(width: 100, height: 50))
+
+        let result = processor.downscaledToPointSize(image)
+        let cgImage = result.cgImage(forProposedRect: nil, context: nil, hints: nil)!
+
+        XCTAssertEqual(cgImage.width, 100)
+        XCTAssertEqual(cgImage.height, 50)
+        XCTAssertEqual(result.size, NSSize(width: 100, height: 50))
+    }
+
+    func testOneXImagesAreLeftAlone() {
+        let image = TestImages.nsImage(width: 100, height: 50)
+
+        XCTAssertIdentical(processor.downscaledToPointSize(image), image)
+    }
 }

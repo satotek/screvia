@@ -52,7 +52,11 @@ app at all.
 
 **Output**
 
-- PNG, JPEG or TIFF into any folder, with adjustable JPEG quality
+- PNG, JPEG or TIFF into any folder, with adjustable JPEG quality, named by a
+  template of date, time, app and a counting number
+- Or no file at all: captures go to the clipboard only
+- Optionally open the editor straight after capturing, include the pointer,
+  hide desktop icons, or save Retina captures at 1×
 - PNG on the clipboard rather than the uncompressed TIFF AppKit would
   otherwise hand over
 - Background, padding, corner radius and shadow styling

@@ -21,6 +21,7 @@ final class CaptureCoordinator: ObservableObject {
 
     private let toastController = ToastController()
     private let textCaptureController = TextCaptureWindowController()
+    private let desktopCover = DesktopCover()
 
     private var areaSelectionController: AreaSelectionController?
     private var windowSelectionController: WindowSelectionController?
@@ -37,6 +38,45 @@ final class CaptureCoordinator: ObservableObject {
     init(settings: ScreviaSettings) {
         self.settings = settings
         captureHistory = historyStore.entries
+        // History does not outlive a launch, so neither do unsaved captures.
+        try? FileManager.default.removeItem(at: Self.unsavedDirectory)
+    }
+
+    /// Where captures go when "Save to file" is off: out of the user's
+    /// folders, but on disk so history, the thumbnail and dragging work.
+    static var unsavedDirectory: URL {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            .appending(path: "dev.satotek.screvia/Unsaved", directoryHint: .isDirectory)
+    }
+
+    /// The app a capture came from, for `{app}` in file names. Screvia itself
+    /// is frontmost when a capture starts from the hub, which says nothing.
+    private static func sourceAppName(processID: pid_t? = nil) -> String? {
+        let app = processID.flatMap(NSRunningApplication.init(processIdentifier:))
+            ?? NSWorkspace.shared.frontmostApplication
+        guard let app, app.bundleIdentifier != Bundle.main.bundleIdentifier else {
+            return nil
+        }
+        return app.localizedName
+    }
+
+    private func cursorSnapshot(on screen: NSScreen) -> CursorSnapshot? {
+        settings.includeCursor ? CursorSnapshot.current(on: screen) : nil
+    }
+
+    /// Runs a display capture with the desktop icons covered when the user
+    /// asks for it. The cover needs a frame on screen before the capture.
+    private func withDesktopHidden(_ capture: @escaping () -> Void) {
+        guard settings.hideDesktopIcons else {
+            capture()
+            return
+        }
+        desktopCover.show()
+        Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(150))
+            capture()
+            self?.desktopCover.hide()
+        }
     }
 
     func start() {
@@ -78,15 +118,21 @@ final class CaptureCoordinator: ObservableObject {
             return
         }
 
+        let app = Self.sourceAppName()
         afterDelay { [weak self] in
-            guard let self else {
-                return
-            }
-            do {
-                let image = try self.captureService.captureMainDisplay(on: screen)
-                self.finishCapture(image, on: screen)
-            } catch {
-                ErrorPresenter.present(error)
+            self?.withDesktopHidden { [weak self] in
+                guard let self else {
+                    return
+                }
+                do {
+                    let image = try self.captureService.captureMainDisplay(
+                        on: screen,
+                        cursor: self.cursorSnapshot(on: screen)
+                    )
+                    self.finishCapture(image, on: screen, app: app)
+                } catch {
+                    ErrorPresenter.present(error)
+                }
             }
         }
     }
@@ -108,11 +154,21 @@ final class CaptureCoordinator: ObservableObject {
     }
 
     private func captureArea(_ selection: CGRect, on screen: NSScreen) {
-        do {
-            let image = try captureService.capture(selection: selection, on: screen)
-            finishCapture(image, on: screen)
-        } catch {
-            ErrorPresenter.present(error)
+        let app = Self.sourceAppName()
+        withDesktopHidden { [weak self] in
+            guard let self else {
+                return
+            }
+            do {
+                let image = try self.captureService.capture(
+                    selection: selection,
+                    on: screen,
+                    cursor: self.cursorSnapshot(on: screen)
+                )
+                self.finishCapture(image, on: screen, app: app)
+            } catch {
+                ErrorPresenter.present(error)
+            }
         }
     }
 
@@ -164,8 +220,14 @@ final class CaptureCoordinator: ObservableObject {
             textCaptureController.update(text: nil)
             return
         }
+        let language = settings.textLanguage
+        let joinLines = settings.textJoinLines
         Task { [weak self] in
-            let text = try? await TextRecognizer.text(in: cgImage)
+            let text = try? await TextRecognizer.text(
+                in: cgImage,
+                language: language,
+                joinLines: joinLines
+            )
             self?.textCaptureController.update(text: text)
         }
     }
@@ -181,9 +243,11 @@ final class CaptureCoordinator: ObservableObject {
             ErrorPresenter.present(TextRecognizer.RecognitionError.noText)
             return
         }
+        let language = settings.textLanguage
+        let joinLines = settings.textJoinLines
         Task { [weak self] in
             do {
-                let text = try await TextRecognizer.text(in: cgImage)
+                let text = try await TextRecognizer.text(in: cgImage, language: language, joinLines: joinLines)
                 guard let self else {
                     return
                 }
@@ -239,9 +303,10 @@ final class CaptureCoordinator: ObservableObject {
             do {
                 let image = try await self.captureService.captureWindow(
                     windowID: selectedWindow.id,
-                    includeShadow: self.settings.includeWindowShadow
+                    includeShadow: self.settings.includeWindowShadow,
+                    includeCursor: self.settings.includeCursor
                 )
-                self.finishCapture(image, on: screen)
+                self.finishCapture(image, on: screen, app: Self.sourceAppName(processID: selectedWindow.processID))
             } catch {
                 ErrorPresenter.present(error)
             }
@@ -280,7 +345,12 @@ final class CaptureCoordinator: ObservableObject {
                         processID: selectedWindow.processID,
                         windowBounds: selectedWindow.bounds
                     )
-                    self.finishCapture(image, on: screen, kind: .scrolling)
+                    self.finishCapture(
+                        image,
+                        on: screen,
+                        kind: .scrolling,
+                        app: Self.sourceAppName(processID: selectedWindow.processID)
+                    )
                 } catch {
                     ErrorPresenter.present(error)
                 }
@@ -398,15 +468,19 @@ final class CaptureCoordinator: ObservableObject {
     private func finishCapture(
         _ image: NSImage,
         on screen: NSScreen,
-        kind: CaptureKind = .standard
+        kind: CaptureKind = .standard,
+        app: String? = nil
     ) {
         let displayID = ScreenUtilities.displayID(for: screen) ?? 0
         let styleOptions = settings.styleOptions
-        let saveDirectory = settings.saveDirectoryURL
+        let saveDirectory = saveDirectory
+        let baseName = settings.nextFileName(app: app)
+        let downscale = settings.downscaleRetina
         let format = settings.imageFormat
         let jpegQuality = settings.jpegQuality
-        let copyToClipboard = settings.copyToClipboard
+        let copyToClipboard = copiesToClipboard
         let showThumbnail = settings.showThumbnail
+        let openEditor = settings.openEditorAfterCapture
         let playSound = settings.playSound
         let pipeline = captureProcessingPipeline
 
@@ -418,7 +492,9 @@ final class CaptureCoordinator: ObservableObject {
                     directory: saveDirectory,
                     format: format,
                     jpegQuality: jpegQuality,
-                    includeClipboardData: copyToClipboard
+                    includeClipboardData: copyToClipboard,
+                    baseName: baseName,
+                    downscaleToPointSize: downscale
                 )
 
                 guard let self else {
@@ -436,22 +512,35 @@ final class CaptureCoordinator: ObservableObject {
                     NSSound(named: NSSound.Name("Tink"))?.play()
                 }
 
-                self.publishCapture(
-                    CaptureItem(
-                        image: result.image,
-                        fileURL: result.savedImage.fileURL,
-                        displayID: displayID,
-                        kind: kind
-                    ),
-                    showThumbnail: showThumbnail
+                let capture = CaptureItem(
+                    image: result.image,
+                    fileURL: result.savedImage.fileURL,
+                    displayID: displayID,
+                    kind: kind
                 )
+                self.publishCapture(capture, showThumbnail: showThumbnail && !openEditor)
+                if openEditor {
+                    self.openEditor(for: capture)
+                }
             } catch {
                 ErrorPresenter.present(error)
             }
         }
     }
 
+    /// The save folder, or the scratch folder when saving is off.
+    private var saveDirectory: URL {
+        settings.saveToFile ? settings.saveDirectoryURL : Self.unsavedDirectory
+    }
+
+    /// With saving off the clipboard is the only place a capture lands, so
+    /// it always gets a copy.
+    private var copiesToClipboard: Bool {
+        settings.copyToClipboard || !settings.saveToFile
+    }
+
     private func publishCapture(_ capture: CaptureItem, showThumbnail: Bool) {
+        historyStore.limit = settings.historyLimit
         historyStore.record(
             fileURL: capture.fileURL,
             displayID: capture.displayID,
@@ -522,10 +611,11 @@ final class CaptureCoordinator: ObservableObject {
                     return
                 }
 
-                let saveDirectory = self.settings.saveDirectoryURL
+                let saveDirectory = self.saveDirectory
+                let baseName = self.settings.nextFileName(app: nil)
                 let format = self.settings.imageFormat
                 let jpegQuality = self.settings.jpegQuality
-                let copyToClipboard = self.settings.copyToClipboard
+                let copyToClipboard = self.copiesToClipboard
                 let showThumbnail = self.settings.showThumbnail
                 let pipeline = self.captureProcessingPipeline
 
@@ -542,7 +632,8 @@ final class CaptureCoordinator: ObservableObject {
                             directory: saveDirectory,
                             format: format,
                             jpegQuality: jpegQuality,
-                            includeClipboardData: copyToClipboard
+                            includeClipboardData: copyToClipboard,
+                            baseName: baseName
                         )
 
                         guard let self else {

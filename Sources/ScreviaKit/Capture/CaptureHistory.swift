@@ -73,7 +73,11 @@ final class CaptureHistoryStore {
         static let entries = "captureHistory.entries"
     }
 
-    static let maximumEntries = 30
+    static let defaultLimit = 30
+
+    /// How many entries to keep; the oldest go first. Lowering it trims at
+    /// the next capture rather than at once.
+    var limit = CaptureHistoryStore.defaultLimit
 
     private let fileManager: FileManager
 
@@ -105,8 +109,8 @@ final class CaptureHistoryStore {
 
         entries.removeAll { $0.filePath == entry.filePath }
         entries.insert(entry, at: 0)
-        if entries.count > Self.maximumEntries {
-            entries = Array(entries.prefix(Self.maximumEntries))
+        if entries.count > max(limit, 1) {
+            entries = Array(entries.prefix(max(limit, 1)))
         }
     }
 
