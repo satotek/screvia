@@ -1,6 +1,7 @@
 # Editor roadmap
 
-Where the annotation editor is headed. The yardstick is ShareX's image
+Where the annotation editor is headed; the wider plan is in
+[roadmap.md](roadmap.md). The yardstick is ShareX's image
 editor: what it offers, which parts Screvia adopts, and in what order.
 
 ## How the editor is built
