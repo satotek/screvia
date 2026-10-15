@@ -9,13 +9,14 @@ ShareX for the Mac: free, and nothing leaves the Mac. Screvia does not chase
 CleanShot X's everything-included scope. It competes on a capable editor and
 on keeping captures local, which rules out cloud sharing.
 
-Compared with the common alternatives (as of October 2026):
+Compared with the common alternatives (as of October 2026, after OCR and
+the self-timer landed):
 
 | | Screvia has | Screvia lacks |
 | --- | --- | --- |
 | macOS (⇧⌘5) | Scrolling capture, backgrounds, pinning, history, an editor | Screen recording |
-| CleanShot X | Price, local-only | OCR, recording, timer, re-editing, hiding desktop icons, cloud |
-| Shottr | A ShareX-style editor | OCR, pixel loupe and measuring, colour picker |
+| CleanShot X | Price, local-only | Recording, re-editing, hiding desktop icons, cloud |
+| Shottr | A ShareX-style editor | Pixel loupe and measuring, colour picker |
 | Snagit | Price, native and light | Recording, templates, step capture |
 | Xnapper | Price | Automatic balancing, social presets |
 
