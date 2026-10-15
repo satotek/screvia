@@ -63,13 +63,6 @@ nonisolated struct CaptureService {
                 return L10n.text("error.scrollCaptureFailed")
             }
         }
-
-        var requiresAccessibilityPermission: Bool {
-            if case .accessibilityPermissionRequired = self {
-                return true
-            }
-            return false
-        }
     }
 
     // The only method here that reads the mouse location, so the only one

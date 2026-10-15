@@ -23,6 +23,11 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         self.statusItem = statusItem
 
         captureCoordinator.start()
+
+        if !ScreenRecordingPermission.isGranted {
+            ScreenRecordingPermission.request()
+            windowsCoordinator.openPermissionOnboarding()
+        }
     }
 
     /// The status bar glyph.
@@ -126,9 +131,11 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
                     self?.closeCaptureHub()
                     self?.windowsCoordinator.openLicenses()
                 },
+                // The guide rather than System Settings directly: it also
+                // offers the restart that a new grant needs.
                 onOpenScreenRecordingSettings: { [weak self] in
                     self?.closeCaptureHub()
-                    SystemSettingsService.openScreenRecordingSettings()
+                    self?.windowsCoordinator.openPermissionOnboarding()
                 },
                 onRevealFolder: { [weak self] in
                     self?.closeCaptureHub()

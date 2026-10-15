@@ -1046,13 +1046,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Screen Recording permission is required. Open permissions from the Screvia capture hub."
+            "value": "Screen Recording permission is required. Allow Screvia in System Settings, then restart it."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "画面収録の権限が必要です。Screvia の撮影ハブから権限設定を開いてください。"
+            "value": "画面収録の権限が必要です。システム設定で Screvia を許可してから、再起動してください。"
           }
         }
       }
@@ -1165,6 +1165,134 @@
           "stringUnit": {
             "state": "translated",
             "value": "オープンソースライセンス"
+          }
+        }
+      }
+    },
+    "permission.later": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Later"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "あとで"
+          }
+        }
+      }
+    },
+    "permission.message": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screvia needs Screen Recording permission to capture your screen. macOS asks only once; after that, the permission is turned on in System Settings."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画面を撮影するには、画面収録の権限が必要です。macOS が確認するのは最初の 1 回だけで、それ以降はシステム設定でオンにします。"
+          }
+        }
+      }
+    },
+    "permission.openSettings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open System Settings"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "システム設定を開く"
+          }
+        }
+      }
+    },
+    "permission.relaunch": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restart Screvia"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screvia を再起動"
+          }
+        }
+      }
+    },
+    "permission.step.enable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on Screvia in the Screen Recording list."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画面収録の一覧で Screvia をオンにします。"
+          }
+        }
+      }
+    },
+    "permission.step.openSettings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click Open System Settings."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「システム設定を開く」をクリックします。"
+          }
+        }
+      }
+    },
+    "permission.step.relaunch": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restart Screvia. macOS applies the change only after a restart."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screvia を再起動します。変更は再起動後に反映されます。"
+          }
+        }
+      }
+    },
+    "permission.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow Screen Recording"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画面収録を許可してください"
           }
         }
       }

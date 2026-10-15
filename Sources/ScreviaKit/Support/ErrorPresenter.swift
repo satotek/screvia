@@ -18,14 +18,21 @@ enum ErrorPresenter {
         alert.informativeText = error.localizedDescription
         alert.addButton(withTitle: L10n.text("app.ok"))
 
-        let captureError = error as? CaptureService.CaptureError
-        if captureError?.requiresAccessibilityPermission == true {
+        let openSettings: (() -> Void)? = switch error as? CaptureService.CaptureError {
+        case .screenRecordingPermissionRequired?:
+            SystemSettingsService.openScreenRecordingSettings
+        case .accessibilityPermissionRequired?:
+            SystemSettingsService.openAccessibilitySettings
+        default:
+            nil
+        }
+        if openSettings != nil {
             alert.addButton(withTitle: L10n.text("app.openSettings"))
         }
 
         let response = alert.runModal()
         if response == .alertSecondButtonReturn {
-            SystemSettingsService.openAccessibilitySettings()
+            openSettings?()
         }
     }
 }
