@@ -49,8 +49,8 @@ targets:
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         CFBundleDevelopmentRegion: en
-        # Keep the existing .icns rather than introducing an asset catalog:
-        # scripts/regrid-appicon.swift already produces it on Apple's grid.
+        # An .icns rather than an asset catalog: scripts/draw-appicon.swift
+        # draws it on Apple's grid at every size.
         CFBundleIconFile: AppIcon.icns
         CFBundleLocalizations: [en, ja]
         # A menu bar app: no Dock icon, no main window on launch.

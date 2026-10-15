@@ -173,14 +173,22 @@ GitHub Actions monthly.
 
 ## App icon
 
-`Assets/AppIcon-master.png` is the artwork; `scripts/generate-icons.swift`
-produces the `.iconset` and `.icns`.
+`scripts/draw-appicon.swift` draws the icon in code and writes
+`Assets/AppIcon-master.png`, `Assets/AppIcon.iconset/` and `App/AppIcon.icns`.
+Change the icon there and rerun it; never edit the PNGs by hand. Each size is
+drawn from the shapes rather than scaled down, so 16 and 32 pixels stay sharp.
 
-macOS expects the icon art to occupy **824 of 1024 points** (80.5%), leaving a
-transparent margin. Edge-to-edge artwork gets wrapped in the system's own
-container on macOS 26 and reads as visibly oversized.
-`scripts/regrid-appicon.swift` rescales by the alpha bounding box to put art
-back on that grid.
+The design is capture brackets around an arrow, in the app's accent blue and
+signal coral. A number badge in place of the arrow was tried and dropped: on
+macOS a coloured circle with a digit on an app icon reads as an unread count.
+
+macOS expects the icon body to occupy **824 of 1024 points** (80.5%), leaving
+a transparent margin. Edge-to-edge artwork gets wrapped in the system's own
+container on macOS 26 and reads as visibly oversized; the previous icon had
+that problem and an opaque background as well.
+
+The menu bar glyph is separate: `Sources/ScreviaKit/Resources/MenuBarIcon.pdf`,
+explored with `scripts/generate-icons.swift`.
 
 ## Troubleshooting
 
