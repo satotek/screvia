@@ -68,7 +68,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.satotek.screvia
-        MARKETING_VERSION: "0.1.1"
+        MARKETING_VERSION: "0.2.0"
         # Only for builds run from Xcode. BuildApp overrides it with the
         # commit count, which only ever grows along main.
         CURRENT_PROJECT_VERSION: "1"
