@@ -20,6 +20,7 @@ a user**.
 | Capture history bookkeeping | Scroll event posting (needs Accessibility permission and a live target app) |
 | Scroll frame stitching maths | SwiftUI view rendering |
 | Image processing geometry | Global hotkey registration (Carbon, process-wide) |
+| Annotation hit testing, moving, resizing and export | The editor's pointer handling (SwiftUI gestures) |
 | Saving, encoding, clipboard | Launch at login against the real `SMAppService` |
 | Thumbnail generation and caching | |
 
@@ -49,6 +50,15 @@ margin geometry, and every background style producing a drawable image.
 suffix that keeps two captures in the same second from overwriting each other,
 JPEG quality actually reaching the encoder, and PNG (not TIFF) reaching the
 pasteboard.
+
+**`AnnotationGeometryTests`** — hit testing boxes by their inside and arrows
+by their line, finding handles in view space, moves stopping at the image
+edge, corner and edge resizing, and a box flipping when dragged past its
+opposite side.
+
+**`AnnotationRendererTests`** — export keeping the capture's pixel size
+rather than the main screen's scale, shapes landing in the right half
+despite the coordinate flip, and an unannotated image passing through.
 
 **`HistoryThumbnailLoaderTests`** — thumbnail sizing and cache-key
 distinctness.

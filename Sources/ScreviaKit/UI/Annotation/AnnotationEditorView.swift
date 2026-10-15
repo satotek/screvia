@@ -12,6 +12,7 @@ struct AnnotationEditorView: View {
     @State private var undoStack: [[Annotation]] = []
     @State private var redoStack: [[Annotation]] = []
     @State private var zoomScale: CGFloat = 1
+    @State private var selection: Annotation.ID?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -20,7 +21,9 @@ struct AnnotationEditorView: View {
 
             AnnotationCanvas(
                 image: previewImage,
+                imageSize: image.size,
                 selectedTool: selectedTool,
+                selection: $selection,
                 zoomScale: $zoomScale,
                 annotations: $annotations,
                 undoStack: $undoStack,
@@ -43,6 +46,7 @@ struct AnnotationEditorView: View {
         }
         redoStack.append(annotations)
         annotations = previous
+        dropStaleSelection()
     }
 
     private func performRedo() {
@@ -51,6 +55,23 @@ struct AnnotationEditorView: View {
         }
         undoStack.append(annotations)
         annotations = next
+        dropStaleSelection()
+    }
+
+    private func deleteSelection() {
+        guard let selection else {
+            return
+        }
+        undoStack.append(annotations)
+        annotations.removeAll { $0.id == selection }
+        redoStack.removeAll()
+        self.selection = nil
+    }
+
+    private func dropStaleSelection() {
+        if let selection, !annotations.contains(where: { $0.id == selection }) {
+            self.selection = nil
+        }
     }
 
     private var toolbar: some View {
@@ -92,6 +113,15 @@ struct AnnotationEditorView: View {
             .disabled(redoStack.isEmpty)
             .keyboardShortcut("z", modifiers: [.command, .shift])
             .help("\(L10n.text("app.redo"))  ⇧⌘Z")
+
+            Button(action: deleteSelection) {
+                Image(systemName: "trash")
+                    .frame(width: 28, height: 28)
+            }
+            .buttonStyle(.borderless)
+            .disabled(selection == nil)
+            .keyboardShortcut(.delete, modifiers: [])
+            .help("\(L10n.text("annotation.delete"))  ⌫")
 
             Spacer()
 
@@ -188,126 +218,7 @@ struct AnnotationEditorView: View {
     }
 
     private func flattenedImage() -> NSImage {
-        let result = NSImage(size: image.size)
-        result.lockFocus()
-        image.draw(
-            in: NSRect(origin: .zero, size: image.size),
-            from: NSRect(origin: .zero, size: image.size),
-            operation: .copy,
-            fraction: 1
-        )
-
-        for annotation in annotations {
-            draw(annotation, on: result)
-        }
-
-        result.unlockFocus()
-        return result
-    }
-
-    private func draw(_ annotation: Annotation, on image: NSImage) {
-        let imageRect = NSRect(origin: .zero, size: image.size)
-        let rect = annotationRect(annotation, in: imageRect)
-        let color = NSColor.systemRed
-
-        switch annotation.tool {
-        case .rectangle:
-            color.setStroke()
-            let path = NSBezierPath(rect: rect)
-            path.lineWidth = 4
-            path.stroke()
-        case .ellipse:
-            color.setStroke()
-            let path = NSBezierPath(ovalIn: rect)
-            path.lineWidth = 4
-            path.stroke()
-        case .highlight:
-            NSColor.systemYellow.withAlphaComponent(0.34).setFill()
-            NSBezierPath(rect: rect).fill()
-        case .text:
-            drawText(annotation.text ?? "", in: rect, on: image)
-        case .blur, .pixelate:
-            if let filterName = annotation.tool.filterName {
-                drawFilteredRegion(rect, on: image, filterName: filterName)
-            }
-        case .arrow:
-            color.setStroke()
-            let start = imagePoint(annotation.start, in: imageRect)
-            let end = imagePoint(annotation.end, in: imageRect)
-            let path = NSBezierPath()
-            path.move(to: start)
-            path.line(to: end)
-            path.lineWidth = 4
-            path.stroke()
-
-            let angle = atan2(end.y - start.y, end.x - start.x)
-            let wingLength: CGFloat = 14
-            let left = CGPoint(
-                x: end.x - wingLength * cos(angle - .pi / 6),
-                y: end.y - wingLength * sin(angle - .pi / 6)
-            )
-            let right = CGPoint(
-                x: end.x - wingLength * cos(angle + .pi / 6),
-                y: end.y - wingLength * sin(angle + .pi / 6)
-            )
-            path.move(to: left)
-            path.line(to: end)
-            path.line(to: right)
-            path.stroke()
-        }
-    }
-
-    private func drawText(_ value: String, in rect: CGRect, on image: NSImage) {
-        guard !value.isEmpty else {
-            return
-        }
-
-        NSColor.black.withAlphaComponent(0.62).setFill()
-        NSBezierPath(roundedRect: rect, xRadius: 7, yRadius: 7).fill()
-
-        let fontSize = max(13, min(34, rect.height * 0.52))
-        value.draw(
-            in: rect.insetBy(dx: 9, dy: 5),
-            withAttributes: [
-                .font: NSFont.systemFont(ofSize: fontSize, weight: .semibold),
-                .foregroundColor: NSColor.white
-            ]
-        )
-    }
-
-    private func drawFilteredRegion(
-        _ rect: CGRect,
-        on image: NSImage,
-        filterName: String
-    ) {
-        guard let filtered = filteredRegion(of: image, in: rect, filterName: filterName) else {
-            return
-        }
-
-        filtered.draw(
-            in: rect,
-            from: NSRect(origin: .zero, size: filtered.size),
-            operation: .sourceOver,
-            fraction: 1
-        )
-    }
-
-    private func annotationRect(_ annotation: Annotation, in imageRect: CGRect) -> CGRect {
-        let start = imagePoint(annotation.start, in: imageRect)
-        let end = imagePoint(annotation.end, in: imageRect)
-        return CGRect(
-            x: min(start.x, end.x),
-            y: min(start.y, end.y),
-            width: abs(end.x - start.x),
-            height: abs(end.y - start.y)
-        )
-    }
-
-    private func imagePoint(_ point: CGPoint, in imageRect: CGRect) -> CGPoint {
-        CGPoint(
-            x: imageRect.minX + point.x * imageRect.width,
-            y: imageRect.minY + (1 - point.y) * imageRect.height
-        )
+        AnnotationRenderer.flatten(image, annotations: annotations)
     }
 }
 

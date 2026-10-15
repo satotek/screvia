@@ -2,23 +2,51 @@ import AppKit
 import SwiftUI
 
 struct AnnotationCanvas: View {
+    /// What is on screen; may be a downsampled copy of the capture.
     let image: NSImage
+    /// The full capture's size in points, the unit line widths are given in.
+    let imageSize: CGSize
     let selectedTool: AnnotationTool
+    @Binding var selection: Annotation.ID?
     @Binding var zoomScale: CGFloat
     @Binding var annotations: [Annotation]
     @Binding var undoStack: [[Annotation]]
     @Binding var redoStack: [[Annotation]]
 
-    @State private var dragStart: CGPoint?
-    @State private var dragEnd: CGPoint?
+    /// What the current pointer drag is doing, decided when it starts.
+    private enum DragAction {
+        case drawing(start: CGPoint, end: CGPoint)
+        /// `original` is the annotation as the drag found it; every update is
+        /// computed from it, not from the previous frame, so rounding never
+        /// accumulates. `before` is the undo snapshot.
+        case moving(original: Annotation, before: [Annotation])
+        case resizing(original: Annotation, handle: AnnotationHandle, before: [Annotation])
+        /// A click on empty space with the select tool.
+        case idle
+    }
+
+    private struct FilteredRegion {
+        let bounds: CGRect
+        let image: CGImage
+    }
+
+    private static let handleSize: CGFloat = 8
+    private static let handleHitRadius: CGFloat = 8
+    private static let hitTolerance: CGFloat = 6
+
+    @State private var dragAction: DragAction?
     @State private var magnificationStart: CGFloat?
     @State private var editingTextID: UUID?
     @State private var annotationsBeforeTextEditing: [Annotation]?
 
-    /// Filtered region images keyed by annotation id. Committed annotations
-    /// never change shape, so each one is computed once; the in-progress drag
-    /// annotation is deliberately absent and falls back to a cheap sketch.
-    @State private var filteredRegions: [UUID: NSImage] = [:]
+    /// Filtered region images keyed by annotation id, each tagged with the
+    /// bounds it was computed for so a moved or resized region is redone. A
+    /// region being dragged falls back to a cheap sketch until it settles.
+    @State private var filteredRegions: [UUID: FilteredRegion] = [:]
+
+    private var selectedAnnotation: Annotation? {
+        selection.flatMap { id in annotations.first { $0.id == id } }
+    }
 
     var body: some View {
         GeometryReader { geometry in
@@ -33,13 +61,30 @@ struct AnnotationCanvas: View {
                         .position(x: imageRect.midX, y: imageRect.midY)
 
                     Canvas { context, _ in
-                        for annotation in annotations {
-                            draw(annotation, in: &context, imageRect: imageRect)
+                        let pointScale = imageRect.width / max(imageSize.width, 1)
+                        context.withCGContext { cgContext in
+                            for annotation in annotations {
+                                AnnotationRenderer.draw(
+                                    annotation,
+                                    in: cgContext,
+                                    imageRect: imageRect,
+                                    pointScale: pointScale,
+                                    filteredRegion: filteredImage(for: annotation)
+                                )
+                            }
+
+                            if case let .drawing(start, end) = dragAction {
+                                AnnotationRenderer.draw(
+                                    Annotation(tool: selectedTool, start: start, end: end),
+                                    in: cgContext,
+                                    imageRect: imageRect,
+                                    pointScale: pointScale
+                                )
+                            }
                         }
 
-                        if let dragStart, let dragEnd {
-                            let preview = Annotation(tool: selectedTool, start: dragStart, end: dragEnd)
-                            draw(preview, in: &context, imageRect: imageRect)
+                        if editingTextID == nil, let selectedAnnotation {
+                            drawSelection(of: selectedAnnotation, in: &context, imageRect: imageRect)
                         }
                     }
                     .allowsHitTesting(false)
@@ -60,45 +105,16 @@ struct AnnotationCanvas: View {
                 .frame(width: contentSize.width, height: contentSize.height)
                 .contentShape(Rectangle())
                 .gesture(
-                    DragGesture(minimumDistance: 1)
+                    // Zero distance, so a plain click can select or deselect.
+                    DragGesture(minimumDistance: 0)
                         .onChanged { value in
-                            if editingTextID != nil, dragStart == nil {
-                                commitTextEditing()
+                            if dragAction == nil {
+                                beginDrag(at: value.startLocation, in: imageRect)
                             }
-
-                            let point = normalizedPoint(value.location, in: imageRect)
-                            if dragStart == nil {
-                                dragStart = normalizedPoint(value.startLocation, in: imageRect)
-                            }
-                            dragEnd = point
+                            updateDrag(value, in: imageRect)
                         }
                         .onEnded { value in
-                            defer {
-                                dragStart = nil
-                                dragEnd = nil
-                            }
-
-                            let start = normalizedPoint(value.startLocation, in: imageRect)
-                            let end = normalizedPoint(value.location, in: imageRect)
-                            if selectedTool == .text {
-                                let bounds = normalizedTextBounds(start: start, end: end)
-                                beginTextEditing(start: bounds.0, end: bounds.1)
-                                return
-                            }
-
-                            guard abs(end.x - start.x) > 0.005, abs(end.y - start.y) > 0.005 else {
-                                return
-                            }
-
-                            undoStack.append(annotations)
-                            annotations.append(
-                                Annotation(
-                                    tool: selectedTool,
-                                    start: start,
-                                    end: end
-                                )
-                            )
-                            redoStack.removeAll()
+                            endDrag(value, in: imageRect)
                         }
                 )
             }
@@ -117,10 +133,121 @@ struct AnnotationCanvas: View {
                     }
             )
         }
-        .onChange(of: annotations.map(\.id), initial: true) { _, _ in
+        .onChange(of: annotations, initial: true) { _, _ in
             refreshFilteredRegions()
         }
     }
+
+    // MARK: - Dragging
+
+    /// A handle of the selected annotation wins over everything, so a shape
+    /// can be resized right after it is drawn without switching tools.
+    /// Moving needs the select tool; with a drawing tool, a drag that starts
+    /// on an existing shape draws a new one on top.
+    private func beginDrag(at point: CGPoint, in imageRect: CGRect) {
+        if editingTextID != nil {
+            commitTextEditing()
+        }
+
+        if let selectedAnnotation,
+           let handle = selectedAnnotation.handle(at: point, in: imageRect, radius: Self.handleHitRadius) {
+            dragAction = .resizing(original: selectedAnnotation, handle: handle, before: annotations)
+            return
+        }
+
+        if selectedTool == .select {
+            let hit = annotations.last { $0.contains(point, in: imageRect, tolerance: Self.hitTolerance) }
+            selection = hit?.id
+            dragAction = hit.map { .moving(original: $0, before: annotations) } ?? .idle
+            return
+        }
+
+        selection = nil
+        let start = AnnotationSpace.normalizedPoint(point, in: imageRect)
+        dragAction = .drawing(start: start, end: start)
+    }
+
+    private func updateDrag(_ value: DragGesture.Value, in imageRect: CGRect) {
+        switch dragAction {
+        case let .drawing(start, _):
+            dragAction = .drawing(start: start, end: AnnotationSpace.normalizedPoint(value.location, in: imageRect))
+        case let .moving(original, _):
+            replace(original.moved(by: CGVector(
+                dx: value.translation.width / imageRect.width,
+                dy: value.translation.height / imageRect.height
+            )))
+        case let .resizing(original, handle, _):
+            replace(original.resized(handle, to: AnnotationSpace.normalizedPoint(value.location, in: imageRect)))
+        case .idle, nil:
+            break
+        }
+    }
+
+    private func endDrag(_ value: DragGesture.Value, in imageRect: CGRect) {
+        let action = dragAction
+        dragAction = nil
+
+        switch action {
+        case let .drawing(start, _):
+            let end = AnnotationSpace.normalizedPoint(value.location, in: imageRect)
+            if selectedTool == .text {
+                let bounds = normalizedTextBounds(start: start, end: end)
+                beginTextEditing(start: bounds.0, end: bounds.1)
+                return
+            }
+
+            guard abs(end.x - start.x) > 0.005, abs(end.y - start.y) > 0.005 else {
+                return
+            }
+
+            let annotation = Annotation(tool: selectedTool, start: start, end: end)
+            undoStack.append(annotations)
+            annotations.append(annotation)
+            redoStack.removeAll()
+            selection = annotation.id
+        case let .moving(_, before), let .resizing(_, _, before):
+            if annotations != before {
+                undoStack.append(before)
+                redoStack.removeAll()
+            }
+            refreshFilteredRegions()
+        case .idle, nil:
+            break
+        }
+    }
+
+    private func replace(_ annotation: Annotation) {
+        guard let index = annotations.firstIndex(where: { $0.id == annotation.id }) else {
+            return
+        }
+        annotations[index] = annotation
+    }
+
+    private func drawSelection(of annotation: Annotation, in context: inout GraphicsContext, imageRect: CGRect) {
+        if !annotation.tool.isLine {
+            let outline = AnnotationSpace.rect(annotation.bounds, in: imageRect)
+            context.stroke(
+                Path(outline),
+                with: .color(.accentColor),
+                style: StrokeStyle(lineWidth: 1, dash: [4, 3])
+            )
+        }
+
+        for handle in annotation.handles {
+            let center = AnnotationSpace.point(annotation.location(of: handle), in: imageRect)
+            let size = Self.handleSize
+            let knob = Path(ellipseIn: CGRect(
+                x: center.x - size / 2,
+                y: center.y - size / 2,
+                width: size,
+                height: size
+            ))
+            context.fill(knob, with: .color(.white))
+            context.stroke(knob, with: .color(.accentColor), lineWidth: 1.5)
+        }
+    }
+
+    // MARK: - Text
 
     private func beginTextEditing(start: CGPoint, end: CGPoint) {
         if editingTextID != nil {
@@ -195,11 +322,10 @@ struct AnnotationCanvas: View {
     }
 
     private func textEditorRect(for annotation: Annotation, in imageRect: CGRect) -> CGRect {
-        // `annotationRect` belongs to AnnotationEditorView, which works in the
-        // image's own coordinates. Here we need view coordinates, so build the
-        // rect from the same normalized endpoints `draw` uses.
-        let start = point(annotation.start, in: imageRect)
-        let end = point(annotation.end, in: imageRect)
+        // Larger than the annotation itself, so a small box still leaves room
+        // to type.
+        let start = AnnotationSpace.point(annotation.start, in: imageRect)
+        let end = AnnotationSpace.point(annotation.end, in: imageRect)
         let baseRect = CGRect(
             x: min(start.x, end.x),
             y: min(start.y, end.y),
@@ -222,140 +348,52 @@ struct AnnotationCanvas: View {
         return CGRect(x: x, y: y, width: width, height: height)
     }
 
-    private func refreshFilteredRegions() {
-        let live = Set(annotations.map(\.id))
-        filteredRegions = filteredRegions.filter { live.contains($0.key) }
+    // MARK: - Redaction filters
 
-        for annotation in annotations {
+    private func filteredImage(for annotation: Annotation) -> CGImage? {
+        guard let region = filteredRegions[annotation.id], region.bounds == annotation.bounds else {
+            return nil
+        }
+        return region.image
+    }
+
+    private func refreshFilteredRegions() {
+        switch dragAction {
+        case .moving, .resizing:
+            return
+        default:
+            break
+        }
+
+        let redactions = annotations.filter { $0.tool.filterName != nil }
+        filteredRegions = filteredRegions.filter { id, region in
+            redactions.contains { $0.id == id && $0.bounds == region.bounds }
+        }
+
+        guard
+            redactions.contains(where: { filteredRegions[$0.id] == nil }),
+            let source = image.cgImage(forProposedRect: nil, context: nil, hints: nil)
+        else {
+            return
+        }
+
+        let pixels = CGRect(x: 0, y: 0, width: source.width, height: source.height)
+        for annotation in redactions where filteredRegions[annotation.id] == nil {
             guard
-                filteredRegions[annotation.id] == nil,
-                let filterName = annotation.tool.filterName
+                let filterName = annotation.tool.filterName,
+                let filtered = filteredRegion(
+                    of: source,
+                    in: AnnotationSpace.rect(annotation.bounds, in: pixels),
+                    filterName: filterName
+                )
             else {
                 continue
             }
-
-            let rect = imageSpaceRect(
-                start: annotation.start,
-                end: annotation.end,
-                imageSize: image.size
-            )
-            filteredRegions[annotation.id] = filteredRegion(
-                of: image,
-                in: rect,
-                filterName: filterName
-            )
+            filteredRegions[annotation.id] = FilteredRegion(bounds: annotation.bounds, image: filtered)
         }
     }
 
-    private func draw(_ annotation: Annotation, in context: inout GraphicsContext, imageRect: CGRect) {
-        let start = point(annotation.start, in: imageRect)
-        let end = point(annotation.end, in: imageRect)
-        let rect = CGRect(
-            x: min(start.x, end.x),
-            y: min(start.y, end.y),
-            width: abs(end.x - start.x),
-            height: abs(end.y - start.y)
-        )
-        let red = Color.red
-
-        switch annotation.tool {
-        case .rectangle:
-            context.stroke(Path(rect), with: .color(red), lineWidth: 3)
-        case .ellipse:
-            context.stroke(Path(ellipseIn: rect), with: .color(red), lineWidth: 3)
-        case .highlight:
-            context.fill(Path(rect), with: .color(.yellow.opacity(0.35)))
-        case .text:
-            context.fill(Path(rect), with: .color(.black.opacity(0.62)))
-            if let text = annotation.text, !text.isEmpty {
-                context.draw(
-                    Text(text)
-                        .font(.system(size: max(13, min(34, rect.height * 0.52)), weight: .semibold))
-                        .foregroundStyle(.white),
-                    at: CGPoint(x: rect.minX + 9, y: rect.minY + 6),
-                    anchor: .topLeading
-                )
-            }
-        case .blur:
-            if let filtered = filteredRegions[annotation.id] {
-                context.draw(Image(nsImage: filtered), in: rect)
-            } else {
-                context.fill(Path(rect), with: .color(.black.opacity(0.28)))
-                drawBlurPreview(in: rect, context: &context)
-            }
-        case .pixelate:
-            if let filtered = filteredRegions[annotation.id] {
-                context.draw(Image(nsImage: filtered), in: rect)
-            } else {
-                drawPixelatePreview(in: rect, context: &context)
-            }
-        case .arrow:
-            var path = Path()
-            path.move(to: start)
-            path.addLine(to: end)
-            context.stroke(path, with: .color(red), lineWidth: 3)
-
-            let angle = atan2(end.y - start.y, end.x - start.x)
-            let wingLength: CGFloat = 12
-            let left = CGPoint(
-                x: end.x - wingLength * cos(angle - .pi / 6),
-                y: end.y - wingLength * sin(angle - .pi / 6)
-            )
-            let right = CGPoint(
-                x: end.x - wingLength * cos(angle + .pi / 6),
-                y: end.y - wingLength * sin(angle + .pi / 6)
-            )
-            path.move(to: left)
-            path.addLine(to: end)
-            path.addLine(to: right)
-            context.stroke(path, with: .color(red), lineWidth: 3)
-        }
-    }
-
-    private func drawBlurPreview(in rect: CGRect, context: inout GraphicsContext) {
-        let step: CGFloat = 9
-        for index in 0..<max(1, Int(rect.width / step)) {
-            let x = rect.minX + CGFloat(index) * step
-            let stripe = CGRect(x: x, y: rect.minY, width: step / 2, height: rect.height)
-            context.fill(Path(stripe), with: .color(.white.opacity(0.08)))
-        }
-    }
-
-    private func drawPixelatePreview(in rect: CGRect, context: inout GraphicsContext) {
-        let step: CGFloat = 12
-        let columns = max(1, Int(rect.width / step))
-        let rows = max(1, Int(rect.height / step))
-
-        for column in 0..<columns {
-            for row in 0..<rows {
-                guard (column + row).isMultiple(of: 2) else {
-                    continue
-                }
-
-                let block = CGRect(
-                    x: rect.minX + CGFloat(column) * step,
-                    y: rect.minY + CGFloat(row) * step,
-                    width: step,
-                    height: step
-                )
-                context.fill(Path(block), with: .color(.white.opacity(0.22)))
-            }
-        }
-    }
-
-    private func point(_ normalized: CGPoint, in imageRect: CGRect) -> CGPoint {
-        CGPoint(
-            x: imageRect.minX + normalized.x * imageRect.width,
-            y: imageRect.minY + normalized.y * imageRect.height
-        )
-    }
-
-    private func normalizedPoint(_ point: CGPoint, in imageRect: CGRect) -> CGPoint {
-        CGPoint(
-            x: min(max((point.x - imageRect.minX) / imageRect.width, 0), 1),
-            y: min(max((point.y - imageRect.minY) / imageRect.height, 0), 1)
-        )
-    }
+    // MARK: - Layout
 
     private func canvasContentSize(in containerSize: CGSize) -> CGSize {
         let imageSize = scaledImageSize(in: containerSize)
