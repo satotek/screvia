@@ -4,11 +4,18 @@ import XCTest
 @testable import ScreviaKit
 
 final class ImageStoreTests: XCTestCase {
-    private let store = ImageStore()
+    private var store = ImageStore()
     private var directory: URL!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
+        // A private pasteboard per test. The system one is shared by the
+        // processes `swift test --parallel` runs at once, which made the
+        // clipboard tests overwrite each other, and it holds whatever the
+        // developer last copied.
+        let name = NSPasteboard.Name("ImageStoreTests-\(UUID().uuidString)")
+        store.pasteboardName = name
+        addTeardownBlock { NSPasteboard(name: name).releaseGlobally() }
         directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("ImageStoreTests-\(UUID().uuidString)", isDirectory: true)
     }
@@ -185,22 +192,19 @@ final class ImageStoreTests: XCTestCase {
     /// The clipboard carries PNG rather than the uncompressed TIFF AppKit
     /// would otherwise hand over — this is the behaviour that fix introduced.
     func testCopyingAnImagePutsPngOnThePasteboard() {
-        NSPasteboard.general.clearContents()
-
         store.copyToClipboard(TestImages.nsImage(width: 20, height: 20))
 
-        let data = NSPasteboard.general.data(forType: .png)
+        let data = NSPasteboard(name: store.pasteboardName).data(forType: .png)
         XCTAssertNotNil(data, "The pasteboard should carry PNG data")
         // PNG's 8-byte magic number.
         XCTAssertEqual(data?.prefix(4).map { $0 }, [0x89, 0x50, 0x4E, 0x47])
     }
 
     func testCopyingRawDataUsesTheMatchingPasteboardType() {
-        NSPasteboard.general.clearContents()
         let payload = Data("fake tiff".utf8)
 
         store.copyToClipboard(data: payload, format: .tiff)
 
-        XCTAssertEqual(NSPasteboard.general.data(forType: .tiff), payload)
+        XCTAssertEqual(NSPasteboard(name: store.pasteboardName).data(forType: .tiff), payload)
     }
 }
