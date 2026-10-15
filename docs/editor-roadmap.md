@@ -3,30 +3,33 @@
 Where the annotation editor is headed. The yardstick is ShareX's image
 editor: what it offers, which parts Screvia adopts, and in what order.
 
-## Foundation first
+## How the editor is built
 
-Two things in the current editor make every new tool cost double, so they
-come before any feature.
-
-- **One renderer.** The canvas draws with SwiftUI's `Canvas`
-  (`AnnotationCanvas`), while copy and save draw again with `NSBezierPath`
-  (`AnnotationEditorView.flattenedImage`). Each tool is written twice, and the
-  two can disagree. Both should call one function that draws into a
-  `CGContext`, and export should render at the image's pixel size.
-- **Annotations that can be edited.** An `Annotation` is a tool and two
-  points, fixed once drawn: no colour, no line width, no way to select it
-  again. It needs a style, a shape that fits each tool (freehand is a list of
-  points, a step is one point and a number), hit testing, and handles.
+- **One renderer.** `AnnotationRenderer` draws into a `CGContext` with a
+  top-left origin. The canvas calls it through SwiftUI's `Canvas`, and export
+  calls it on a bitmap at the capture's pixel size, so a tool is written once
+  and the editor shows what gets saved.
+- **A document.** `AnnotationDocument` holds the annotations and the crop,
+  and is what undo snapshots. Annotation coordinates are fractions of the
+  image (0–1, top-left origin).
+- **Styles in image points.** Line widths and font sizes are in the
+  capture's points, so they keep their proportion at any zoom and in the
+  export. The last-used style is stored in preferences.
+- **Text and steps are sized by font.** Their box follows the font size
+  rather than a drag, as in ShareX, so labels can share a size. They move
+  but have no resize handles.
 
 ## Phases
 
-**Phase 0 — foundation.** One renderer; per-annotation style; select, move,
-resize and delete.
+**Phase 0 — foundation (done).** One renderer; per-annotation style; select,
+move, resize and delete.
 
-**Phase 1.**
+**Phase 1 (done).**
 
-- Tools: line, freehand, step (①②③, numbered automatically)
-- Text with an outline or a background
+- Tools: line, freehand, step (①②③, numbered by order, renumbered on
+  delete)
+- Text: colour, size, bold, and a box, outline or plain appearance;
+  double-click to edit again
 - Stroke colour, fill colour, line width, shadow on or off, remembered
   between sessions
 - Duplicate, delete, delete all
@@ -41,13 +44,16 @@ resize and delete.
 - Stacking order, paste from the clipboard
 - Auto crop, rotate and flip, resize, canvas size
 - Image effects, starting with border and shadow
+- Font choice; text that wraps inside a dragged box
 
 **Not planned.** Cursor drawing (the capture settings cover it), cut out,
 upload, print.
 
-## Crop is different
+## Crop is a viewport
 
-Every other tool adds a shape on top of the image; crop changes the image.
-Annotation coordinates are fractions of the image (0–1), so a crop has to
-remap them, and undo has to record image changes as well as annotation
-changes.
+Every other tool adds a shape on top of the image; crop changes what is
+kept. Rather than cutting the image and remapping every annotation, the crop
+is a rectangle in annotation space stored in the document. The canvas shows
+only that part (`CanvasLayout`), and export draws everything and then cuts
+the bitmap. Annotations outside the crop are untouched, so undoing a crop
+brings them back exactly.
