@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 public final class AppDelegate: NSObject, NSApplicationDelegate {
     public override init() {
@@ -20,6 +21,11 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem.button?.imagePosition = .imageOnly
         statusItem.button?.target = self
         statusItem.button?.action = #selector(toggleCaptureHub)
+        // Dropping an image on the icon opens it in the editor. The button
+        // itself cannot be a drop target, so its window is, with this
+        // delegate receiving the drag; see the NSDraggingDestination below.
+        statusItem.button?.window?.registerForDraggedTypes([.fileURL])
+        statusItem.button?.window?.delegate = self
         self.statusItem = statusItem
 
         captureCoordinator.start()
@@ -62,6 +68,14 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             systemSymbolName: "camera.viewfinder",
             accessibilityDescription: "Screvia"
         )
+    }
+
+    /// Finder's Open With, and files dropped on the app in the Finder.
+    public func application(_ application: NSApplication, open urls: [URL]) {
+        guard let url = urls.first(where: Self.isImage) else {
+            return
+        }
+        captureCoordinator.editImage(at: url)
     }
 
     public func applicationWillTerminate(_ notification: Notification) {
@@ -121,6 +135,14 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
                 onRemoveHistory: { [weak self] entry in
                     self?.closeCaptureHub()
                     self?.captureCoordinator.removeHistoryEntry(entry)
+                },
+                onOpenImage: { [weak self] in
+                    self?.closeCaptureHub()
+                    self?.captureCoordinator.chooseImageToEdit()
+                },
+                onEditClipboard: { [weak self] in
+                    self?.closeCaptureHub()
+                    self?.captureCoordinator.editClipboardImage()
                 },
                 onOpenPreferences: { [weak self] in
                     self?.closeCaptureHub()
@@ -185,5 +207,35 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     private func closeCaptureHub() {
         capturePopover?.performClose(nil)
         capturePopover = nil
+    }
+}
+
+// MARK: - Dropping images on the menu bar icon
+
+extension AppDelegate: NSWindowDelegate {
+    private static func isImage(_ url: URL) -> Bool {
+        (try? url.resourceValues(forKeys: [.contentTypeKey]).contentType)?
+            .conforms(to: .image) == true
+    }
+
+    private static func droppedImage(_ sender: NSDraggingInfo) -> URL? {
+        let urls = sender.draggingPasteboard.readObjects(
+            forClasses: [NSURL.self],
+            options: [.urlReadingFileURLsOnly: true]
+        ) as? [URL]
+        return urls?.first(where: isImage)
+    }
+
+    @objc func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        Self.droppedImage(sender) == nil ? [] : .copy
+    }
+
+    @objc func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        guard let url = Self.droppedImage(sender) else {
+            return false
+        }
+        closeCaptureHub()
+        captureCoordinator.editImage(at: url)
+        return true
     }
 }

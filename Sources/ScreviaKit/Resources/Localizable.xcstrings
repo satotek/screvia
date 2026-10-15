@@ -1121,6 +1121,22 @@
         }
       }
     },
+    "error.clipboardNoImage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There is no image on the clipboard. Copy an image or an image file, then try again."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "クリップボードに画像がありません。画像か画像ファイルをコピーしてから、もう一度お試しください。"
+          }
+        }
+      }
+    },
     "error.cropFailed": {
       "localizations": {
         "en": {
@@ -1181,6 +1197,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "画像を指定形式に変換できませんでした。"
+          }
+        }
+      }
+    },
+    "error.imageUnreadable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screvia could not read this image."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この画像を読み込めませんでした。"
           }
         }
       }
@@ -1293,6 +1325,70 @@
           "stringUnit": {
             "state": "translated",
             "value": "TIFF"
+          }
+        }
+      }
+    },
+    "import.clipboardName": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasted image"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "貼り付けた画像"
+          }
+        }
+      }
+    },
+    "import.fromClipboard": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit Clipboard"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "クリップボードを編集"
+          }
+        }
+      }
+    },
+    "import.openImage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Image…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画像を開く…"
+          }
+        }
+      }
+    },
+    "import.openMessage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose an image to annotate."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "注釈を付ける画像を選んでください。"
           }
         }
       }

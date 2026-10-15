@@ -12,6 +12,8 @@ struct CaptureHubView: View {
     let onCopyHistory: (CaptureHistoryEntry) -> Void
     let onPinHistory: (CaptureHistoryEntry) -> Void
     let onRemoveHistory: (CaptureHistoryEntry) -> Void
+    let onOpenImage: () -> Void
+    let onEditClipboard: () -> Void
     let onOpenPreferences: () -> Void
     let onOpenAbout: () -> Void
     let onOpenLicenses: () -> Void
@@ -26,6 +28,7 @@ struct CaptureHubView: View {
             header
             captureModes
             displayPicker
+            editSources
             recentCaptureSection
             footer
         }
@@ -105,6 +108,17 @@ struct CaptureHubView: View {
         }
         .padding(.horizontal, 14)
         .padding(.bottom, 14)
+    }
+
+    /// The editor for images Screvia did not capture.
+    private var editSources: some View {
+        HStack(spacing: 2) {
+            FooterButton(symbol: "photo", title: L10n.text("import.openImage"), action: onOpenImage)
+            FooterButton(symbol: "doc.on.clipboard", title: L10n.text("import.fromClipboard"), action: onEditClipboard)
+            Spacer()
+        }
+        .padding(.horizontal, 10)
+        .padding(.bottom, 10)
     }
 
     /// Reads the user's current binding so the popover never disagrees with the
@@ -411,6 +425,8 @@ private struct FooterButton: View {
         onCopyHistory: { _ in },
         onPinHistory: { _ in },
         onRemoveHistory: { _ in },
+        onOpenImage: {},
+        onEditClipboard: {},
         onOpenPreferences: {},
         onOpenAbout: {},
         onOpenLicenses: {},
@@ -432,6 +448,8 @@ private struct FooterButton: View {
         onCopyHistory: { _ in },
         onPinHistory: { _ in },
         onRemoveHistory: { _ in },
+        onOpenImage: {},
+        onEditClipboard: {},
         onOpenPreferences: {},
         onOpenAbout: {},
         onOpenLicenses: {},

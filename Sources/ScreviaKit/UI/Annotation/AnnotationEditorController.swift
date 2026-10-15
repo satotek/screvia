@@ -5,8 +5,10 @@ import UniformTypeIdentifiers
 final class AnnotationEditorController {
     private var window: NSWindow?
 
+    /// `suggestedName` seeds Save As, without an extension.
     func show(
-        capture: CaptureItem,
+        image: NSImage,
+        suggestedName: String,
         style: AnnotationStyle,
         onStyleChange: @escaping (AnnotationStyle) -> Void,
         onSave: @escaping (NSImage) -> Void,
@@ -15,10 +17,9 @@ final class AnnotationEditorController {
     ) {
         window?.close()
 
-        let suggestedName = capture.fileURL.deletingPathExtension().lastPathComponent
         let editor = AnnotationEditorView(
-            image: capture.image,
-            previewImage: ImagePreview.downsample(capture.image),
+            image: image,
+            previewImage: ImagePreview.downsample(image),
             initialStyle: style,
             onStyleChange: onStyleChange,
             onSave: { [weak self] image in

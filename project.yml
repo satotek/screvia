@@ -55,6 +55,13 @@ targets:
         CFBundleLocalizations: [en, ja]
         # A menu bar app: no Dock icon, no main window on launch.
         LSUIElement: true
+        # Offers Screvia under Finder's Open With for images, to annotate
+        # them. Alternate, so it never takes over as the default app.
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Image
+            CFBundleTypeRole: Editor
+            LSHandlerRank: Alternate
+            LSItemContentTypes: [public.image]
         NSHumanReadableCopyright: "Copyright © 2026 satotek. MIT License."
         NSScreenCaptureUsageDescription: >-
           Screvia uses Screen Recording access to capture images from your Mac.
