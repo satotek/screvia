@@ -40,7 +40,7 @@ nonisolated enum AnnotationRenderer {
         }
 
         switch annotation.tool {
-        case .select, .crop:
+        case .select, .crop, .liveText:
             break
         case .rectangle:
             if let fill = style.fillColor {

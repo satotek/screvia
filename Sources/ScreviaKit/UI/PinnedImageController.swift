@@ -63,6 +63,16 @@ private struct PinnedImageView: View {
                 .scaledToFit()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
+            // Text in a pinned image can be selected and copied; the overlay
+            // covers exactly where the image is drawn, which differs from
+            // the panel once it is resized to another shape.
+            GeometryReader { geometry in
+                let fitted = Self.aspectFit(image.size, in: geometry.size)
+                LiveTextOverlay(image: image)
+                    .frame(width: fitted.width, height: fitted.height)
+                    .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
+            }
+
             Button(action: onClose) {
                 Image(systemName: "xmark.circle.fill")
                     .font(.title2)
@@ -74,6 +84,14 @@ private struct PinnedImageView: View {
             .padding(8)
         }
         .background(.black.opacity(0.04))
+    }
+
+    private static func aspectFit(_ size: CGSize, in container: CGSize) -> CGSize {
+        guard size.width > 0, size.height > 0 else {
+            return container
+        }
+        let scale = min(container.width / size.width, container.height / size.height)
+        return CGSize(width: size.width * scale, height: size.height * scale)
     }
 }
 

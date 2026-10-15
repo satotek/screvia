@@ -23,6 +23,8 @@ app at all.
   frames together by comparing their overlap
 - Capture text: select an area and its text, Japanese included, goes to the
   clipboard, recognized on your Mac by Vision
+- Select just part of the text in a capture with Live Text, in the editor
+  or on a pinned image, and copy it
 - Capture the previous area again, and a self-timer of 3, 5 or 10 seconds
   for menus and hover states
 - Global hotkeys for every capture mode, remappable in Preferences

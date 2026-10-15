@@ -289,6 +289,38 @@
         }
       }
     },
+    "annotation.liveText": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select Text"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "テキストを選択"
+          }
+        }
+      }
+    },
+    "annotation.liveTextHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag across text to select it, then press ⌘C or right-click to copy."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文字をドラッグして選び、⌘C か右クリックでコピーします。"
+          }
+        }
+      }
+    },
     "annotation.more": {
       "localizations": {
         "en": {

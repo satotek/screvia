@@ -88,6 +88,20 @@ struct AnnotationCanvas: View {
                     }
                     .allowsHitTesting(false)
 
+                    // Above the canvas and below nothing: in this mode a
+                    // drag selects text instead of drawing.
+                    if selectedTool == .liveText {
+                        LiveTextOverlay(image: image)
+                            .frame(width: layout.imageRect.width, height: layout.imageRect.height)
+                            .position(x: layout.imageRect.midX, y: layout.imageRect.midY)
+                            .mask {
+                                Rectangle()
+                                    .frame(width: layout.visibleRect.width, height: layout.visibleRect.height)
+                                    .position(x: layout.visibleRect.midX, y: layout.visibleRect.midY)
+                            }
+                            .zIndex(3)
+                    }
+
                     if let editingTextID,
                        let annotation = annotations.first(where: { $0.id == editingTextID }) {
                         let pointScale = layout.imageRect.width / max(imageSize.width, 1)
@@ -121,7 +135,9 @@ struct AnnotationCanvas: View {
                         }
                         .onEnded { value in
                             endDrag(value, layout: layout)
-                        }
+                        },
+                    // Live Text handles its own drags.
+                    including: selectedTool == .liveText ? .subviews : .all
                 )
             }
             .simultaneousGesture(
@@ -184,7 +200,7 @@ struct AnnotationCanvas: View {
             )
         }
 
-        if editingTextID == nil, let selectedAnnotation {
+        if editingTextID == nil, selectedTool != .liveText, let selectedAnnotation {
             drawSelection(of: selectedAnnotation, in: &context, imageRect: imageRect)
         }
     }
