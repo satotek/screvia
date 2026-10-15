@@ -94,6 +94,8 @@ previews, CI and troubleshooting.
   XcodeGen/SwiftPM setup, scripts, CI
 - [Testing](docs/testing.md) — what is covered, what deliberately is not, and
   the conventions for adding more
+- [Roadmap](docs/roadmap.md) — where Screvia is headed and in what order,
+  with the editor's own plan in [editor-roadmap.md](docs/editor-roadmap.md)
 
 Contributors should also read [AGENTS.md](AGENTS.md) for the working
 conventions.
