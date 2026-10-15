@@ -86,7 +86,9 @@ the user's clipboard is untouched).
 as Japanese (it fails if English is listed first), and an image with no text
 reported as such, and lines joined without spaces between Japanese and
 with them between Latin text. The first run of the suite loads Vision's model and takes
-several seconds; later runs are fast.
+several seconds; later runs are fast. On GitHub's macOS runners Vision cannot
+recognize text at all, so the tests that need it are skipped there; the
+line-joining tests still run.
 
 **`FileNameTemplateTests`** — the standard template reproducing the names
 Screvia always used, every token filled in, a blank template falling back,
