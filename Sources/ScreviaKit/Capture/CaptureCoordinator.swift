@@ -303,6 +303,10 @@ final class CaptureCoordinator: ObservableObject {
     private func openEditor(for capture: CaptureItem) {
         editorController.show(
             capture: capture,
+            style: settings.annotationStyle,
+            onStyleChange: { [weak self] style in
+                self?.settings.annotationStyle = style
+            },
             onSave: { [weak self] annotatedImage in
                 guard let self else {
                     return
@@ -357,6 +361,16 @@ final class CaptureCoordinator: ObservableObject {
                     } catch {
                         ErrorPresenter.present(error)
                     }
+                }
+            },
+            onSaveAs: { [weak self] annotatedImage, url in
+                guard let self else {
+                    return
+                }
+                do {
+                    try self.imageStore.write(annotatedImage, to: url, jpegQuality: self.settings.jpegQuality)
+                } catch {
+                    ErrorPresenter.present(error)
                 }
             },
             onCopy: { [weak self] annotatedImage in

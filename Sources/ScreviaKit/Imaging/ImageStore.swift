@@ -86,6 +86,19 @@ nonisolated struct ImageStore {
         )
     }
 
+    /// Writes to a path the user chose, in the format its extension names.
+    /// Unlike `saveAndEncode`, this overwrites: the save panel has already
+    /// asked.
+    func write(_ image: NSImage, to url: URL, jpegQuality: Double) throws {
+        let format = ImageFormat(fileExtension: url.pathExtension) ?? .png
+        guard let data = try encodedData(for: image, format: format, jpegQuality: jpegQuality) else {
+            Log.storage.error("Failed to encode an image as \(format.rawValue, privacy: .public)")
+            throw StoreError.imageEncodingFailed
+        }
+        try data.write(to: url, options: .atomic)
+        Log.storage.info("Saved \(data.count, privacy: .public) bytes to \(url.path)")
+    }
+
     func copyToClipboard(_ image: NSImage) {
         // Encode PNG directly from the image's CGImage. The old path created
         // a TIFF representation and then decoded it again before encoding PNG.

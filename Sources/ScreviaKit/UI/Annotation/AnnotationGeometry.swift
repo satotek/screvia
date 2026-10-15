@@ -19,16 +19,25 @@ nonisolated enum AnnotationSpace {
         )
     }
 
-    /// Clamped, so a drag that leaves the image pins to its edge.
-    static func normalizedPoint(_ point: CGPoint, in imageRect: CGRect) -> CGPoint {
-        clamped(CGPoint(
-            x: (point.x - imageRect.minX) / imageRect.width,
-            y: (point.y - imageRect.minY) / imageRect.height
-        ))
+    static let unit = CGRect(x: 0, y: 0, width: 1, height: 1)
+
+    /// Clamped to `area`, so a drag that leaves the visible image pins to its
+    /// edge.
+    static func normalizedPoint(_ point: CGPoint, in imageRect: CGRect, within area: CGRect = unit) -> CGPoint {
+        clamped(
+            CGPoint(
+                x: (point.x - imageRect.minX) / imageRect.width,
+                y: (point.y - imageRect.minY) / imageRect.height
+            ),
+            to: area
+        )
     }
 
-    static func clamped(_ point: CGPoint) -> CGPoint {
-        CGPoint(x: min(max(point.x, 0), 1), y: min(max(point.y, 0), 1))
+    static func clamped(_ point: CGPoint, to area: CGRect = unit) -> CGPoint {
+        CGPoint(
+            x: min(max(point.x, area.minX), area.maxX),
+            y: min(max(point.y, area.minY), area.maxY)
+        )
     }
 }
 
@@ -49,17 +58,20 @@ nonisolated enum AnnotationHandle: Hashable {
 nonisolated extension Annotation {
     /// The bounding box in annotation space, whichever way it was drawn.
     var bounds: CGRect {
-        CGRect(
-            x: min(start.x, end.x),
-            y: min(start.y, end.y),
-            width: abs(end.x - start.x),
-            height: abs(end.y - start.y)
-        )
+        if tool == .freehand, let first = points.first {
+            return points.dropFirst().reduce(CGRect(origin: first, size: .zero)) { box, point in
+                box.union(CGRect(origin: point, size: .zero))
+            }
+        }
+        return endpointBox
     }
 
     var handles: [AnnotationHandle] {
         if tool.isLine {
             return [.start, .end]
+        }
+        if tool.isSizedByFont {
+            return []
         }
         let positions: [(AnnotationHandle.Edge?, AnnotationHandle.Edge?)] = [
             (.min, .min), (nil, .min), (.max, .min), (.max, nil),
@@ -100,21 +112,32 @@ nonisolated extension Annotation {
             let b = AnnotationSpace.point(end, in: imageRect)
             return Self.distance(from: point, toSegment: a, b) <= tolerance
         }
+        if tool == .freehand {
+            let stroke = points.map { AnnotationSpace.point($0, in: imageRect) }
+            if stroke.count == 1 {
+                return hypot(stroke[0].x - point.x, stroke[0].y - point.y) <= tolerance
+            }
+            return zip(stroke, stroke.dropFirst()).contains { a, b in
+                Self.distance(from: point, toSegment: a, b) <= tolerance
+            }
+        }
         return AnnotationSpace.rect(bounds, in: imageRect)
             .insetBy(dx: -tolerance, dy: -tolerance)
             .contains(point)
     }
 
-    /// Moves the annotation, stopping at the image's edges so it can never be
-    /// dragged out of reach.
-    func moved(by delta: CGVector) -> Annotation {
+    /// Moves the annotation, stopping at the edges of `area` so it can never
+    /// be dragged out of reach. One already past an edge, as after a crop,
+    /// may stay there but not go further.
+    func moved(by delta: CGVector, within area: CGRect = AnnotationSpace.unit) -> Annotation {
         let bounds = bounds
-        let dx = min(max(delta.dx, -bounds.minX), 1 - bounds.maxX)
-        let dy = min(max(delta.dy, -bounds.minY), 1 - bounds.maxY)
+        let dx = Self.clamp(delta.dx, min(area.minX - bounds.minX, 0), max(area.maxX - bounds.maxX, 0))
+        let dy = Self.clamp(delta.dy, min(area.minY - bounds.minY, 0), max(area.maxY - bounds.maxY, 0))
 
         var moved = self
         moved.start = CGPoint(x: start.x + dx, y: start.y + dy)
         moved.end = CGPoint(x: end.x + dx, y: end.y + dy)
+        moved.points = points.map { CGPoint(x: $0.x + dx, y: $0.y + dy) }
         return moved
     }
 
@@ -123,8 +146,8 @@ nonisolated extension Annotation {
     /// Call it on the annotation as it was when the drag began. Dragging a box
     /// handle past the opposite side flips the box, and only the original
     /// still knows which side the handle started on.
-    func resized(_ handle: AnnotationHandle, to point: CGPoint) -> Annotation {
-        let point = AnnotationSpace.clamped(point)
+    func resized(_ handle: AnnotationHandle, to point: CGPoint, within area: CGRect = AnnotationSpace.unit) -> Annotation {
+        let point = AnnotationSpace.clamped(point, to: area)
         var resized = self
 
         switch handle {
@@ -147,9 +170,36 @@ nonisolated extension Annotation {
             }
             resized.start = CGPoint(x: min(minX, maxX), y: min(minY, maxY))
             resized.end = CGPoint(x: max(minX, maxX), y: max(minY, maxY))
+            resized.points = Self.rescale(points, from: bounds, to: resized.endpointBox)
         }
 
         return resized
+    }
+
+    /// The box `start` and `end` describe, even for a freehand drawing whose
+    /// `bounds` come from its points.
+    private var endpointBox: CGRect {
+        CGRect(
+            x: min(start.x, end.x),
+            y: min(start.y, end.y),
+            width: abs(end.x - start.x),
+            height: abs(end.y - start.y)
+        )
+    }
+
+    /// Maps each point's position in `old` to the same position in `new`. A
+    /// flat axis has no position to keep, so points stay at its start.
+    private static func rescale(_ points: [CGPoint], from old: CGRect, to new: CGRect) -> [CGPoint] {
+        points.map { point in
+            CGPoint(
+                x: new.minX + (old.width > 0 ? (point.x - old.minX) / old.width : 0) * new.width,
+                y: new.minY + (old.height > 0 ? (point.y - old.minY) / old.height : 0) * new.height
+            )
+        }
+    }
+
+    private static func clamp(_ value: CGFloat, _ low: CGFloat, _ high: CGFloat) -> CGFloat {
+        min(max(value, low), high)
     }
 
     private static func coordinate(_ edge: AnnotationHandle.Edge?, from low: CGFloat, to high: CGFloat) -> CGFloat {

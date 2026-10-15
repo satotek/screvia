@@ -97,6 +97,38 @@
         }
       }
     },
+    "annotation.crop": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crop"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "トリミング"
+          }
+        }
+      }
+    },
+    "annotation.cropHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag to choose the area to keep. ⌘Z undoes the crop."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "残す範囲をドラッグで選びます。⌘Z で元に戻せます。"
+          }
+        }
+      }
+    },
     "annotation.delete": {
       "localizations": {
         "en": {
@@ -109,6 +141,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "削除"
+          }
+        }
+      }
+    },
+    "annotation.deleteAll": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete All"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "すべて削除"
+          }
+        }
+      }
+    },
+    "annotation.duplicate": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duplicate"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製"
           }
         }
       }
@@ -145,6 +209,22 @@
         }
       }
     },
+    "annotation.freehand": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Freehand"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "フリーハンド"
+          }
+        }
+      }
+    },
     "annotation.highlight": {
       "localizations": {
         "en": {
@@ -157,6 +237,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "ハイライト"
+          }
+        }
+      }
+    },
+    "annotation.line": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Line"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直線"
+          }
+        }
+      }
+    },
+    "annotation.more": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "その他"
           }
         }
       }
@@ -205,6 +317,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "選択"
+          }
+        }
+      }
+    },
+    "annotation.step": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Step"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ステップ"
           }
         }
       }
@@ -609,22 +737,6 @@
         }
       }
     },
-    "app.nonDestructive": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Annotations are non-destructive until export"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "書き出すまで元画像は変更されません"
-          }
-        }
-      }
-    },
     "app.ok": {
       "localizations": {
         "en": {
@@ -797,6 +909,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "保存"
+          }
+        }
+      }
+    },
+    "app.saveAs": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save As…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名前を付けて保存…"
           }
         }
       }
@@ -2141,6 +2269,182 @@
           "stringUnit": {
             "state": "translated",
             "value": "クリックでウィンドウを撮影  ·  Esc でキャンセル"
+          }
+        }
+      }
+    },
+    "style.bold": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bold"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "太字"
+          }
+        }
+      }
+    },
+    "style.customColor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other Color…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "その他の色…"
+          }
+        }
+      }
+    },
+    "style.fill": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fill"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "塗り"
+          }
+        }
+      }
+    },
+    "style.fontSize": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Size %d"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "サイズ %d"
+          }
+        }
+      }
+    },
+    "style.lineWidth": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Width %d"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "太さ %d"
+          }
+        }
+      }
+    },
+    "style.noFill": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Fill"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "塗りなし"
+          }
+        }
+      }
+    },
+    "style.shadow": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shadow"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "影"
+          }
+        }
+      }
+    },
+    "style.text": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Text style"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文字の見た目"
+          }
+        }
+      }
+    },
+    "style.text.background": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Box"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "背景"
+          }
+        }
+      }
+    },
+    "style.text.outline": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Outline"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "縁取り"
+          }
+        }
+      }
+    },
+    "style.text.plain": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plain"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文字のみ"
           }
         }
       }

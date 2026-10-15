@@ -31,7 +31,8 @@ app.
 ## Suites
 
 **`ScreviaSettingsTests`** — defaults, round-tripping every property through
-`UserDefaults`, unknown stored enum values falling back instead of crashing,
+`UserDefaults` (the editor's style included, with unreadable JSON falling back
+to the standard style), unknown stored enum values falling back instead of crashing,
 `styleOptions` clamping negative geometry, and `reset` persisting rather than
 only changing memory.
 
@@ -46,19 +47,28 @@ canvas excluding overlapping strips.
 **`ImageProcessorTests`** — the unstyled pass-through, padding and shadow
 margin geometry, and every background style producing a drawable image.
 
-**`ImageStoreTests`** — directory creation, per-format extensions, the numeric
+**`ImageStoreTests`** — Save As writing the format its extension names and
+replacing an existing file, directory creation, per-format extensions, the numeric
 suffix that keeps two captures in the same second from overwriting each other,
 JPEG quality actually reaching the encoder, and PNG (not TIFF) reaching the
 pasteboard.
 
-**`AnnotationGeometryTests`** — hit testing boxes by their inside and arrows
-by their line, finding handles in view space, moves stopping at the image
-edge, corner and edge resizing, and a box flipping when dragged past its
-opposite side.
+**`AnnotationGeometryTests`** — hit testing boxes by their inside and lines
+and freehand by their stroke, finding handles in view space, moves stopping
+at the image or crop edge without snapping a shape already past it, corner
+and edge resizing, a box flipping when dragged past its opposite side,
+freehand points scaling with their box, step numbering, and duplicates
+getting a new identity.
 
 **`AnnotationRendererTests`** — export keeping the capture's pixel size
 rather than the main screen's scale, shapes landing in the right half
-despite the coordinate flip, and an unannotated image passing through.
+despite the coordinate flip, crops cut at full resolution and from the top,
+text boxes following the font size, and steps staying round on a
+non-square image.
+
+**`CanvasLayoutTests`** — fitting the image inside the margin, a cropped
+image extending past the visible rect so annotation space still lines up,
+and zoom growing the scrollable content.
 
 **`HistoryThumbnailLoaderTests`** — thumbnail sizing and cache-key
 distinctness.

@@ -19,6 +19,31 @@ final class ImageStoreTests: XCTestCase {
         try super.tearDownWithError()
     }
 
+    // MARK: - write
+
+    /// Save As picks the format from the extension the user typed.
+    func testWriteUsesTheFormatTheExtensionNames() throws {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let url = directory.appendingPathComponent("edited.jpg")
+
+        try store.write(TestImages.nsImage(width: 10, height: 10), to: url, jpegQuality: 0.8)
+
+        let data = try Data(contentsOf: url)
+        XCTAssertEqual(Array(data.prefix(3)), [0xFF, 0xD8, 0xFF], "expected a JPEG header")
+    }
+
+    /// The save panel has already asked about replacing the file.
+    func testWriteReplacesAnExistingFile() throws {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let url = directory.appendingPathComponent("edited.png")
+        try Data("old".utf8).write(to: url)
+
+        try store.write(TestImages.nsImage(width: 10, height: 10), to: url, jpegQuality: 0.8)
+
+        let data = try Data(contentsOf: url)
+        XCTAssertEqual(Array(data.prefix(4)), [0x89, 0x50, 0x4E, 0x47], "expected a PNG header")
+    }
+
     // MARK: - save
 
     func testSaveCreatesTheDirectoryIfItIsMissing() throws {
