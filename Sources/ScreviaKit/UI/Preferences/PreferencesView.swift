@@ -109,9 +109,18 @@ struct GeneralPreferences: View {
     @State private var launchAtLoginStatus: SMAppService.Status = .notRegistered
     @State private var launchAtLoginError: String?
 
+    /// What the next capture from Safari would be called.
+    private var fileNameExample: String {
+        let template = FileNameTemplate(settings.fileNameTemplate)
+        let name = template.render(date: Date(), app: "Safari", counter: settings.fileNameCounter + 1)
+        return "\(name).\(settings.imageFormat.fileExtension)"
+    }
+
     var body: some View {
         Form {
             Section {
+                Toggle(L10n.text("preferences.saveToFile"), isOn: $settings.saveToFile)
+
                 VStack(alignment: .leading, spacing: 9) {
                     Text(L10n.text("preferences.saveLocation"))
                         .font(.system(size: 13, weight: .semibold))
@@ -126,11 +135,29 @@ struct GeneralPreferences: View {
                         Button(L10n.text("preferences.choose"), action: chooseFolder)
                     }
                 }
+                .disabled(!settings.saveToFile)
             } header: {
                 Text(L10n.text("preferences.whereCapturesGo"))
             } footer: {
-                Text(L10n.text("preferences.createFolderHint"))
+                Text(L10n.text(settings.saveToFile ? "preferences.createFolderHint" : "preferences.unsavedHint"))
             }
+
+            Section {
+                TextField(L10n.text("preferences.fileNameTemplate"), text: $settings.fileNameTemplate)
+                    .font(.system(size: 12, design: .monospaced))
+                LabeledContent(L10n.text("preferences.fileNameExample")) {
+                    Text(fileNameExample)
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+            } header: {
+                Text(L10n.text("preferences.fileName"))
+            } footer: {
+                Text(L10n.text("preferences.fileNameTokens"))
+            }
+            .disabled(!settings.saveToFile)
 
             Section(L10n.text("preferences.fileFormat")) {
                 Picker(L10n.text("preferences.defaultFormat"), selection: $settings.imageFormat) {
@@ -151,9 +178,22 @@ struct GeneralPreferences: View {
             }
 
             Section(L10n.text("preferences.afterCapture")) {
-                Toggle(L10n.text("preferences.copyToClipboard"), isOn: $settings.copyToClipboard)
+                // Without a saved file the clipboard is where captures land,
+                // so it is shown on and cannot be turned off.
+                Toggle(
+                    L10n.text("preferences.copyToClipboard"),
+                    isOn: settings.saveToFile ? $settings.copyToClipboard : .constant(true)
+                )
+                .disabled(!settings.saveToFile)
+                Toggle(L10n.text("preferences.openEditorAfterCapture"), isOn: $settings.openEditorAfterCapture)
                 Toggle(L10n.text("preferences.showThumbnail"), isOn: $settings.showThumbnail)
+                    .disabled(settings.openEditorAfterCapture)
                 Toggle(L10n.text("preferences.playSound"), isOn: $settings.playSound)
+                Picker(L10n.text("preferences.historyLimit"), selection: $settings.historyLimit) {
+                    ForEach(ScreviaSettings.historyLimitChoices, id: \.self) { limit in
+                        Text(L10n.format("preferences.historyLimitCount", limit)).tag(limit)
+                    }
+                }
             }
 
             Section(L10n.text("preferences.startup")) {
@@ -257,6 +297,27 @@ struct CapturePreferences: View {
 
     var body: some View {
         Form {
+            Section(L10n.text("preferences.captureOptions")) {
+                Toggle(L10n.text("preferences.includeCursor"), isOn: $settings.includeCursor)
+                Toggle(L10n.text("preferences.hideDesktopIcons"), isOn: $settings.hideDesktopIcons)
+                Toggle(L10n.text("preferences.downscaleRetina"), isOn: $settings.downscaleRetina)
+                Text(L10n.text("preferences.downscaleRetinaHint"))
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            }
+
+            Section(L10n.text("preferences.textCapture")) {
+                Picker(L10n.text("preferences.textLanguage"), selection: $settings.textLanguage) {
+                    ForEach(TextLanguage.allCases) { language in
+                        Text(language.title).tag(language)
+                    }
+                }
+                Toggle(L10n.text("preferences.textJoinLines"), isOn: $settings.textJoinLines)
+                Text(L10n.text("preferences.textJoinLinesHint"))
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            }
+
             Section(L10n.text("preferences.windowCapture")) {
                 Toggle(L10n.text("preferences.includeWindowShadow"), isOn: $settings.includeWindowShadow)
                 Text(L10n.text("preferences.windowShadowHint"))

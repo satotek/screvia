@@ -57,6 +57,10 @@ final class LocalizationKeyTests: XCTestCase {
         try assertTranslated(AnnotationTool.allCases.map { "annotation.\($0.rawValue)" })
     }
 
+    func testTextLanguages() throws {
+        try assertTranslated(TextLanguage.allCases.map { "textLanguage.\($0.rawValue)" })
+    }
+
     func testTextAppearances() throws {
         try assertTranslated(TextAppearance.allCases.map { "style.text.\($0.rawValue)" })
     }

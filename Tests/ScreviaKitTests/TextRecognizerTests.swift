@@ -50,4 +50,25 @@ final class TextRecognizerTests: XCTestCase {
             XCTFail("unexpected error: \(error)")
         }
     }
+
+    // MARK: - Joining lines
+
+    /// Japanese wraps without spaces, so joining must not add any.
+    func testJapaneseLinesJoinWithoutSpaces() {
+        XCTAssertEqual(TextRecognizer.joined(["画面を", "撮影する"]), "画面を撮影する")
+    }
+
+    func testEnglishLinesJoinWithASpace() {
+        XCTAssertEqual(TextRecognizer.joined(["Hello", "Screvia "]), "Hello Screvia")
+    }
+
+    func testMixedLinesGetASpaceOnlyNextToLatin() {
+        XCTAssertEqual(TextRecognizer.joined(["Screvia で", "撮る", "screen"]), "Screvia で撮る screen")
+    }
+
+    func testRecognitionCanJoinLines() async throws {
+        let text = try await TextRecognizer.text(in: image(lines: ["Hello Screvia", "Second line 42"]), joinLines: true)
+
+        XCTAssertEqual(text, "Hello Screvia Second line 42")
+    }
 }

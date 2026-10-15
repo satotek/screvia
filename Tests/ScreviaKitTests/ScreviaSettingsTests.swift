@@ -71,6 +71,15 @@ final class ScreviaSettingsTests: XCTestCase {
         style.textAppearance = .outline
         settings.annotationStyle = style
         settings.captureDelay = 5
+        settings.fileNameTemplate = "{app}-{n}"
+        settings.saveToFile = false
+        settings.openEditorAfterCapture = true
+        settings.includeCursor = true
+        settings.downscaleRetina = true
+        settings.hideDesktopIcons = true
+        settings.textJoinLines = true
+        settings.textLanguage = .english
+        settings.historyLimit = 100
 
         // A second instance reads the same suite from scratch, which is what
         // a relaunch does.
@@ -91,6 +100,43 @@ final class ScreviaSettingsTests: XCTestCase {
         XCTAssertTrue(reloaded.shadowEnabled)
         XCTAssertEqual(reloaded.annotationStyle, style)
         XCTAssertEqual(reloaded.captureDelay, 5)
+        XCTAssertEqual(reloaded.fileNameTemplate, "{app}-{n}")
+        XCTAssertFalse(reloaded.saveToFile)
+        XCTAssertTrue(reloaded.openEditorAfterCapture)
+        XCTAssertTrue(reloaded.includeCursor)
+        XCTAssertTrue(reloaded.downscaleRetina)
+        XCTAssertTrue(reloaded.hideDesktopIcons)
+        XCTAssertTrue(reloaded.textJoinLines)
+        XCTAssertEqual(reloaded.textLanguage, .english)
+        XCTAssertEqual(reloaded.historyLimit, 100)
+    }
+
+    func testAStoredHistoryLimitOutsideTheChoicesFallsBackToThirty() {
+        defaults.set(7, forKey: "historyLimit")
+        defaults.set("klingon", forKey: "textLanguage")
+
+        let settings = ScreviaSettings(defaults: defaults)
+
+        XCTAssertEqual(settings.historyLimit, 30)
+        XCTAssertEqual(settings.textLanguage, .automatic)
+    }
+
+    /// The counter only moves for templates that show it, and keeps going
+    /// after a relaunch so numbers never repeat in the folder.
+    func testTheFileNumberAdvancesOnlyWhenTheTemplateUsesIt() {
+        let settings = ScreviaSettings(defaults: defaults)
+        let date = Date(timeIntervalSince1970: 0)
+
+        settings.fileNameTemplate = "Shot-{n}"
+        XCTAssertEqual(settings.nextFileName(date: date, app: nil), "Shot-1")
+        XCTAssertEqual(settings.nextFileName(date: date, app: nil), "Shot-2")
+
+        settings.fileNameTemplate = "{app}"
+        XCTAssertEqual(settings.nextFileName(date: date, app: "Safari"), "Safari")
+        XCTAssertEqual(settings.fileNameCounter, 2)
+
+        settings.fileNameTemplate = "Shot-{n}"
+        XCTAssertEqual(ScreviaSettings(defaults: defaults).nextFileName(date: date, app: nil), "Shot-3")
     }
 
     /// The hub offers fixed choices; anything else stored, such as a minute
@@ -167,11 +213,16 @@ final class ScreviaSettingsTests: XCTestCase {
         settings.shadowEnabled = true
         settings.annotationStyle.color = .green
         settings.captureDelay = 10
+        settings.saveToFile = false
+        settings.historyLimit = 50
 
         settings.reset()
 
         XCTAssertEqual(settings.annotationStyle, .standard)
         XCTAssertEqual(settings.captureDelay, 0)
+        XCTAssertTrue(settings.saveToFile)
+        XCTAssertEqual(settings.historyLimit, 30)
+        XCTAssertEqual(settings.fileNameTemplate, FileNameTemplate.standard)
         XCTAssertEqual(settings.imageFormat, .png)
         XCTAssertEqual(settings.jpegQuality, 0.92)
         XCTAssertTrue(settings.copyToClipboard)

@@ -1,6 +1,35 @@
 import AppKit
 
 nonisolated struct ImageProcessor {
+    /// The image at one pixel per point, or itself when it already is.
+    func downscaledToPointSize(_ image: NSImage) -> NSImage {
+        guard let source = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            return image
+        }
+        let width = Int(image.size.width.rounded())
+        let height = Int(image.size.height.rounded())
+        guard
+            width > 0, height > 0, source.width > width,
+            let context = CGContext(
+                data: nil,
+                width: width,
+                height: height,
+                bitsPerComponent: 8,
+                bytesPerRow: 0,
+                space: source.colorSpace ?? CGColorSpace(name: CGColorSpace.sRGB)!,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            )
+        else {
+            return image
+        }
+        context.interpolationQuality = .high
+        context.draw(source, in: CGRect(x: 0, y: 0, width: width, height: height))
+        guard let output = context.makeImage() else {
+            return image
+        }
+        return NSImage(cgImage: output, size: image.size)
+    }
+
     func process(_ image: NSImage, options: CaptureStyleOptions) -> NSImage {
         let hasFrame = options.backgroundStyle != .none
             || options.padding > 0

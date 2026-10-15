@@ -1921,6 +1921,22 @@
         }
       }
     },
+    "preferences.captureOptions": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capturing"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "撮影"
+          }
+        }
+      }
+    },
     "preferences.captureScroll": {
       "localizations": {
         "en": {
@@ -2049,6 +2065,38 @@
         }
       }
     },
+    "preferences.downscaleRetina": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save Retina captures at 1×"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retina の画像を等倍で保存"
+          }
+        }
+      }
+    },
+    "preferences.downscaleRetinaHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Halves the width and height of captures from a Retina screen: smaller files, sized for sharing."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retina の画面で撮った画像の縦横を半分にします。ファイルが小さくなり、共有にちょうどよい大きさになります。"
+          }
+        }
+      }
+    },
     "preferences.fileFormat": {
       "localizations": {
         "en": {
@@ -2065,6 +2113,70 @@
         }
       }
     },
+    "preferences.fileName": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File name"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ファイル名"
+          }
+        }
+      }
+    },
+    "preferences.fileNameExample": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Example"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "例"
+          }
+        }
+      }
+    },
+    "preferences.fileNameTemplate": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Template"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ひな形"
+          }
+        }
+      }
+    },
+    "preferences.fileNameTokens": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{date} 2026-10-15 · {time} 23.32.09 · {app} the app captured · {n} a number that counts up"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{date} 2026-10-15 ・ {time} 23.32.09 ・ {app} 撮ったアプリの名前 ・ {n} 1 ずつ増える番号"
+          }
+        }
+      }
+    },
     "preferences.general": {
       "localizations": {
         "en": {
@@ -2077,6 +2189,70 @@
           "stringUnit": {
             "state": "translated",
             "value": "一般"
+          }
+        }
+      }
+    },
+    "preferences.hideDesktopIcons": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide desktop icons"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "デスクトップのアイコンを隠す"
+          }
+        }
+      }
+    },
+    "preferences.historyLimit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recent captures to keep"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "撮影履歴の件数"
+          }
+        }
+      }
+    },
+    "preferences.historyLimitCount": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d 件"
+          }
+        }
+      }
+    },
+    "preferences.includeCursor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show the pointer"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "マウスポインタを写す"
           }
         }
       }
@@ -2189,6 +2365,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "アクセシビリティの設定を開く…"
+          }
+        }
+      }
+    },
+    "preferences.openEditorAfterCapture": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the editor after capturing"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "撮影後にエディタを開く"
           }
         }
       }
@@ -2337,6 +2529,22 @@
         }
       }
     },
+    "preferences.saveToFile": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save captures to a file"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "撮った画像をファイルに保存"
+          }
+        }
+      }
+    },
     "preferences.screenshotFrame": {
       "localizations": {
         "en": {
@@ -2449,6 +2657,70 @@
         }
       }
     },
+    "preferences.textCapture": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Text Capture"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "テキストを撮影"
+          }
+        }
+      }
+    },
+    "preferences.textJoinLines": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join lines into one paragraph"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "行をつなげて 1 つの文にする"
+          }
+        }
+      }
+    },
+    "preferences.textJoinLinesHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For text that was wrapped only by its layout. Japanese joins without spaces."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "表示の都合で折り返されていた文章向けです。日本語はスペースを入れずにつなげます。"
+          }
+        }
+      }
+    },
+    "preferences.textLanguage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "認識する言語"
+          }
+        }
+      }
+    },
     "preferences.thumbnailPosition": {
       "localizations": {
         "en": {
@@ -2477,6 +2749,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Screvia 設定"
+          }
+        }
+      }
+    },
+    "preferences.unsavedHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Captures go to the clipboard only. History and the thumbnail still work until Screvia quits."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "撮った画像はクリップボードにだけ入ります。履歴とサムネイルは、Screvia を終了するまで使えます。"
           }
         }
       }
@@ -2829,6 +3117,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "Screvia — テキスト"
+          }
+        }
+      }
+    },
+    "textLanguage.automatic": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatic (Japanese and English)"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動（日本語と英語）"
+          }
+        }
+      }
+    },
+    "textLanguage.english": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "English"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "英語"
+          }
+        }
+      }
+    },
+    "textLanguage.japanese": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Japanese"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "日本語"
           }
         }
       }
