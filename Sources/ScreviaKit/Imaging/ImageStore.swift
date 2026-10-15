@@ -4,6 +4,14 @@ import ImageIO
 import UniformTypeIdentifiers
 
 nonisolated struct ImageStore {
+    /// The system clipboard, unless a test passes a private one. Held by
+    /// name because NSPasteboard is not Sendable.
+    var pasteboardName: NSPasteboard.Name = .general
+
+    private var pasteboard: NSPasteboard {
+        NSPasteboard(name: pasteboardName)
+    }
+
     struct SavedImage {
         let fileURL: URL
         let data: Data?
@@ -108,7 +116,8 @@ nonisolated struct ImageStore {
             jpegQuality: 1
         ) else {
             Log.storage.error("PNG encoding failed; falling back to TIFF on the pasteboard")
-            NSPasteboard.general.writeObjects([image])
+            pasteboard.clearContents()
+            pasteboard.writeObjects([image])
             return
         }
 
@@ -116,7 +125,7 @@ nonisolated struct ImageStore {
     }
 
     func copyToClipboard(data: Data, format: ImageFormat) {
-        let pasteboard = NSPasteboard.general
+        let pasteboard = pasteboard
         pasteboard.clearContents()
         pasteboard.setData(data, forType: format.pasteboardType)
     }
