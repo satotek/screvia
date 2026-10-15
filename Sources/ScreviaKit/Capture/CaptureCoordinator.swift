@@ -164,7 +164,78 @@ final class CaptureCoordinator: ObservableObject {
             guard let self, let capture = await self.capture(from: entry) else {
                 return
             }
-            self.openEditor(for: capture)
+            // Saved PNGs carry no DPI, so they load at one point per pixel.
+            let image = ImageImport.normalized(capture.image, scale: Self.importScale) ?? capture.image
+            self.openEditor(
+                image: image,
+                suggestedName: capture.fileURL.deletingPathExtension().lastPathComponent,
+                displayID: capture.displayID,
+                kind: capture.kind
+            )
+        }
+    }
+
+    // MARK: - Editing other images
+
+    /// Imported images are sized as if captured on the main screen; see
+    /// `ImageImport.normalized`.
+    private static var importScale: CGFloat {
+        NSScreen.main?.backingScaleFactor ?? 2
+    }
+
+    private static var displayUnderPointer: UInt32 {
+        ScreenUtilities.screenAtMouse().flatMap(ScreenUtilities.displayID(for:)) ?? 0
+    }
+
+    func editClipboardImage() {
+        do {
+            let image = try ImageImport.image(from: .general, scale: Self.importScale)
+            openEditor(
+                image: image,
+                suggestedName: L10n.text("import.clipboardName"),
+                displayID: Self.displayUnderPointer,
+                kind: .standard
+            )
+        } catch {
+            ErrorPresenter.present(error)
+        }
+    }
+
+    func chooseImageToEdit() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = ImageImport.contentTypes
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.message = L10n.text("import.openMessage")
+        // A menu bar app is not frontmost by default; without this the panel
+        // opens behind the window the user was in.
+        NSApp.activate(ignoringOtherApps: true)
+        guard panel.runModal() == .OK, let url = panel.url else {
+            return
+        }
+        editImage(at: url)
+    }
+
+    /// Saving writes a new file to the capture folder; `url` is never
+    /// overwritten unless the user picks it in Save As.
+    func editImage(at url: URL) {
+        let scale = Self.importScale
+        let displayID = Self.displayUnderPointer
+        Task { [weak self] in
+            do {
+                guard let data = await Self.readData(at: url) else {
+                    throw ImageImport.ImportError.unreadable
+                }
+                let image = try ImageImport.image(from: data, scale: scale)
+                self?.openEditor(
+                    image: image,
+                    suggestedName: url.deletingPathExtension().lastPathComponent,
+                    displayID: displayID,
+                    kind: .standard
+                )
+            } catch {
+                ErrorPresenter.present(error)
+            }
         }
     }
 
@@ -301,8 +372,18 @@ final class CaptureCoordinator: ObservableObject {
     }
 
     private func openEditor(for capture: CaptureItem) {
+        openEditor(
+            image: capture.image,
+            suggestedName: capture.fileURL.deletingPathExtension().lastPathComponent,
+            displayID: capture.displayID,
+            kind: capture.kind
+        )
+    }
+
+    private func openEditor(image: NSImage, suggestedName: String, displayID: UInt32, kind: CaptureKind) {
         editorController.show(
-            capture: capture,
+            image: image,
+            suggestedName: suggestedName,
             style: settings.annotationStyle,
             onStyleChange: { [weak self] style in
                 self?.settings.annotationStyle = style
@@ -317,8 +398,6 @@ final class CaptureCoordinator: ObservableObject {
                 let jpegQuality = self.settings.jpegQuality
                 let copyToClipboard = self.settings.copyToClipboard
                 let showThumbnail = self.settings.showThumbnail
-                let displayID = capture.displayID
-                let kind = capture.kind
                 let pipeline = self.captureProcessingPipeline
 
                 Task { [weak self] in
