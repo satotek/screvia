@@ -97,6 +97,22 @@
         }
       }
     },
+    "annotation.delete": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "削除"
+          }
+        }
+      }
+    },
     "annotation.editorTitle": {
       "localizations": {
         "en": {
@@ -173,6 +189,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "矩形"
+          }
+        }
+      }
+    },
+    "annotation.select": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選択"
           }
         }
       }

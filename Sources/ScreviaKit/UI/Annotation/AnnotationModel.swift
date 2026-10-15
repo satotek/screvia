@@ -1,7 +1,8 @@
 import AppKit
 import SwiftUI
 
-enum AnnotationTool: String, CaseIterable, Identifiable {
+nonisolated enum AnnotationTool: String, CaseIterable, Identifiable {
+    case select
     case rectangle
     case ellipse
     case arrow
@@ -14,6 +15,8 @@ enum AnnotationTool: String, CaseIterable, Identifiable {
 
     var symbolName: String {
         switch self {
+        case .select:
+            return "cursorarrow"
         case .rectangle:
             return "rectangle"
         case .ellipse:
@@ -46,6 +49,12 @@ enum AnnotationTool: String, CaseIterable, Identifiable {
             return nil
         }
     }
+
+    /// Drawn from one end to the other, so it is edited by its two endpoints
+    /// rather than by the box around it.
+    var isLine: Bool {
+        self == .arrow
+    }
 }
 
 enum AnnotationZoom {
@@ -58,24 +67,41 @@ enum AnnotationZoom {
     }
 }
 
-struct Annotation: Identifiable {
+/// How an annotation is stroked. Line width is in image points, so it keeps
+/// its proportion to the image at every zoom level and in the export.
+nonisolated struct AnnotationStyle: Equatable {
+    var color: CGColor
+    var lineWidth: CGFloat
+
+    static let standard = AnnotationStyle(
+        color: CGColor(srgbRed: 1, green: 0.23, blue: 0.19, alpha: 1),
+        lineWidth: 4
+    )
+}
+
+/// `start` and `end` are fractions of the image (0...1, top-left origin), so
+/// an annotation stays put under zoom and survives the downsampled preview.
+nonisolated struct Annotation: Identifiable, Equatable {
     let id: UUID
     let tool: AnnotationTool
-    let start: CGPoint
-    let end: CGPoint
+    var start: CGPoint
+    var end: CGPoint
     var text: String?
+    var style: AnnotationStyle
 
     init(
         id: UUID = UUID(),
         tool: AnnotationTool,
         start: CGPoint,
         end: CGPoint,
-        text: String? = nil
+        text: String? = nil,
+        style: AnnotationStyle = .standard
     ) {
         self.id = id
         self.tool = tool
         self.start = start
         self.end = end
         self.text = text
+        self.style = style
     }
 }
