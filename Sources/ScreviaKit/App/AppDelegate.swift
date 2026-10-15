@@ -87,20 +87,24 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
                 displays: captureCoordinator.displayInfos(),
                 history: captureCoordinator.captureHistory,
                 onCaptureFullScreen: { [weak self] displayID in
-                    self?.closeCaptureHub()
-                    self?.captureCoordinator.captureFullScreen(displayID: displayID)
+                    self?.closeCaptureHub {
+                        self?.captureCoordinator.captureFullScreen(displayID: displayID)
+                    }
                 },
                 onCaptureArea: { [weak self] in
-                    self?.closeCaptureHub()
-                    self?.captureCoordinator.captureArea()
+                    self?.closeCaptureHub {
+                        self?.captureCoordinator.captureArea()
+                    }
                 },
                 onCaptureWindow: { [weak self] in
-                    self?.closeCaptureHub()
-                    self?.captureCoordinator.captureWindow()
+                    self?.closeCaptureHub {
+                        self?.captureCoordinator.captureWindow()
+                    }
                 },
                 onCaptureScroll: { [weak self] in
-                    self?.closeCaptureHub()
-                    self?.captureCoordinator.captureScroll()
+                    self?.closeCaptureHub {
+                        self?.captureCoordinator.captureScroll()
+                    }
                 },
                 onEditHistory: { [weak self] entry in
                     self?.closeCaptureHub()
@@ -155,6 +159,27 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         capturePopover = popover
         NSApp.activate(ignoringOtherApps: true)
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+    }
+
+    /// Closes the hub, then starts `capture` once the hub is off screen.
+    ///
+    /// Capturing straight after `performClose` caught the popover mid-fade
+    /// in the screenshot. Closing without the animation removes the window
+    /// at once, but the window server only drops it from the screen on its
+    /// next frame, so the capture waits a little longer than one frame.
+    private func closeCaptureHub(beforeCapture capture: @escaping () -> Void) {
+        guard let popover = capturePopover, popover.isShown else {
+            capture()
+            return
+        }
+
+        popover.animates = false
+        popover.close()
+        capturePopover = nil
+        Task {
+            try? await Task.sleep(for: .milliseconds(100))
+            capture()
+        }
     }
 
     private func closeCaptureHub() {
