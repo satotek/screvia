@@ -37,7 +37,11 @@ final class PinnedImageController {
                 }
             }
         )
-        panel.contentView = NSHostingView(rootView: view)
+        // The panel's size is set here and by the user; letting SwiftUI
+        // size it too risks the same layout loop as the editor's.
+        let hosting = NSHostingView(rootView: view)
+        hosting.sizingOptions = []
+        panel.contentView = hosting
 
         if let screen = ScreenUtilities.screen(for: displayID) ?? NSScreen.main ?? NSScreen.screens.first {
             let frame = screen.visibleFrame
