@@ -21,8 +21,9 @@ app at all.
 - Full screen, region, and window capture across multiple displays
 - Scrolling capture: pick a window, and Screvia scrolls it and stitches the
   frames together by comparing their overlap
-- Capture text: select an area and its text, Japanese included, goes to the
-  clipboard, recognized on your Mac by Vision
+- Capture text: select an area and a window shows its text, Japanese
+  included, recognized on your Mac by Vision; copy all of it, edit it first,
+  or pick out part of the image with Live Text
 - Select just part of the text in a capture with Live Text, in the editor
   or on a pinned image, and copy it
 - Capture the previous area again, and a self-timer of 3, 5 or 10 seconds

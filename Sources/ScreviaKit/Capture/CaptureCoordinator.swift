@@ -20,6 +20,7 @@ final class CaptureCoordinator: ObservableObject {
     private let historyStore = CaptureHistoryStore()
 
     private let toastController = ToastController()
+    private let textCaptureController = TextCaptureWindowController()
 
     private var areaSelectionController: AreaSelectionController?
     private var windowSelectionController: WindowSelectionController?
@@ -134,7 +135,8 @@ final class CaptureCoordinator: ObservableObject {
         }
     }
 
-    /// Captures an area and copies the text in it rather than the image.
+    /// Captures an area and opens it in a window that shows its text, to
+    /// copy all of it or, with Live Text, just a part.
     func captureText() {
         let controller = AreaSelectionController()
         areaSelectionController = controller
@@ -147,11 +149,30 @@ final class CaptureCoordinator: ObservableObject {
 
             do {
                 let image = try self.captureService.capture(selection: selection, on: screen)
-                self.copyText(in: image)
+                self.showText(in: image)
             } catch {
                 ErrorPresenter.present(error)
             }
         }
+    }
+
+    private func showText(in image: NSImage) {
+        textCaptureController.show(image: image) { [weak self] text in
+            self?.copyToClipboard(text: text)
+        }
+        guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            textCaptureController.update(text: nil)
+            return
+        }
+        Task { [weak self] in
+            let text = try? await TextRecognizer.text(in: cgImage)
+            self?.textCaptureController.update(text: text)
+        }
+    }
+
+    private func copyToClipboard(text: String) {
+        imageStore.copyToClipboard(text: text)
+        toastController.show(L10n.format("toast.textCopied", text.count), symbol: "text.viewfinder")
     }
 
     /// Recognizes the text in `image` and puts it on the clipboard.
@@ -166,11 +187,7 @@ final class CaptureCoordinator: ObservableObject {
                 guard let self else {
                     return
                 }
-                self.imageStore.copyToClipboard(text: text)
-                self.toastController.show(
-                    L10n.format("toast.textCopied", text.count),
-                    symbol: "text.viewfinder"
-                )
+                self.copyToClipboard(text: text)
             } catch {
                 ErrorPresenter.present(error)
             }

@@ -2769,6 +2769,70 @@
         }
       }
     },
+    "textCapture.copyAll": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy All"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "すべてコピー"
+          }
+        }
+      }
+    },
+    "textCapture.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select text in the image, or edit it below, then copy."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画像の文字を選ぶか、下の文を編集してからコピーできます。"
+          }
+        }
+      }
+    },
+    "textCapture.recognizing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reading text…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文字を読み取っています…"
+          }
+        }
+      }
+    },
+    "textCapture.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screvia — Text"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screvia — テキスト"
+          }
+        }
+      }
+    },
     "thumbnail.bottomLeft": {
       "localizations": {
         "en": {
