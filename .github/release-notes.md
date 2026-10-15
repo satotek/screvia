@@ -13,8 +13,8 @@ Or clear the quarantine flag from Terminal instead of steps 2–3:
 xattr -dr com.apple.quarantine /Applications/Screvia.app
 ```
 
-Screvia asks for Screen Recording on first capture, and for Accessibility
-the first time you use scrolling capture. Every release is signed with the
+Screvia asks for Screen Recording when it first starts, with a guide to the
+setting, and for Accessibility the first time you use scrolling capture. Every release is signed with the
 same certificate, so updating keeps both permissions.
 
 `Screvia-<version>.dmg.sha256` holds the image's SHA-256 checksum.
