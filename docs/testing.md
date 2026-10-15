@@ -73,6 +73,10 @@ and zoom growing the scrollable content.
 **`HistoryThumbnailLoaderTests`** — thumbnail sizing and cache-key
 distinctness.
 
+**`LocalizationKeyTests`** — every enum case whose title is looked up as
+`"prefix.\(rawValue)"` has an en and a ja string in the catalog. Such keys
+compile whether or not they exist, and a missing one shows the raw key.
+
 **`LaunchAtLoginControllerTests`** — status mapping and register/unregister
 behaviour against a fake service.
 
