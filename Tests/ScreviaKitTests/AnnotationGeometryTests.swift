@@ -114,4 +114,86 @@ final class AnnotationGeometryTests: XCTestCase {
         assertPoint(resized.start, CGPoint(x: 0.9, y: 0.1))
         assertPoint(resized.end, CGPoint(x: 0.5, y: 1))
     }
+
+    // MARK: - Freehand
+
+    private func scribble() -> Annotation {
+        let points = [CGPoint(x: 0.1, y: 0.2), CGPoint(x: 0.3, y: 0.6), CGPoint(x: 0.5, y: 0.4)]
+        return Annotation(tool: .freehand, start: CGPoint(x: 0.1, y: 0.2), end: CGPoint(x: 0.5, y: 0.6), points: points)
+    }
+
+    func testFreehandBoundsComeFromItsPoints() {
+        assertRect(scribble().bounds, CGRect(x: 0.1, y: 0.2, width: 0.4, height: 0.4))
+    }
+
+    /// Hit on the stroke, not anywhere in its box.
+    func testFreehandIsHitOnlyNearTheStroke() {
+        let annotation = scribble()
+
+        XCTAssertTrue(annotation.contains(CGPoint(x: 40, y: 40), in: imageRect, tolerance: 4))
+        XCTAssertFalse(annotation.contains(CGPoint(x: 90, y: 25), in: imageRect, tolerance: 4))
+    }
+
+    func testResizingFreehandScalesItsPoints() {
+        let resized = scribble().resized(.box(x: .max, y: .max), to: CGPoint(x: 0.9, y: 1))
+
+        assertRect(resized.bounds, CGRect(x: 0.1, y: 0.2, width: 0.8, height: 0.8))
+        // The middle point sat half way across and all the way down.
+        assertPoint(resized.points[1], CGPoint(x: 0.5, y: 1))
+    }
+
+    func testMovingFreehandMovesItsPoints() {
+        let moved = scribble().moved(by: CGVector(dx: 0.1, dy: 0.1))
+
+        assertPoint(moved.points[0], CGPoint(x: 0.2, y: 0.3))
+        assertRect(moved.bounds, CGRect(x: 0.2, y: 0.3, width: 0.4, height: 0.4))
+    }
+
+    // MARK: - Font-sized tools
+
+    func testTextAndStepsHaveNoResizeHandles() {
+        XCTAssertEqual(box(.zero, CGPoint(x: 0.2, y: 0.1), tool: .text).handles, [])
+        XCTAssertEqual(box(.zero, CGPoint(x: 0.1, y: 0.1), tool: .step).handles, [])
+    }
+
+    func testStepsAreNumberedInOrderAndRenumberOnDelete() {
+        let first = box(.zero, .zero, tool: .step)
+        let arrow = box(.zero, CGPoint(x: 1, y: 1), tool: .arrow)
+        let second = box(.zero, .zero, tool: .step)
+        let third = box(.zero, .zero, tool: .step)
+
+        XCTAssertEqual(Annotation.stepNumbers(in: [first, arrow, second, third])[third.id], 3)
+        XCTAssertEqual(Annotation.stepNumbers(in: [arrow, second, third])[third.id], 2)
+        XCTAssertNil(Annotation.stepNumbers(in: [first, arrow])[arrow.id])
+    }
+
+    // MARK: - Within a crop
+
+    func testMovingStopsAtTheCrop() {
+        let crop = CGRect(x: 0.2, y: 0.2, width: 0.5, height: 0.5)
+        let moved = box(CGPoint(x: 0.3, y: 0.3), CGPoint(x: 0.4, y: 0.4))
+            .moved(by: CGVector(dx: 0.9, dy: -0.9), within: crop)
+
+        assertRect(moved.bounds, CGRect(x: 0.6, y: 0.2, width: 0.1, height: 0.1))
+    }
+
+    /// After a crop a shape can sit partly outside. Moving it must not snap
+    /// it inside on the first frame, only stop it going further out.
+    func testAShapeAlreadyPastTheCropDoesNotJump() {
+        let crop = CGRect(x: 0.2, y: 0, width: 0.8, height: 1)
+        let outside = box(CGPoint(x: 0.1, y: 0.3), CGPoint(x: 0.3, y: 0.4))
+
+        assertRect(outside.moved(by: CGVector(dx: 0, dy: 0.1), within: crop).bounds,
+                   CGRect(x: 0.1, y: 0.4, width: 0.2, height: 0.1))
+        assertRect(outside.moved(by: CGVector(dx: -0.1, dy: 0), within: crop).bounds,
+                   CGRect(x: 0.1, y: 0.3, width: 0.2, height: 0.1))
+    }
+
+    func testDuplicatesGetANewIdentity() {
+        let original = scribble()
+        let copy = original.duplicated()
+
+        XCTAssertNotEqual(copy.id, original.id)
+        XCTAssertEqual(copy.points, original.points)
+    }
 }

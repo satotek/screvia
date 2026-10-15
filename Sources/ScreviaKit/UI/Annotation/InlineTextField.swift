@@ -3,6 +3,10 @@ import SwiftUI
 
 struct InlineTextField: View {
     @Binding var text: String
+    /// The annotation's own font at the current zoom, so the text does not
+    /// jump in size when editing ends.
+    let font: NSFont
+    let horizontalPadding: CGFloat
     let onCommit: () -> Void
     let onCancel: () -> Void
 
@@ -16,9 +20,9 @@ struct InlineTextField: View {
                 .foregroundStyle(.white.opacity(0.55))
         )
         .textFieldStyle(.plain)
-        .font(.system(size: 18, weight: .semibold))
+        .font(Font(font))
         .foregroundStyle(.white)
-        .padding(.horizontal, 12)
+        .padding(.horizontal, horizontalPadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .background(.black.opacity(0.72), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay {

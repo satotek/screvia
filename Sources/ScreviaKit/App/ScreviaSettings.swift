@@ -89,6 +89,7 @@ final class ScreviaSettings: ObservableObject {
         static let padding = "padding"
         static let cornerRadius = "cornerRadius"
         static let shadowEnabled = "shadowEnabled"
+        static let annotationStyle = "annotationStyle"
     }
 
     private let defaults: UserDefaults
@@ -145,6 +146,16 @@ final class ScreviaSettings: ObservableObject {
         didSet { defaults.set(shadowEnabled, forKey: Key.shadowEnabled) }
     }
 
+    /// The editor's last-used style, so the next annotation starts from it.
+    /// Stored as JSON; anything unreadable falls back to the standard style.
+    @Published var annotationStyle: AnnotationStyle {
+        didSet {
+            if let data = try? JSONEncoder().encode(annotationStyle) {
+                defaults.set(data, forKey: Key.annotationStyle)
+            }
+        }
+    }
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
 
@@ -166,6 +177,8 @@ final class ScreviaSettings: ObservableObject {
         padding = defaults.object(forKey: Key.padding) as? Double ?? 0
         cornerRadius = defaults.object(forKey: Key.cornerRadius) as? Double ?? 16
         shadowEnabled = defaults.object(forKey: Key.shadowEnabled) as? Bool ?? false
+        annotationStyle = defaults.data(forKey: Key.annotationStyle)
+            .flatMap { try? JSONDecoder().decode(AnnotationStyle.self, from: $0) } ?? .standard
     }
 
     var saveDirectoryURL: URL {
@@ -195,6 +208,7 @@ final class ScreviaSettings: ObservableObject {
         padding = 0
         cornerRadius = 16
         shadowEnabled = false
+        annotationStyle = .standard
     }
 
     private static var defaultSaveDirectoryURL: URL {

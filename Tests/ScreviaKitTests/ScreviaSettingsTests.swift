@@ -64,6 +64,12 @@ final class ScreviaSettingsTests: XCTestCase {
         settings.padding = 24
         settings.cornerRadius = 8
         settings.shadowEnabled = true
+        var style = AnnotationStyle.standard
+        style.color = .blue
+        style.fillColor = .yellow
+        style.fontSize = 36
+        style.textAppearance = .outline
+        settings.annotationStyle = style
 
         // A second instance reads the same suite from scratch, which is what
         // a relaunch does.
@@ -82,6 +88,7 @@ final class ScreviaSettingsTests: XCTestCase {
         XCTAssertEqual(reloaded.padding, 24)
         XCTAssertEqual(reloaded.cornerRadius, 8)
         XCTAssertTrue(reloaded.shadowEnabled)
+        XCTAssertEqual(reloaded.annotationStyle, style)
     }
 
     /// A preferences file edited by hand, or written by a newer build, must
@@ -96,6 +103,14 @@ final class ScreviaSettingsTests: XCTestCase {
         XCTAssertEqual(settings.imageFormat, .png)
         XCTAssertEqual(settings.thumbnailPosition, .bottomRight)
         XCTAssertEqual(settings.backgroundStyle, .none)
+    }
+
+    /// A style written by a build with different fields must not stop the
+    /// editor from opening.
+    func testAnUnreadableAnnotationStyleFallsBackToTheStandardOne() {
+        defaults.set(Data("{\"colour\":\"red\"}".utf8), forKey: "annotationStyle")
+
+        XCTAssertEqual(ScreviaSettings(defaults: defaults).annotationStyle, .standard)
     }
 
     // MARK: - styleOptions
@@ -140,9 +155,11 @@ final class ScreviaSettingsTests: XCTestCase {
         settings.backgroundStyle = .sage
         settings.padding = 40
         settings.shadowEnabled = true
+        settings.annotationStyle.color = .green
 
         settings.reset()
 
+        XCTAssertEqual(settings.annotationStyle, .standard)
         XCTAssertEqual(settings.imageFormat, .png)
         XCTAssertEqual(settings.jpegQuality, 0.92)
         XCTAssertTrue(settings.copyToClipboard)
