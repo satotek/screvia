@@ -31,10 +31,17 @@ app at all.
 
 **Annotate**
 
-- Rectangle, ellipse, arrow, highlight and text
-- Blur and pixelate for redaction, rendered live on the canvas so what you see
-  before saving is what gets saved
-- Undo/redo with `⌘Z` / `⇧⌘Z`
+- Rectangle, ellipse, line, arrow, freehand, highlight, text and numbered
+  steps that renumber themselves
+- Colour, fill, line width and shadow; text in a box, outlined or plain, at
+  any size, with the last style remembered
+- Select, move, resize, duplicate and delete annotations; double-click text to
+  change it
+- Blur and pixelate for redaction, and crop, all drawn by the same renderer as
+  the saved image, so what you see is what gets saved
+- Open any image, not only captures: from the clipboard, a file, a drop on the
+  menu bar icon, or Finder's Open With
+- Undo/redo with `⌘Z` / `⇧⌘Z`, and Save As
 
 **Output**
 
