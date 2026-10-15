@@ -8,6 +8,10 @@ struct CaptureHubView: View {
     let onCaptureArea: () -> Void
     let onCaptureWindow: () -> Void
     let onCaptureScroll: () -> Void
+    let onCaptureText: () -> Void
+    let onCaptureLastArea: () -> Void
+    let captureDelay: Int
+    let onCaptureDelayChange: (Int) -> Void
     let onEditHistory: (CaptureHistoryEntry) -> Void
     let onCopyHistory: (CaptureHistoryEntry) -> Void
     let onPinHistory: (CaptureHistoryEntry) -> Void
@@ -27,6 +31,7 @@ struct CaptureHubView: View {
         VStack(alignment: .leading, spacing: 0) {
             header
             captureModes
+            captureExtras
             displayPicker
             editSources
             recentCaptureSection
@@ -108,6 +113,58 @@ struct CaptureHubView: View {
         }
         .padding(.horizontal, 14)
         .padding(.bottom, 14)
+    }
+
+    /// Capture modes that need no tile of their own, and the self-timer.
+    private var captureExtras: some View {
+        HStack(spacing: 2) {
+            FooterButton(
+                symbol: ShortcutAction.captureText.symbol,
+                title: L10n.text("app.captureText"),
+                action: onCaptureText
+            )
+            .help(shortcutHelp(L10n.text("preferences.captureText"), for: .captureText))
+            FooterButton(
+                symbol: ShortcutAction.captureLastArea.symbol,
+                title: L10n.text("app.captureLastArea"),
+                action: onCaptureLastArea
+            )
+            .help(shortcutHelp(L10n.text("preferences.captureLastArea"), for: .captureLastArea))
+            Spacer()
+            Menu {
+                Picker(L10n.text("app.timer"), selection: Binding(get: { captureDelay }, set: { onCaptureDelayChange($0) })) {
+                    ForEach(ScreviaSettings.captureDelayChoices, id: \.self) { seconds in
+                        Text(seconds == 0 ? L10n.text("app.timerOff") : L10n.format("app.timerSeconds", seconds))
+                            .tag(seconds)
+                    }
+                }
+                .pickerStyle(.inline)
+            } label: {
+                // Styled like FooterButton; a borderless menu would draw its
+                // label in the default control font instead.
+                Label(
+                    captureDelay == 0 ? L10n.text("app.timer") : L10n.format("app.timerSeconds", captureDelay),
+                    systemImage: "timer"
+                )
+                .font(.system(size: 11))
+                .foregroundStyle(captureDelay == 0 ? Color.secondary : ScreviaTheme.accent)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 4)
+                .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            }
+            .menuStyle(.button)
+            .buttonStyle(.plain)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .help(L10n.text("app.timerHelp"))
+        }
+        .padding(.horizontal, 10)
+        .padding(.bottom, 8)
+    }
+
+    private func shortcutHelp(_ title: String, for action: ShortcutAction) -> String {
+        let shortcut = shortcutLabel(for: action)
+        return shortcut.isEmpty ? title : "\(title)  \(shortcut)"
     }
 
     /// The editor for images Screvia did not capture.
@@ -421,6 +478,10 @@ private struct FooterButton: View {
         onCaptureArea: {},
         onCaptureWindow: {},
         onCaptureScroll: {},
+        onCaptureText: {},
+        onCaptureLastArea: {},
+        captureDelay: 0,
+        onCaptureDelayChange: { _ in },
         onEditHistory: { _ in },
         onCopyHistory: { _ in },
         onPinHistory: { _ in },
@@ -444,6 +505,10 @@ private struct FooterButton: View {
         onCaptureArea: {},
         onCaptureWindow: {},
         onCaptureScroll: {},
+        onCaptureText: {},
+        onCaptureLastArea: {},
+        captureDelay: 0,
+        onCaptureDelayChange: { _ in },
         onEditHistory: { _ in },
         onCopyHistory: { _ in },
         onPinHistory: { _ in },

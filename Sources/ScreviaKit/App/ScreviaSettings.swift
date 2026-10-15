@@ -90,6 +90,7 @@ final class ScreviaSettings: ObservableObject {
         static let cornerRadius = "cornerRadius"
         static let shadowEnabled = "shadowEnabled"
         static let annotationStyle = "annotationStyle"
+        static let captureDelay = "captureDelay"
     }
 
     private let defaults: UserDefaults
@@ -156,6 +157,14 @@ final class ScreviaSettings: ObservableObject {
         }
     }
 
+    /// Seconds between choosing what to capture and taking it, so a menu or
+    /// hover state can be set up first. Zero captures at once.
+    @Published var captureDelay: Int {
+        didSet { defaults.set(captureDelay, forKey: Key.captureDelay) }
+    }
+
+    static let captureDelayChoices = [0, 3, 5, 10]
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
 
@@ -179,6 +188,8 @@ final class ScreviaSettings: ObservableObject {
         shadowEnabled = defaults.object(forKey: Key.shadowEnabled) as? Bool ?? false
         annotationStyle = defaults.data(forKey: Key.annotationStyle)
             .flatMap { try? JSONDecoder().decode(AnnotationStyle.self, from: $0) } ?? .standard
+        let storedDelay = defaults.object(forKey: Key.captureDelay) as? Int ?? 0
+        captureDelay = Self.captureDelayChoices.contains(storedDelay) ? storedDelay : 0
     }
 
     var saveDirectoryURL: URL {
@@ -209,6 +220,7 @@ final class ScreviaSettings: ObservableObject {
         cornerRadius = 16
         shadowEnabled = false
         annotationStyle = .standard
+        captureDelay = 0
     }
 
     private static var defaultSaveDirectoryURL: URL {

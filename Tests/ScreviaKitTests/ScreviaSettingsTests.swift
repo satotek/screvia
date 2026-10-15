@@ -70,6 +70,7 @@ final class ScreviaSettingsTests: XCTestCase {
         style.fontSize = 36
         style.textAppearance = .outline
         settings.annotationStyle = style
+        settings.captureDelay = 5
 
         // A second instance reads the same suite from scratch, which is what
         // a relaunch does.
@@ -89,6 +90,15 @@ final class ScreviaSettingsTests: XCTestCase {
         XCTAssertEqual(reloaded.cornerRadius, 8)
         XCTAssertTrue(reloaded.shadowEnabled)
         XCTAssertEqual(reloaded.annotationStyle, style)
+        XCTAssertEqual(reloaded.captureDelay, 5)
+    }
+
+    /// The hub offers fixed choices; anything else stored, such as a minute
+    /// from a hand-edited preferences file, starts the timer as off.
+    func testAStoredDelayOutsideTheChoicesFallsBackToOff() {
+        defaults.set(60, forKey: "captureDelay")
+
+        XCTAssertEqual(ScreviaSettings(defaults: defaults).captureDelay, 0)
     }
 
     /// A preferences file edited by hand, or written by a newer build, must
@@ -156,10 +166,12 @@ final class ScreviaSettingsTests: XCTestCase {
         settings.padding = 40
         settings.shadowEnabled = true
         settings.annotationStyle.color = .green
+        settings.captureDelay = 10
 
         settings.reset()
 
         XCTAssertEqual(settings.annotationStyle, .standard)
+        XCTAssertEqual(settings.captureDelay, 0)
         XCTAssertEqual(settings.imageFormat, .png)
         XCTAssertEqual(settings.jpegQuality, 0.92)
         XCTAssertTrue(settings.copyToClipboard)

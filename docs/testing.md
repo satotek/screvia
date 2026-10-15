@@ -32,7 +32,8 @@ app.
 
 **`ScreviaSettingsTests`** — defaults, round-tripping every property through
 `UserDefaults` (the editor's style included, with unreadable JSON falling back
-to the standard style), unknown stored enum values falling back instead of crashing,
+to the standard style; the self-timer, with values outside its choices
+falling back to off), unknown stored enum values falling back instead of crashing,
 `styleOptions` clamping negative geometry, and `reset` persisting rather than
 only changing memory.
 
@@ -77,6 +78,11 @@ distinctness.
 screen without losing pixels, non-images rejected, and the clipboard read
 whether it holds pixels or a copied image file (on a private pasteboard, so
 the user's clipboard is untouched).
+
+**`TextRecognizerTests`** — English lines read top to bottom, Japanese read
+as Japanese (it fails if English is listed first), and an image with no text
+reported as such. The first run of the suite loads Vision's model and takes
+several seconds; later runs are fast.
 
 **`LocalizationKeyTests`** — every enum case whose title is looked up as
 `"prefix.\(rawValue)"` has an en and a ja string in the catalog. Such keys

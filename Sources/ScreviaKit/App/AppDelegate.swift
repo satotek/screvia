@@ -28,6 +28,9 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem.button?.window?.delegate = self
         self.statusItem = statusItem
 
+        captureCoordinator.onCountdown = { [weak self] remaining in
+            self?.showCountdown(remaining)
+        }
         captureCoordinator.start()
 
         if !ScreenRecordingPermission.isGranted {
@@ -120,6 +123,20 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
                         self?.captureCoordinator.captureScroll()
                     }
                 },
+                onCaptureText: { [weak self] in
+                    self?.closeCaptureHub {
+                        self?.captureCoordinator.captureText()
+                    }
+                },
+                onCaptureLastArea: { [weak self] in
+                    self?.closeCaptureHub {
+                        self?.captureCoordinator.captureLastArea()
+                    }
+                },
+                captureDelay: settings.captureDelay,
+                onCaptureDelayChange: { [weak self] seconds in
+                    self?.settings.captureDelay = seconds
+                },
                 onEditHistory: { [weak self] entry in
                     self?.closeCaptureHub()
                     self?.captureCoordinator.editHistoryEntry(entry)
@@ -181,6 +198,23 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         capturePopover = popover
         NSApp.activate(ignoringOtherApps: true)
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+    }
+
+    /// The self-timer's remaining seconds beside the menu bar icon, the one
+    /// place that is on screen whatever the user is setting up.
+    private func showCountdown(_ remaining: Int?) {
+        guard let statusItem, let button = statusItem.button else {
+            return
+        }
+        if let remaining {
+            statusItem.length = NSStatusItem.variableLength
+            button.title = " \(remaining)"
+            button.imagePosition = .imageLeading
+        } else {
+            button.title = ""
+            button.imagePosition = .imageOnly
+            statusItem.length = NSStatusItem.squareLength
+        }
     }
 
     /// Closes the hub, then starts `capture` once the hub is off screen.

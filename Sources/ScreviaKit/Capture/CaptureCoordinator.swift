@@ -19,8 +19,17 @@ final class CaptureCoordinator: ObservableObject {
     private let editorController = AnnotationEditorController()
     private let historyStore = CaptureHistoryStore()
 
+    private let toastController = ToastController()
+
     private var areaSelectionController: AreaSelectionController?
     private var windowSelectionController: WindowSelectionController?
+
+    /// The last area chosen, for capturing the same area again. Kept for the
+    /// session only: displays and their arrangement can change in between.
+    private var lastArea: (selection: CGRect, displayID: UInt32)?
+
+    /// Shows the self-timer's remaining seconds, and nil when it is done.
+    var onCountdown: ((Int?) -> Void)?
 
     @Published private(set) var captureHistory: [CaptureHistoryEntry]
 
@@ -44,6 +53,10 @@ final class CaptureCoordinator: ObservableObject {
                 self.captureWindow()
             case .captureScroll:
                 self.captureScroll()
+            case .captureText:
+                self.captureText()
+            case .captureLastArea:
+                self.captureLastArea()
             }
         }
     }
@@ -64,11 +77,16 @@ final class CaptureCoordinator: ObservableObject {
             return
         }
 
-        do {
-            let image = try captureService.captureMainDisplay(on: screen)
-            finishCapture(image, on: screen)
-        } catch {
-            ErrorPresenter.present(error)
+        afterDelay { [weak self] in
+            guard let self else {
+                return
+            }
+            do {
+                let image = try self.captureService.captureMainDisplay(on: screen)
+                self.finishCapture(image, on: screen)
+            } catch {
+                ErrorPresenter.present(error)
+            }
         }
     }
 
@@ -81,13 +99,101 @@ final class CaptureCoordinator: ObservableObject {
             }
 
             self.areaSelectionController = nil
+            self.rememberArea(selection, on: screen)
+            self.afterDelay { [weak self] in
+                self?.captureArea(selection, on: screen)
+            }
+        }
+    }
+
+    private func captureArea(_ selection: CGRect, on screen: NSScreen) {
+        do {
+            let image = try captureService.capture(selection: selection, on: screen)
+            finishCapture(image, on: screen)
+        } catch {
+            ErrorPresenter.present(error)
+        }
+    }
+
+    private func rememberArea(_ selection: CGRect, on screen: NSScreen) {
+        if let displayID = ScreenUtilities.displayID(for: screen) {
+            lastArea = (selection, displayID)
+        }
+    }
+
+    func captureLastArea() {
+        guard
+            let lastArea,
+            let screen = ScreenUtilities.screen(for: lastArea.displayID)
+        else {
+            ErrorPresenter.present(CaptureService.CaptureError.noPreviousArea)
+            return
+        }
+        afterDelay { [weak self] in
+            self?.captureArea(lastArea.selection, on: screen)
+        }
+    }
+
+    /// Captures an area and copies the text in it rather than the image.
+    func captureText() {
+        let controller = AreaSelectionController()
+        areaSelectionController = controller
+        controller.start { [weak self] selection, screen in
+            guard let self else {
+                return
+            }
+            self.areaSelectionController = nil
+            self.rememberArea(selection, on: screen)
 
             do {
                 let image = try self.captureService.capture(selection: selection, on: screen)
-                self.finishCapture(image, on: screen)
+                self.copyText(in: image)
             } catch {
                 ErrorPresenter.present(error)
             }
+        }
+    }
+
+    /// Recognizes the text in `image` and puts it on the clipboard.
+    func copyText(in image: NSImage) {
+        guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            ErrorPresenter.present(TextRecognizer.RecognitionError.noText)
+            return
+        }
+        Task { [weak self] in
+            do {
+                let text = try await TextRecognizer.text(in: cgImage)
+                guard let self else {
+                    return
+                }
+                self.imageStore.copyToClipboard(text: text)
+                self.toastController.show(
+                    L10n.format("toast.textCopied", text.count),
+                    symbol: "text.viewfinder"
+                )
+            } catch {
+                ErrorPresenter.present(error)
+            }
+        }
+    }
+
+    /// Runs `capture` after the self-timer, counting down in the menu bar.
+    /// The countdown is cleared a frame before the capture so it is not in
+    /// the shot.
+    private func afterDelay(_ capture: @escaping () -> Void) {
+        let delay = settings.captureDelay
+        guard delay > 0 else {
+            capture()
+            return
+        }
+        Task { [weak self] in
+            for remaining in stride(from: delay, to: 0, by: -1) {
+                self?.onCountdown?(remaining)
+                try? await Task.sleep(for: .seconds(1))
+            }
+            self?.onCountdown?(nil)
+            try? await Task.sleep(for: .milliseconds(100))
+            capture()
         }
     }
 
@@ -101,20 +207,26 @@ final class CaptureCoordinator: ObservableObject {
 
             self.windowSelectionController = nil
 
-            Task { [weak self] in
-                guard let self else {
-                    return
-                }
+            self.afterDelay { [weak self] in
+                self?.captureSelectedWindow(selectedWindow, on: screen)
+            }
+        }
+    }
 
-                do {
-                    let image = try await self.captureService.captureWindow(
-                        windowID: selectedWindow.id,
-                        includeShadow: self.settings.includeWindowShadow
-                    )
-                    self.finishCapture(image, on: screen)
-                } catch {
-                    ErrorPresenter.present(error)
-                }
+    private func captureSelectedWindow(_ selectedWindow: CapturableWindow, on screen: NSScreen) {
+        Task { [weak self] in
+            guard let self else {
+                return
+            }
+
+            do {
+                let image = try await self.captureService.captureWindow(
+                    windowID: selectedWindow.id,
+                    includeShadow: self.settings.includeWindowShadow
+                )
+                self.finishCapture(image, on: screen)
+            } catch {
+                ErrorPresenter.present(error)
             }
         }
     }
@@ -454,6 +566,9 @@ final class CaptureCoordinator: ObservableObject {
             },
             onCopy: { [weak self] annotatedImage in
                 self?.imageStore.copyToClipboard(annotatedImage)
+            },
+            onCopyText: { [weak self] annotatedImage in
+                self?.copyText(in: annotatedImage)
             }
         )
     }

@@ -13,7 +13,8 @@ final class AnnotationEditorController {
         onStyleChange: @escaping (AnnotationStyle) -> Void,
         onSave: @escaping (NSImage) -> Void,
         onSaveAs: @escaping (NSImage, URL) -> Void,
-        onCopy: @escaping (NSImage) -> Void
+        onCopy: @escaping (NSImage) -> Void,
+        onCopyText: @escaping (NSImage) -> Void
     ) {
         window?.close()
 
@@ -32,7 +33,8 @@ final class AnnotationEditorController {
                     onSaveAs(image, url)
                 }
             },
-            onCopy: onCopy
+            onCopy: onCopy,
+            onCopyText: onCopyText
         )
 
         let window = NSWindow(
