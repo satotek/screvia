@@ -26,7 +26,12 @@ nonisolated enum HistoryThumbnailLoader {
     }
 
     static func pngData(for url: URL, maxPixelSize: Int = 256) -> Data? {
-        let cacheKey = "\(url.standardizedFileURL.path)#\(maxPixelSize)" as NSString
+        // The modification date is in the key because a re-edited capture is
+        // saved over its own file.
+        // FileManager rather than URL resource values, which a URL can cache.
+        let modified = ((try? FileManager.default.attributesOfItem(atPath: url.path))?[.modificationDate] as? Date)?
+            .timeIntervalSinceReferenceDate ?? 0
+        let cacheKey = "\(url.standardizedFileURL.path)#\(modified)#\(maxPixelSize)" as NSString
         if let cached = cacheBox.cache.object(forKey: cacheKey) {
             return cached as Data
         }
