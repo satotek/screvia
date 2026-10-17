@@ -4,6 +4,11 @@ import UniformTypeIdentifiers
 
 public final class AppDelegate: NSObject, NSApplicationDelegate {
     public override init() {
+        // AppKit's own tooltips, sooner than the system's delay of over a
+        // second: the editor's icon-only tools depend on them to say what
+        // they do. A registered default, so a value set with `defaults`
+        // still wins.
+        UserDefaults.standard.register(defaults: ["NSInitialToolTipDelay": 500])
         super.init()
     }
 
@@ -15,6 +20,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
 
     public func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
+        NSApp.mainMenu = makeMainMenu()
 
         let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         statusItem.button?.image = Self.menuBarImage()
@@ -79,6 +85,42 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
         captureCoordinator.editImage(at: url)
+    }
+
+    /// A click on the Dock icon, there while the editor is open, brings the
+    /// editor forward.
+    public func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        NSApp.windows.first { $0.isVisible && $0.canBecomeMain }?.makeKeyAndOrderFront(nil)
+        return false
+    }
+
+    /// Shown only while the app is a regular one, when the editor is open.
+    /// Just the app menu: an Edit menu's ⌘Z and ⌘C would take those keys from
+    /// the editor's own undo and copy.
+    private func makeMainMenu() -> NSMenu {
+        let appMenu = NSMenu()
+        appMenu.addItem(withTitle: L10n.text("about.menuTitle"), action: #selector(openAbout), keyEquivalent: "")
+            .target = self
+        appMenu.addItem(withTitle: L10n.text("app.settings"), action: #selector(openPreferences), keyEquivalent: ",")
+            .target = self
+        appMenu.addItem(.separator())
+        appMenu.addItem(withTitle: L10n.text("app.hide"), action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
+        appMenu.addItem(.separator())
+        appMenu.addItem(withTitle: L10n.text("app.quitScrevia"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+
+        let appItem = NSMenuItem()
+        appItem.submenu = appMenu
+        let mainMenu = NSMenu()
+        mainMenu.addItem(appItem)
+        return mainMenu
+    }
+
+    @objc private func openAbout() {
+        windowsCoordinator.openAbout()
+    }
+
+    @objc private func openPreferences() {
+        windowsCoordinator.openPreferences(settings: settings)
     }
 
     public func applicationWillTerminate(_ notification: Notification) {

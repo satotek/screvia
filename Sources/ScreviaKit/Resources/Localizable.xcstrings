@@ -785,6 +785,22 @@
         }
       }
     },
+    "app.hide": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide Screvia"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screvia を隠す"
+          }
+        }
+      }
+    },
     "app.lastCapture": {
       "localizations": {
         "en": {
@@ -941,6 +957,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "終了"
+          }
+        }
+      }
+    },
+    "app.quitScrevia": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit Screvia"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screvia を終了"
           }
         }
       }
