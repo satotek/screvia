@@ -75,7 +75,7 @@ image extending past the visible rect so annotation space still lines up,
 and zoom growing the scrollable content.
 
 **`HistoryThumbnailLoaderTests`** — thumbnail sizing and cache-key
-distinctness.
+distinctness, including a file replaced at the same path.
 
 **`ImageImportTests`** — imported images sized like a capture from this
 screen without losing pixels, non-images rejected, and the clipboard read
@@ -139,7 +139,7 @@ unfixed code**. Re-introduce the bug, run the suite, see it go red, then
 restore the fix. A regression test that was never seen failing is not yet
 known to test anything.
 
-Two current tests came from this, both marked `/// Regression test.` in
+Three current tests came from this, all marked `/// Regression test.` in
 source:
 
 - `ImageStitcherTests.testStoreWritesADistinctFilePerIndex` — every scroll
@@ -148,8 +148,11 @@ source:
 - `HistoryThumbnailLoaderTests.testDifferentFilesDoNotShareACacheEntry` — the
   cache key was a constant, so the first thumbnail generated was returned for
   every entry in the history strip.
+- `HistoryThumbnailLoaderTests.testAReplacedFileGetsANewThumbnail` — the
+  cache was keyed by path alone, so saving a reopened edit over its file
+  left the history strip showing the old picture.
 
-Both were missing string interpolations (`"frame-(index).png"` instead of
+The first two were missing string interpolations (`"frame-(index).png"` instead of
 `"frame-\(index).png"`), which compile perfectly happily as literals.
 
 ## Where to add next

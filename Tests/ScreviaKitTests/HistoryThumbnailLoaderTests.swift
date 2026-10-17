@@ -90,6 +90,19 @@ final class HistoryThumbnailLoaderTests: XCTestCase {
         XCTAssertEqual(large.width, 128)
     }
 
+    /// Regression test. Saving a re-edited capture replaces its file, and
+    /// the cache, keyed by path alone, kept showing the old picture.
+    func testAReplacedFileGetsANewThumbnail() throws {
+        let url = try writePNG(named: "reedited.png", width: 400, height: 100)
+        let before = try size(of: try XCTUnwrap(HistoryThumbnailLoader.pngData(for: url, maxPixelSize: 80)))
+
+        _ = try writePNG(named: "reedited.png", width: 100, height: 400)
+        let after = try size(of: try XCTUnwrap(HistoryThumbnailLoader.pngData(for: url, maxPixelSize: 80)))
+
+        XCTAssertGreaterThan(before.width, before.height)
+        XCTAssertGreaterThan(after.height, after.width, "The thumbnail should show the replaced file")
+    }
+
     func testRepeatedRequestsForTheSameThumbnailAgree() throws {
         let url = try writePNG(named: "cached.png", width: 300, height: 200)
 
