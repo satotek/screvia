@@ -45,7 +45,8 @@ app at all.
 - Lines and arrows bend from a handle in the middle; arrowheads open or
   filled, at one end or both
 - Colour, fill, line width and shadow; text in a box, outlined or plain, at
-  any size, with the last style remembered
+  any size and in a standard, rounded, serif or monospaced design, wrapping
+  in a box you drag out, with the last style remembered
 - Select, move, resize, duplicate and delete annotations with any tool, as
   in ShareX; double-click text to change it
 - The colour under the pointer, copied with Tab as HEX, CSS or Swift code; an

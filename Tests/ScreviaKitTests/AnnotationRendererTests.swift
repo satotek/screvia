@@ -331,4 +331,41 @@ final class AnnotationRendererTests: XCTestCase {
         XCTAssertLessThan(corner(radius: 0), 100)
         XCTAssertEqual(corner(radius: 16), 255)
     }
+
+    // MARK: - Text
+
+    /// Dragged out, a text box keeps its width and grows down as it wraps.
+    func testAWrappingTextBoxKeepsItsWidthAndGrowsDown() {
+        let line = "A sentence long enough to need more than one line"
+        let single = AnnotationRenderer.textBoxSize(line, style: .standard)
+        let wrapped = AnnotationRenderer.textBoxSize(line, style: .standard, width: 120)
+
+        XCTAssertEqual(wrapped.width, 120)
+        XCTAssertGreaterThan(wrapped.height, single.height * 2)
+    }
+
+    func testFittingKeepsAWrappingBoxsWidth() {
+        let box = Annotation(
+            tool: .text,
+            start: CGPoint(x: 0.1, y: 0.1),
+            end: CGPoint(x: 0.1, y: 0.1),
+            text: "Wrapped text that goes on",
+            textWidth: 100
+        )
+
+        let fitted = AnnotationRenderer.fitted(box, imageSize: CGSize(width: 1000, height: 1000))
+
+        XCTAssertEqual(fitted.bounds.width, 0.1, accuracy: 1e-9)
+        XCTAssertEqual(fitted.bounds.origin, CGPoint(x: 0.1, y: 0.1))
+    }
+
+    func testEachFontDesignIsItsOwnFont() {
+        let names = FontDesign.allCases.map { design -> String in
+            var style = AnnotationStyle.standard
+            style.fontDesign = design
+            return AnnotationRenderer.font(for: style, pointScale: 1).fontName
+        }
+
+        XCTAssertEqual(Set(names).count, FontDesign.allCases.count, "\(names)")
+    }
 }

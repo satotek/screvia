@@ -164,7 +164,7 @@ final class EditArchiveTests: XCTestCase {
         var json = try XCTUnwrap(
             try JSONSerialization.jsonObject(with: JSONEncoder().encode(AnnotationStyle.standard)) as? [String: Any]
         )
-        for key in ["magnification", "magnifierShape", "arrowHead", "arrowBothEnds", "cornerRadius", "stepFormat"] {
+        for key in ["magnification", "magnifierShape", "arrowHead", "arrowBothEnds", "cornerRadius", "stepFormat", "fontDesign"] {
             json[key] = nil
         }
 

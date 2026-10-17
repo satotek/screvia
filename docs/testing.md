@@ -78,7 +78,9 @@ image, a balloon's tail reaching its tip, the magnifier showing its focus rather
 than what is under it, only inside its circle when round, and keeping its
 proportions when aimed past the edge, border and shadow framing the
 cropped image at full resolution, filled heads and heads at both ends, a
-bent arrow drawn through its bend, and rounded corners.
+bent arrow drawn through its bend, rounded corners, a dragged-out text box
+keeping its width and growing down, and each font design being its own
+font.
 
 **`CanvasLayoutTests`** — fitting the image inside the margin, a cropped
 image extending past the visible rect so annotation space still lines up,

@@ -40,6 +40,14 @@ struct AnnotationStyleBar: View {
             }
 
             if tool.hasText {
+                Picker(L10n.text("style.fontDesign"), selection: binding(\.fontDesign)) {
+                    ForEach(FontDesign.allCases) { design in
+                        Text(design.title).tag(design)
+                    }
+                }
+                .fixedSize()
+                .help(L10n.text("style.fontDesign"))
+
                 Toggle(isOn: binding(\.isBold)) {
                     Image(systemName: "bold")
                 }
