@@ -72,8 +72,14 @@ hundreds long; each falls back to the system's Japanese font. Dragging with
 the text tool makes a box that wraps at that width, with side handles to
 change it; a click still makes one that grows with its single line.
 
-- Tools: inserted images, emoji stickers, smart eraser
-- Stacking order, paste from the clipboard
+Pictures come in by ⌘V or Insert Image and are annotations holding their
+PNG, so they move, resize in proportion from the corners, stack and survive
+re-editing like any other; they are not a toolbar tool, since they are
+placed rather than drawn. Emoji stickers are large plain text, which sizes
+like any label. Bring to Front, Send to Back and the steps between move the
+selection in the stacking order, which also numbers the steps.
+
+- Tools: smart eraser
 - Auto crop, rotate and flip, resize, canvas size
 - More image effects
 

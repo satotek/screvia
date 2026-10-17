@@ -15,11 +15,17 @@ nonisolated enum AnnotationTool: String, Codable, CaseIterable, Identifiable {
     case blur
     case pixelate
     case magnifier
+    /// A picture pasted or inserted. Not on the toolbar: it is placed by
+    /// Paste and Insert Image, not drawn.
+    case image
     case crop
     /// Not an annotation: selects text in the image, through Live Text.
     case liveText
 
     var id: String { rawValue }
+
+    /// The tools the toolbar offers, which is all but the inserted image.
+    static let toolbar = allCases.filter { $0 != .image }
 
     var symbolName: String {
         switch self {
@@ -49,6 +55,8 @@ nonisolated enum AnnotationTool: String, Codable, CaseIterable, Identifiable {
             return "square.grid.3x3"
         case .magnifier:
             return "plus.magnifyingglass"
+        case .image:
+            return "photo"
         case .crop:
             return "crop"
         case .liveText:
@@ -114,7 +122,7 @@ nonisolated enum AnnotationTool: String, Codable, CaseIterable, Identifiable {
     }
 
     var usesShadow: Bool {
-        usesColor
+        usesColor || self == .image
     }
 }
 
@@ -401,6 +409,8 @@ nonisolated struct Annotation: Identifiable, Equatable, Codable {
     /// The stroke of a freehand drawing, in the same space as `start`.
     var points: [CGPoint]
     var text: String?
+    /// The picture an inserted image shows, as PNG.
+    var imageData: Data?
     /// The width text wraps at, in image points, for a text box dragged
     /// out rather than clicked. Nil sizes the box to one line of text.
     var textWidth: CGFloat?
@@ -425,6 +435,7 @@ nonisolated struct Annotation: Identifiable, Equatable, Codable {
         points: [CGPoint] = [],
         text: String? = nil,
         textWidth: CGFloat? = nil,
+        imageData: Data? = nil,
         tail: CGPoint? = nil,
         bend: CGPoint? = nil,
         focus: CGPoint? = nil,
@@ -437,6 +448,7 @@ nonisolated struct Annotation: Identifiable, Equatable, Codable {
         self.points = points
         self.text = text
         self.textWidth = textWidth
+        self.imageData = imageData
         self.tail = tail
         self.bend = bend
         self.focus = focus
@@ -446,7 +458,7 @@ nonisolated struct Annotation: Identifiable, Equatable, Codable {
     /// A copy with a new identity, so it can be selected and undone apart
     /// from the original.
     func duplicated() -> Annotation {
-        Annotation(tool: tool, start: start, end: end, points: points, text: text, textWidth: textWidth, tail: tail, bend: bend, focus: focus, style: style)
+        Annotation(tool: tool, start: start, end: end, points: points, text: text, textWidth: textWidth, imageData: imageData, tail: tail, bend: bend, focus: focus, style: style)
     }
 
     /// The number each step marker shows: its position among the steps, so
@@ -468,6 +480,29 @@ nonisolated struct AnnotationDocument: Equatable, Codable {
     /// narrows this, so annotations outside it survive an undo.
     var crop = CGRect(x: 0, y: 0, width: 1, height: 1)
     var effects = ImageEffects()
+}
+
+nonisolated enum StackingMove {
+    case front, forward, backward, back
+}
+
+nonisolated extension AnnotationDocument {
+    /// Moves an annotation in the stacking order, where later is on top.
+    /// Steps are numbered by that order, so moving one renumbers them, as in
+    /// ShareX.
+    mutating func move(_ id: Annotation.ID, _ move: StackingMove) {
+        guard let index = annotations.firstIndex(where: { $0.id == id }) else {
+            return
+        }
+        let annotation = annotations.remove(at: index)
+        let destination = switch move {
+        case .front: annotations.count
+        case .forward: min(index + 1, annotations.count)
+        case .backward: max(index - 1, 0)
+        case .back: 0
+        }
+        annotations.insert(annotation, at: destination)
+    }
 }
 
 // In an extension, so the memberwise initializer survives.

@@ -44,6 +44,8 @@ app at all.
   numbered 1 2 3, A B C or I II III that renumber themselves
 - Lines and arrows bend from a handle in the middle; arrowheads open or
   filled, at one end or both
+- Paste or insert pictures and emoji stickers, and arrange annotations from
+  front to back
 - Colour, fill, line width and shadow; text in a box, outlined or plain, at
   any size and in a standard, rounded, serif or monospaced design, wrapping
   in a box you drag out, with the last style remembered

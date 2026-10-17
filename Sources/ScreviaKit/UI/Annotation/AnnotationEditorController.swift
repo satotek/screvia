@@ -47,7 +47,13 @@ final class AnnotationEditorController {
             },
             onCopy: onCopy,
             onCopyText: onCopyText,
-            onCopyColor: onCopyColor
+            onCopyColor: onCopyColor,
+            onReadClipboardImage: { [weak self] in
+                try? ImageImport.image(from: .general, scale: self?.backingScale ?? 2)
+            },
+            onChooseImage: { [weak self] insert in
+                self?.chooseImage(then: insert)
+            }
         )
 
         let window = NSWindow(
@@ -99,6 +105,32 @@ final class AnnotationEditorController {
         }
         NSApp.setActivationPolicy(.regular)
         NSApp.activate()
+    }
+
+    /// The editor's screen, which sets an inserted picture's size in points
+    /// as it does for an imported image.
+    private var backingScale: CGFloat {
+        window?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2
+    }
+
+    private func chooseImage(then insert: @escaping (NSImage) -> Void) {
+        guard let window else {
+            return
+        }
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = ImageImport.contentTypes
+        panel.allowsMultipleSelection = false
+        let scale = backingScale
+        panel.beginSheetModal(for: window) { response in
+            guard response == .OK, let url = panel.url else {
+                return
+            }
+            do {
+                insert(try ImageImport.image(from: try Data(contentsOf: url), scale: scale))
+            } catch {
+                ErrorPresenter.present(error)
+            }
+        }
     }
 
     /// A sheet on the editor, so it is clear which image is being saved.

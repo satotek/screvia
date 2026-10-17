@@ -151,6 +151,9 @@ final class EditArchiveTests: XCTestCase {
         saved.annotations.append(
             Annotation(tool: .balloon, start: .zero, end: CGPoint(x: 0.2, y: 0.1), text: "!", tail: CGPoint(x: 0.5, y: 0.5))
         )
+        saved.annotations.append(
+            Annotation(tool: .image, start: .zero, end: CGPoint(x: 0.2, y: 0.2), imageData: Data([0x89, 0x50, 0x4E, 0x47]))
+        )
 
         let decoded = try JSONDecoder().decode(AnnotationDocument.self, from: JSONEncoder().encode(saved))
 

@@ -65,7 +65,8 @@ and edge resizing, a box flipping when dragged past its opposite side,
 freehand points scaling with their box, step numbering, duplicates getting
 a new identity, a balloon's tail being its only handle, moving with it
 and catching clicks along its length, bent lines passing through their
-handle and hit along the curve, step labels in each format, and a magnifier enlarging an area
+handle and hit along the curve, step labels in each format, moving in the stacking order, a picture keeping
+its aspect from the anchored corner, and a magnifier enlarging an area
 smaller by its zoom around a focus that it carries when moved and that
 aiming moves without moving it, staying a circle in image points with only
 corner handles when round.
@@ -79,8 +80,8 @@ than what is under it, only inside its circle when round, and keeping its
 proportions when aimed past the edge, border and shadow framing the
 cropped image at full resolution, filled heads and heads at both ends, a
 bent arrow drawn through its bend, rounded corners, a dragged-out text box
-keeping its width and growing down, and each font design being its own
-font.
+keeping its width and growing down, each font design being its own font,
+and an inserted picture drawn in its box.
 
 **`CanvasLayoutTests`** — fitting the image inside the margin, a cropped
 image extending past the visible rect so annotation space still lines up,

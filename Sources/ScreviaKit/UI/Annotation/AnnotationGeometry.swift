@@ -167,7 +167,17 @@ nonisolated extension Annotation {
     /// circle rather than an ellipse. The corner at `anchor` stays put and
     /// the box takes its longer side.
     func squared(imageSize: CGSize, from anchor: CGPoint) -> Annotation {
-        guard tool == .magnifier, style.magnifierShape == .circle, imageSize.width > 0, imageSize.height > 0 else {
+        guard tool == .magnifier, style.magnifierShape == .circle else {
+            return self
+        }
+        return keepingAspect(1, imageSize: imageSize, from: anchor)
+    }
+
+    /// The box with `aspect` (width over height, in image points), as large
+    /// as reaches the dragged corner along its longer side. The corner at
+    /// `anchor` stays put.
+    func keepingAspect(_ aspect: CGFloat, imageSize: CGSize, from anchor: CGPoint) -> Annotation {
+        guard aspect > 0, imageSize.width > 0, imageSize.height > 0 else {
             return self
         }
         let box = bounds
@@ -175,16 +185,20 @@ nonisolated extension Annotation {
             x: abs(box.minX - anchor.x) > abs(box.maxX - anchor.x) ? box.minX : box.maxX,
             y: abs(box.minY - anchor.y) > abs(box.maxY - anchor.y) ? box.minY : box.maxY
         )
-        let side = max(box.width * imageSize.width, box.height * imageSize.height)
+        let width = box.width * imageSize.width
+        let height = box.height * imageSize.height
+        let size = width / aspect >= height
+            ? CGSize(width: width, height: width / aspect)
+            : CGSize(width: height * aspect, height: height)
         let corner = CGPoint(
-            x: anchor.x + (far.x < anchor.x ? -1 : 1) * side / imageSize.width,
-            y: anchor.y + (far.y < anchor.y ? -1 : 1) * side / imageSize.height
+            x: anchor.x + (far.x < anchor.x ? -1 : 1) * size.width / imageSize.width,
+            y: anchor.y + (far.y < anchor.y ? -1 : 1) * size.height / imageSize.height
         )
 
-        var squared = self
-        squared.start = CGPoint(x: min(anchor.x, corner.x), y: min(anchor.y, corner.y))
-        squared.end = CGPoint(x: max(anchor.x, corner.x), y: max(anchor.y, corner.y))
-        return squared
+        var kept = self
+        kept.start = CGPoint(x: min(anchor.x, corner.x), y: min(anchor.y, corner.y))
+        kept.end = CGPoint(x: max(anchor.x, corner.x), y: max(anchor.y, corner.y))
+        return kept
     }
 
     /// The corner opposite a corner handle, which stays put while it is
