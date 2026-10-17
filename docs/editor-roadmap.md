@@ -60,8 +60,13 @@ room for it; the area it enlarges is then marked and can be dragged too.
 That stays off the plain drag, since a handle in the middle would take the
 drag that moves it.
 
-- Tools: curved arrow, inserted images, emoji stickers, smart eraser
-- Corner radius, arrowhead styles, step formats (letters, Roman numerals)
+Lines and arrows bend through a handle halfway along, as Shottr's do,
+rather than through a separate curved-arrow tool; dragging it back onto the
+straight line straightens them. Arrows have open or filled heads, at one end
+or both; rectangles have rounded corners; steps count in numbers, letters or
+Roman numerals.
+
+- Tools: inserted images, emoji stickers, smart eraser
 - Stacking order, paste from the clipboard
 - Auto crop, rotate and flip, resize, canvas size
 - More image effects

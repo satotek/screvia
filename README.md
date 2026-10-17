@@ -38,10 +38,12 @@ app at all.
 
 **Annotate**
 
-- Rectangle, ellipse, line, arrow, freehand, highlight, text, speech
-  balloons with a tail you can point, a round or square magnifier at 1.5–4×
-  that ⌥-dragging aims at something else, and numbered steps that renumber
-  themselves
+- Rectangle (square or rounded), ellipse, line, arrow, freehand, highlight,
+  text, speech balloons with a tail you can point, a round or square
+  magnifier at 1.5–4× that ⌥-dragging aims at something else, and steps
+  numbered 1 2 3, A B C or I II III that renumber themselves
+- Lines and arrows bend from a handle in the middle; arrowheads open or
+  filled, at one end or both
 - Colour, fill, line width and shadow; text in a box, outlined or plain, at
   any size, with the last style remembered
 - Select, move, resize, duplicate and delete annotations with any tool, as

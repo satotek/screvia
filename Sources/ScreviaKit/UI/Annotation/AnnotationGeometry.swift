@@ -47,6 +47,8 @@ nonisolated enum AnnotationHandle: Hashable {
     case end
     /// The tip of a speech balloon's tail.
     case tail
+    /// The middle of a line or arrow, which bends it.
+    case bend
     /// A point on the bounding box. A nil axis means the middle of that side,
     /// so `.box(x: .max, y: nil)` is the middle of the right edge.
     case box(x: Edge?, y: Edge?)
@@ -61,16 +63,47 @@ nonisolated extension Annotation {
     /// The bounding box in annotation space, whichever way it was drawn.
     var bounds: CGRect {
         if tool == .freehand, let first = points.first {
-            return points.dropFirst().reduce(CGRect(origin: first, size: .zero)) { box, point in
-                box.union(CGRect(origin: point, size: .zero))
-            }
+            return Self.box(around: points, first: first)
+        }
+        if bend != nil {
+            return Self.box(around: curve, first: start)
         }
         return endpointBox
     }
 
+    private static func box(around points: [CGPoint], first: CGPoint) -> CGRect {
+        points.reduce(CGRect(origin: first, size: .zero)) { box, point in
+            box.union(CGRect(origin: point, size: .zero))
+        }
+    }
+
+    /// The control point of the quadratic curve from `start` to `end` that
+    /// passes through `bend` halfway along.
+    var bendControl: CGPoint? {
+        bend.map { bend in
+            CGPoint(x: 2 * bend.x - (start.x + end.x) / 2, y: 2 * bend.y - (start.y + end.y) / 2)
+        }
+    }
+
+    /// A line or arrow as points along it, finely enough to hit and to bound
+    /// a bent one; a straight one is its two ends.
+    var curve: [CGPoint] {
+        guard let control = bendControl else {
+            return [start, end]
+        }
+        return (0...24).map { step in
+            let t = CGFloat(step) / 24
+            let u = 1 - t
+            return CGPoint(
+                x: u * u * start.x + 2 * u * t * control.x + t * t * end.x,
+                y: u * u * start.y + 2 * u * t * control.y + t * t * end.y
+            )
+        }
+    }
+
     var handles: [AnnotationHandle] {
         if tool.isLine {
-            return [.start, .end]
+            return [.start, .end, .bend]
         }
         if tool == .balloon {
             return [.tail]
@@ -178,6 +211,8 @@ nonisolated extension Annotation {
             return end
         case .tail:
             return tail ?? CGPoint(x: bounds.midX, y: bounds.midY)
+        case .bend:
+            return bend ?? CGPoint(x: (start.x + end.x) / 2, y: (start.y + end.y) / 2)
         case let .box(x, y):
             let bounds = bounds
             return CGPoint(
@@ -212,9 +247,10 @@ nonisolated extension Annotation {
     /// Without `insideCounts`, a see-through box counts only its outline.
     func contains(_ point: CGPoint, in imageRect: CGRect, tolerance: CGFloat, insideCounts: Bool = true) -> Bool {
         if tool.isLine {
-            let a = AnnotationSpace.point(start, in: imageRect)
-            let b = AnnotationSpace.point(end, in: imageRect)
-            return Self.distance(from: point, toSegment: a, b) <= tolerance
+            let path = curve.map { AnnotationSpace.point($0, in: imageRect) }
+            return zip(path, path.dropFirst()).contains { a, b in
+                Self.distance(from: point, toSegment: a, b) <= tolerance
+            }
         }
         if tool == .freehand {
             let stroke = points.map { AnnotationSpace.point($0, in: imageRect) }
@@ -270,6 +306,7 @@ nonisolated extension Annotation {
         // magnifier shows may lie further out, so those are held at it.
         moved.tail = tail.map { AnnotationSpace.clamped(CGPoint(x: $0.x + dx, y: $0.y + dy), to: area) }
         moved.focus = focus.map { AnnotationSpace.clamped(CGPoint(x: $0.x + dx, y: $0.y + dy), to: area) }
+        moved.bend = bend.map { CGPoint(x: $0.x + dx, y: $0.y + dy) }
         return moved
     }
 
@@ -289,6 +326,11 @@ nonisolated extension Annotation {
             resized.end = point
         case .tail:
             resized.tail = point
+        case .bend:
+            // Dragged back onto the straight line, it is straight again, so a
+            // bend can be undone by hand.
+            let middle = CGPoint(x: (start.x + end.x) / 2, y: (start.y + end.y) / 2)
+            resized.bend = hypot(point.x - middle.x, point.y - middle.y) < 0.004 ? nil : point
         case let .box(x, y):
             let bounds = bounds
             var (minX, maxX, minY, maxY) = (bounds.minX, bounds.maxX, bounds.minY, bounds.maxY)

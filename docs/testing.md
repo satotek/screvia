@@ -64,7 +64,8 @@ at the image or crop edge without snapping a shape already past it, corner
 and edge resizing, a box flipping when dragged past its opposite side,
 freehand points scaling with their box, step numbering, duplicates getting
 a new identity, a balloon's tail being its only handle, moving with it
-and catching clicks along its length, and a magnifier enlarging an area
+and catching clicks along its length, bent lines passing through their
+handle and hit along the curve, step labels in each format, and a magnifier enlarging an area
 smaller by its zoom around a focus that it carries when moved and that
 aiming moves without moving it, staying a circle in image points with only
 corner handles when round.
@@ -75,8 +76,9 @@ despite the coordinate flip, crops cut at full resolution and from the top,
 text boxes following the font size, steps staying round on a non-square
 image, a balloon's tail reaching its tip, the magnifier showing its focus rather
 than what is under it, only inside its circle when round, and keeping its
-proportions when aimed past the edge, and border and shadow framing the cropped image at full
-resolution.
+proportions when aimed past the edge, border and shadow framing the
+cropped image at full resolution, filled heads and heads at both ends, a
+bent arrow drawn through its bend, and rounded corners.
 
 **`CanvasLayoutTests`** — fitting the image inside the margin, a cropped
 image extending past the visible rect so annotation space still lines up,
