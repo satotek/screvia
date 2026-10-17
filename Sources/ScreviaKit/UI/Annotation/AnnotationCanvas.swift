@@ -16,8 +16,18 @@ struct AnnotationCanvas: View {
     /// Set while a text field is open, so the editor can keep shortcuts such
     /// as Delete away from it.
     @Binding var isEditingText: Bool
+    /// Screen points per image point, which the zoom readout shows.
+    @Binding var displayScale: CGFloat
+    /// While set, a click picks the colour under it instead of editing.
+    let isPickingColor: Bool
     /// Called with the document as it was before each finished edit.
     let onRecordUndo: (AnnotationDocument) -> Void
+    /// Where the pointer is over the visible image, in annotation space, or
+    /// nil once it leaves.
+    let onHover: (CGPoint?) -> Void
+    /// Gets the area the eyedropper picked from, in annotation space: empty
+    /// for a click, which picks the one point at its origin.
+    let onPickColor: (CGRect) -> Void
 
     /// What the current pointer drag is doing, decided when it starts.
     private enum DragAction {
@@ -31,6 +41,8 @@ struct AnnotationCanvas: View {
         case resizing(original: Annotation, handle: AnnotationHandle, before: AnnotationDocument)
         /// Moving what a magnifier enlarges, not the magnifier.
         case aiming(original: Annotation, before: AnnotationDocument)
+        /// The eyedropper dragged over an area to average.
+        case sampling(start: CGPoint, end: CGPoint)
         /// A click on empty space with the select tool.
         case idle
     }
@@ -129,6 +141,14 @@ struct AnnotationCanvas: View {
                 }
                 .frame(width: layout.contentSize.width, height: layout.contentSize.height)
                 .contentShape(Rectangle())
+                .onContinuousHover { phase in
+                    switch phase {
+                    case let .active(location) where layout.visibleRect.contains(location):
+                        onHover(AnnotationSpace.normalizedPoint(location, in: layout.imageRect, within: document.crop))
+                    default:
+                        onHover(nil)
+                    }
+                }
                 .gesture(
                     // Zero distance, so a plain click can select, place a
                     // step or start a text box.
@@ -145,6 +165,9 @@ struct AnnotationCanvas: View {
                     // Live Text handles its own drags.
                     including: selectedTool == .liveText ? .subviews : .all
                 )
+            }
+            .onChange(of: layout, initial: true) { _, layout in
+                displayScale = layout.imageRect.width / max(imageSize.width, 1)
             }
             .simultaneousGesture(
                 MagnificationGesture()
@@ -217,6 +240,12 @@ struct AnnotationCanvas: View {
                     )
                 }
             }
+        }
+
+        if case let .sampling(start, end) = dragAction {
+            let area = Path(AnnotationSpace.rect(Self.box(start, end), in: imageRect))
+            context.stroke(area, with: .color(.black.opacity(0.6)), style: StrokeStyle(lineWidth: 1))
+            context.stroke(area, with: .color(.white), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
         }
 
         if case let .cropping(start, end) = dragAction {
@@ -309,6 +338,11 @@ struct AnnotationCanvas: View {
         }
 
         let imageRect = layout.imageRect
+        if isPickingColor {
+            let start = AnnotationSpace.normalizedPoint(point, in: imageRect, within: document.crop)
+            dragAction = layout.visibleRect.contains(point) ? .sampling(start: start, end: start) : .idle
+            return
+        }
 
         if let selectedAnnotation,
            let handle = selectedAnnotation.handle(at: point, in: imageRect, radius: Self.handleHitRadius) {
@@ -368,6 +402,8 @@ struct AnnotationCanvas: View {
             dragAction = .drawing(start: start, end: point)
         case let .cropping(start, _):
             dragAction = .cropping(start: start, end: point)
+        case let .sampling(start, _):
+            dragAction = .sampling(start: start, end: point)
         case let .sketching(points):
             let last = AnnotationSpace.point(points[points.count - 1], in: imageRect)
             let next = AnnotationSpace.point(point, in: imageRect)
@@ -447,6 +483,11 @@ struct AnnotationCanvas: View {
                 beginTextEditing(existing: original)
             }
             refreshFilteredRegions()
+        case let .sampling(start, _):
+            let area = Self.box(start, end)
+            let size = AnnotationSpace.rect(area, in: layout.imageRect).size
+            // A few points of drift is still a click.
+            onPickColor(max(size.width, size.height) < 4 ? CGRect(origin: start, size: .zero) : area)
         case let .resizing(_, _, before), let .aiming(_, before):
             if document != before {
                 onRecordUndo(before)

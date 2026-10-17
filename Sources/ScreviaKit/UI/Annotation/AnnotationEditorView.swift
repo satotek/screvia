@@ -8,12 +8,16 @@ struct AnnotationEditorView: View {
     /// The file Save replaces, when this is a saved edit opened again.
     let replacingFileName: String?
     let onStyleChange: (AnnotationStyle) -> Void
+    let onColorFormatChange: (ColorCodeFormat) -> Void
     /// Get the flattened image and the document it came from, so the edit
     /// can be opened again.
     let onSave: (NSImage, AnnotationDocument) -> Void
     let onSaveAs: (NSImage, AnnotationDocument) -> Void
     let onCopy: (NSImage) -> Void
     let onCopyText: (NSImage) -> Void
+    /// Gets a colour's hex code to put on the clipboard.
+    let onCopyColor: (String) -> Void
+    private let pixelReader: PixelReader?
 
     @State private var selectedTool: AnnotationTool = .rectangle
     @State private var document: AnnotationDocument
@@ -23,28 +27,40 @@ struct AnnotationEditorView: View {
     @State private var selection: Annotation.ID?
     @State private var style: AnnotationStyle
     @State private var isEditingText = false
+    @State private var displayScale: CGFloat = 1
+    @State private var isPickingColor = false
+    /// The colour under the pointer, while it is over the image.
+    @State private var hoverColor: AnnotationColor?
+    @State private var colorFormat: ColorCodeFormat
 
     init(
         image: NSImage,
         previewImage: NSImage,
         initialStyle: AnnotationStyle,
+        initialColorFormat: ColorCodeFormat = .hex,
         initialDocument: AnnotationDocument = AnnotationDocument(),
         replacingFileName: String? = nil,
         onStyleChange: @escaping (AnnotationStyle) -> Void,
+        onColorFormatChange: @escaping (ColorCodeFormat) -> Void = { _ in },
         onSave: @escaping (NSImage, AnnotationDocument) -> Void,
         onSaveAs: @escaping (NSImage, AnnotationDocument) -> Void,
         onCopy: @escaping (NSImage) -> Void,
-        onCopyText: @escaping (NSImage) -> Void
+        onCopyText: @escaping (NSImage) -> Void,
+        onCopyColor: @escaping (String) -> Void
     ) {
         self.image = image
         self.previewImage = previewImage
         self.initialStyle = initialStyle
         self.replacingFileName = replacingFileName
         self.onStyleChange = onStyleChange
+        self.onColorFormatChange = onColorFormatChange
+        _colorFormat = State(initialValue: initialColorFormat)
         self.onSave = onSave
         self.onSaveAs = onSaveAs
         self.onCopy = onCopy
         self.onCopyText = onCopyText
+        self.onCopyColor = onCopyColor
+        pixelReader = PixelReader(image)
         _style = State(initialValue: initialStyle)
         _document = State(initialValue: initialDocument)
     }
@@ -69,7 +85,13 @@ struct AnnotationEditorView: View {
                 selection: $selection,
                 zoomScale: $zoomScale,
                 isEditingText: $isEditingText,
-                onRecordUndo: recordUndo
+                displayScale: $displayScale,
+                isPickingColor: isPickingColor,
+                onRecordUndo: recordUndo,
+                onHover: { point in
+                    hoverColor = point.flatMap { pixelReader?.color(at: $0) }
+                },
+                onPickColor: pickColor(in:)
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(nsColor: .underPageBackgroundColor))
@@ -153,6 +175,19 @@ struct AnnotationEditorView: View {
             edit(&document.annotations[index].style)
             document.annotations[index] = AnnotationRenderer.fitted(document.annotations[index], imageSize: imageSize)
         }
+    }
+
+    /// The eyedropper: the colour at a point, or an area's average, becomes
+    /// the colour for new annotations and the selected one, like a swatch,
+    /// and is copied, as Shottr's picker copies.
+    private func pickColor(in area: CGRect) {
+        isPickingColor = false
+        let picked = area.isEmpty ? pixelReader?.color(at: area.origin) : pixelReader?.averageColor(in: area)
+        guard let picked else {
+            return
+        }
+        applyStyle { $0.color = picked }
+        onCopyColor(colorFormat.code(for: picked))
     }
 
     private func dropStaleSelection() {
@@ -319,7 +354,9 @@ struct AnnotationEditorView: View {
             .keyboardShortcut("-", modifiers: [.command])
             .help("\(L10n.text("annotation.zoomOut"))  ⌘−")
 
-            Text(L10n.format("annotation.zoomPercent", Int((zoomScale * 100).rounded())))
+            // Against the image's own size, as other editors show it, not
+            // against the fitted size the zoom buttons step from.
+            Text(L10n.format("annotation.zoomPercent", Int((displayScale * 100).rounded())))
                 .font(.system(size: 10, weight: .semibold, design: .monospaced))
                 .foregroundStyle(.secondary)
                 .frame(minWidth: 48)
@@ -361,7 +398,14 @@ struct AnnotationEditorView: View {
     }
 
     private var footer: some View {
-        HStack {
+        HStack(spacing: 12) {
+            colorReadout
+
+            Text(outputSizeDescription)
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary)
+                .help(L10n.text("annotation.outputSizeHelp"))
+
             Text(
                 L10n.format(
                     document.annotations.count == 1 ? "annotation.count.one" : "annotation.count.many",
@@ -401,6 +445,81 @@ struct AnnotationEditorView: View {
         .padding(.vertical, 10)
     }
 
+    /// The eyedropper, then the colour under the pointer as a swatch and its
+    /// hex code, which ⇧⌘C copies.
+    private var colorReadout: some View {
+        HStack(spacing: 6) {
+            Toggle(isOn: $isPickingColor) {
+                Image(systemName: "eyedropper")
+            }
+            .toggleStyle(.button)
+            .buttonStyle(.borderless)
+            .help(L10n.text("annotation.eyedropperHelp"))
+
+            RoundedRectangle(cornerRadius: 3)
+                .fill(hoverColor.map { Color(cgColor: $0.cgColor) } ?? .clear)
+                .frame(width: 14, height: 14)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 3)
+                        .strokeBorder(Color.primary.opacity(0.25), lineWidth: 1)
+                }
+
+            Button(hoverColor.map(colorFormat.code(for:)) ?? "—") {
+                if let hoverColor {
+                    onCopyColor(colorFormat.code(for: hoverColor))
+                }
+            }
+            .buttonStyle(.plain)
+            .font(.caption.monospaced())
+            .foregroundStyle(hoverColor == nil ? .tertiary : .secondary)
+            .lineLimit(1)
+            // Tab, as in Shottr. Off while typing, where Tab belongs to the
+            // text field.
+            .keyboardShortcut(.tab, modifiers: [])
+            .disabled(hoverColor == nil || isEditingText)
+            .help(L10n.text("annotation.copyColorHelp"))
+
+            Menu {
+                Picker(L10n.text("annotation.colorFormat"), selection: Binding(
+                    get: { colorFormat },
+                    set: { format in
+                        colorFormat = format
+                        onColorFormatChange(format)
+                    }
+                )) {
+                    ForEach(ColorCodeFormat.allCases) { format in
+                        Text(format.title).tag(format)
+                    }
+                }
+                .pickerStyle(.inline)
+            } label: {
+                Image(systemName: "chevron.up.chevron.down")
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .help(L10n.text("annotation.colorFormat"))
+        }
+    }
+
+    /// What Save writes: the crop's size in points, and in pixels too when
+    /// the capture has more than one per point.
+    private var outputSizeDescription: String {
+        let crop = document.crop
+        let width = Int((image.size.width * crop.width).rounded())
+        let height = Int((image.size.height * crop.height).rounded())
+        guard let pixels = pixelReader?.image, CGFloat(pixels.width) > image.size.width + 0.5 else {
+            return L10n.format("annotation.sizePoints", width, height)
+        }
+        return L10n.format(
+            "annotation.sizePointsAndPixels",
+            width,
+            height,
+            Int((CGFloat(pixels.width) * crop.width).rounded()),
+            Int((CGFloat(pixels.height) * crop.height).rounded())
+        )
+    }
+
     private func flattenedImage() -> NSImage {
         AnnotationRenderer.flatten(image, document: document)
     }
@@ -416,7 +535,8 @@ struct AnnotationEditorView: View {
         onSave: { _, _ in },
         onSaveAs: { _, _ in },
         onCopy: { _ in },
-        onCopyText: { _ in }
+        onCopyText: { _ in },
+        onCopyColor: { _ in }
     )
 }
 #endif

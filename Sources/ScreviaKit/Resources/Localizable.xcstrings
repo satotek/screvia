@@ -129,6 +129,38 @@
         }
       }
     },
+    "annotation.colorFormat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colour Format"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "カラーコードの形式"
+          }
+        }
+      }
+    },
+    "annotation.copyColorHelp": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The colour under the pointer. Tab copies it."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "カーソルの下の色です。Tab でコピーします。"
+          }
+        }
+      }
+    },
     "annotation.copyText": {
       "localizations": {
         "en": {
@@ -333,6 +365,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "ドラッグで楕円を描きます。"
+          }
+        }
+      }
+    },
+    "annotation.eyedropperHelp": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eyedropper: click a point, or drag over an area for its average colour. It becomes the drawing colour and is copied."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "スポイト：点をクリックするか、範囲をドラッグして平均の色を取ります。その色で描けるようになり、コピーもされます。"
           }
         }
       }
@@ -545,6 +593,22 @@
         }
       }
     },
+    "annotation.outputSizeHelp": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The size Save writes, after cropping and before effects"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存される画像のサイズです（切り抜き後、エフェクトを付ける前）"
+          }
+        }
+      }
+    },
     "annotation.pixelate": {
       "localizations": {
         "en": {
@@ -653,6 +717,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "注釈を選んで、移動やサイズ変更をします。どのツールでも図形をドラッグすれば動かせて、何もない場所をクリックするとこのツールに戻ります。"
+          }
+        }
+      }
+    },
+    "annotation.sizePoints": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d × %d pt"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d × %d pt"
+          }
+        }
+      }
+    },
+    "annotation.sizePointsAndPixels": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d × %d pt (%d × %d px)"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d × %d pt（%d × %d px）"
           }
         }
       }
@@ -1725,6 +1821,102 @@
           "stringUnit": {
             "state": "translated",
             "value": "黄"
+          }
+        }
+      }
+    },
+    "colorFormat.cssHSL": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CSS hsl()"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CSS hsl()"
+          }
+        }
+      }
+    },
+    "colorFormat.cssRGB": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CSS rgb()"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CSS rgb()"
+          }
+        }
+      }
+    },
+    "colorFormat.hex": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HEX"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HEX"
+          }
+        }
+      }
+    },
+    "colorFormat.hexWithoutHash": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HEX without #"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HEX（# なし）"
+          }
+        }
+      }
+    },
+    "colorFormat.swiftUI": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SwiftUI Color"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SwiftUI Color"
+          }
+        }
+      }
+    },
+    "colorFormat.uiColor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UIColor"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UIColor"
           }
         }
       }
@@ -3885,6 +4077,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "右上"
+          }
+        }
+      }
+    },
+    "toast.colorCopied": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copied %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ をコピーしました"
           }
         }
       }

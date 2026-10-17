@@ -71,6 +71,10 @@ final class LocalizationKeyTests: XCTestCase {
         XCTAssertEqual(AnnotationColor.paletteKeys.count, AnnotationColor.palette.count)
     }
 
+    func testColourFormats() throws {
+        try assertTranslated(ColorCodeFormat.allCases.map { "colorFormat.\($0.rawValue)" })
+    }
+
     func testMagnifierShapes() throws {
         try assertTranslated(MagnifierShape.allCases.map { "style.magnifierShape.\($0.rawValue)" })
     }
