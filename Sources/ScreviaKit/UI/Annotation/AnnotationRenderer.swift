@@ -80,6 +80,17 @@ nonisolated enum AnnotationRenderer {
                 context: context,
                 pointScale: pointScale
             )
+        case .image:
+            if let picture = picture(for: annotation) {
+                // Through a transparency layer, so the picture casts the
+                // shadow as one shape rather than by its transparent box.
+                context.beginTransparencyLayer(auxiliaryInfo: nil)
+                drawImage(picture, in: rect, context: context)
+                context.endTransparencyLayer()
+            } else {
+                context.setFillColor(CGColor(gray: 0.5, alpha: 0.3))
+                context.fill(rect)
+            }
         case .magnifier:
             if annotation.isMagnifyingElsewhere {
                 drawMagnifiedArea(
@@ -208,6 +219,35 @@ nonisolated enum AnnotationRenderer {
                 stepNumber: stepNumbers[annotation.id] ?? 1
             )
         }
+    }
+
+    // MARK: - Inserted pictures
+
+    // Decoding PNG on every frame of a drag would stutter, so decoded
+    // pictures are kept, by the annotation and the size of its data.
+    // NSCache is thread-safe; the box only tells the compiler so.
+    private final class PictureCache: @unchecked Sendable {
+        let cache = NSCache<NSString, CGImage>()
+    }
+
+    private static let pictures = PictureCache()
+
+    static func picture(for annotation: Annotation) -> CGImage? {
+        guard let data = annotation.imageData else {
+            return nil
+        }
+        let key = "\(annotation.id.uuidString)#\(data.count)" as NSString
+        if let cached = pictures.cache.object(forKey: key) {
+            return cached
+        }
+        guard
+            let source = CGImageSourceCreateWithData(data as CFData, nil),
+            let picture = CGImageSourceCreateImageAtIndex(source, 0, nil)
+        else {
+            return nil
+        }
+        pictures.cache.setObject(picture, forKey: key)
+        return picture
     }
 
     // MARK: - Sizing

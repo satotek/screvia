@@ -368,4 +368,22 @@ final class AnnotationRendererTests: XCTestCase {
 
         XCTAssertEqual(Set(names).count, FontDesign.allCases.count, "\(names)")
     }
+
+    // MARK: - Pictures
+
+    func testAnInsertedPictureIsDrawnInItsBox() throws {
+        let red = TestImages.solidCGImage(width: 10, height: 10, r: 255, g: 0, b: 0)
+        let data = try XCTUnwrap(NSBitmapImageRep(cgImage: red).representation(using: .png, properties: [:]))
+        let picture = Annotation(
+            tool: .image,
+            start: CGPoint(x: 0.5, y: 0),
+            end: CGPoint(x: 1, y: 1),
+            imageData: data
+        )
+
+        let flattened = AnnotationRenderer.flatten(threeTimesImage(), document: AnnotationDocument(annotations: [picture]))
+
+        XCTAssertEqual(pixel(of: flattened, x: 225, y: 75).g, 0, "inside the picture")
+        XCTAssertEqual(pixel(of: flattened, x: 75, y: 75).g, 255, "beside it")
+    }
 }

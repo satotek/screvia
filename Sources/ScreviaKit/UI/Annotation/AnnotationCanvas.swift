@@ -432,6 +432,13 @@ struct AnnotationCanvas: View {
             ))
         case let .resizing(original, handle, _):
             var resized = original.resized(handle, to: point, within: document.crop)
+            if original.tool == .image, let anchor = original.anchor(opposite: handle) {
+                // A picture keeps its shape from the corners; the sides
+                // still stretch it, for when that is wanted.
+                let box = original.bounds
+                let aspect = (box.width * imageSize.width) / max(box.height * imageSize.height, .ulpOfOne)
+                resized = resized.keepingAspect(aspect, imageSize: imageSize, from: anchor)
+            }
             if resized.textWidth != nil {
                 resized.textWidth = max(resized.bounds.width * imageSize.width, Self.minimumWrapWidth)
                 resized = AnnotationRenderer.fitted(resized, imageSize: imageSize)

@@ -129,6 +129,38 @@
         }
       }
     },
+    "annotation.bringForward": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bring Forward  ⌘]"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前面へ  ⌘]"
+          }
+        }
+      }
+    },
+    "annotation.bringToFront": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bring to Front  ⇧⌘]"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最前面へ  ⇧⌘]"
+          }
+        }
+      }
+    },
     "annotation.colorFormat": {
       "localizations": {
         "en": {
@@ -449,6 +481,54 @@
         }
       }
     },
+    "annotation.image": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Image"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画像"
+          }
+        }
+      }
+    },
+    "annotation.image.usage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A pasted or inserted picture. Drag a corner to resize it in proportion."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "貼り付けたり挿入したりした画像です。角をドラッグすると、縦横比を保ったまま大きさを変えられます。"
+          }
+        }
+      }
+    },
+    "annotation.insertImage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Insert Image…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画像を挿入…"
+          }
+        }
+      }
+    },
     "annotation.line": {
       "localizations": {
         "en": {
@@ -609,6 +689,22 @@
         }
       }
     },
+    "annotation.pasteImage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste Image  ⌘V"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画像を貼り付け  ⌘V"
+          }
+        }
+      }
+    },
     "annotation.pixelate": {
       "localizations": {
         "en": {
@@ -721,6 +817,38 @@
         }
       }
     },
+    "annotation.sendBackward": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send Backward  ⌘["
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "背面へ  ⌘["
+          }
+        }
+      }
+    },
+    "annotation.sendToBack": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send to Back  ⇧⌘["
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最背面へ  ⇧⌘["
+          }
+        }
+      }
+    },
     "annotation.sizePoints": {
       "localizations": {
         "en": {
@@ -781,6 +909,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "クリックで ①②③ と順に番号を置きます。消すと番号が詰まります。"
+          }
+        }
+      }
+    },
+    "annotation.stickers": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Emoji Stickers"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "絵文字スタンプ"
+          }
+        }
+      }
+    },
+    "annotation.stickersUsage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Place an emoji, sized like a label."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "絵文字を置きます。文字と同じように大きさを変えられます。"
           }
         }
       }

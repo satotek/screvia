@@ -411,4 +411,38 @@ final class AnnotationGeometryTests: XCTestCase {
         XCTAssertEqual([1, 4, 9, 14, 40, 1994].map(StepFormat.roman.label), ["I", "IV", "IX", "XIV", "XL", "MCMXCIV"])
         XCTAssertEqual(StepFormat.number.label(12), "12")
     }
+
+    // MARK: - Stacking and pictures
+
+    func testMovingInTheStackingOrder() {
+        let a = box(.zero, CGPoint(x: 0.1, y: 0.1))
+        let b = box(.zero, CGPoint(x: 0.2, y: 0.2))
+        let c = box(.zero, CGPoint(x: 0.3, y: 0.3))
+        func order(_ move: StackingMove, _ id: UUID) -> [UUID] {
+            var document = AnnotationDocument(annotations: [a, b, c])
+            document.move(id, move)
+            return document.annotations.map(\.id)
+        }
+
+        XCTAssertEqual(order(.front, a.id), [b.id, c.id, a.id])
+        XCTAssertEqual(order(.forward, a.id), [b.id, a.id, c.id])
+        XCTAssertEqual(order(.backward, c.id), [a.id, c.id, b.id])
+        XCTAssertEqual(order(.back, c.id), [c.id, a.id, b.id])
+        XCTAssertEqual(order(.forward, c.id), [a.id, b.id, c.id], "already on top")
+    }
+
+    /// Dragging a picture's corner keeps its shape, in image points: on a
+    /// 200×100 image, a square picture is twice as tall in fractions.
+    func testKeepingAnAspectFromTheAnchor() {
+        let dragged = box(CGPoint(x: 0.1, y: 0.1), CGPoint(x: 0.4, y: 0.2), tool: .image)
+
+        let kept = dragged.keepingAspect(1, imageSize: CGSize(width: 200, height: 100), from: CGPoint(x: 0.1, y: 0.1))
+
+        assertRect(kept.bounds, CGRect(x: 0.1, y: 0.1, width: 0.3, height: 0.6))
+    }
+
+    func testPictureToolsAreNotOnTheToolbar() {
+        XCTAssertFalse(AnnotationTool.toolbar.contains(.image))
+        XCTAssertEqual(AnnotationTool.toolbar.count, AnnotationTool.allCases.count - 1)
+    }
 }

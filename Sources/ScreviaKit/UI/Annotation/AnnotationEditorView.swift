@@ -17,6 +17,10 @@ struct AnnotationEditorView: View {
     let onCopyText: (NSImage) -> Void
     /// Gets a colour's hex code to put on the clipboard.
     let onCopyColor: (String) -> Void
+    /// The image on the clipboard, if there is one, for Paste.
+    let onReadClipboardImage: () -> NSImage?
+    /// Asks for an image file and hands it over, for Insert Image.
+    let onChooseImage: (@escaping (NSImage) -> Void) -> Void
     private let pixelReader: PixelReader?
 
     @State private var selectedTool: AnnotationTool = .rectangle
@@ -46,7 +50,9 @@ struct AnnotationEditorView: View {
         onSaveAs: @escaping (NSImage, AnnotationDocument) -> Void,
         onCopy: @escaping (NSImage) -> Void,
         onCopyText: @escaping (NSImage) -> Void,
-        onCopyColor: @escaping (String) -> Void
+        onCopyColor: @escaping (String) -> Void,
+        onReadClipboardImage: @escaping () -> NSImage? = { nil },
+        onChooseImage: @escaping (@escaping (NSImage) -> Void) -> Void = { _ in }
     ) {
         self.image = image
         self.previewImage = previewImage
@@ -60,6 +66,8 @@ struct AnnotationEditorView: View {
         self.onCopy = onCopy
         self.onCopyText = onCopyText
         self.onCopyColor = onCopyColor
+        self.onReadClipboardImage = onReadClipboardImage
+        self.onChooseImage = onChooseImage
         pixelReader = PixelReader(image)
         _style = State(initialValue: initialStyle)
         _document = State(initialValue: initialDocument)
@@ -190,6 +198,67 @@ struct AnnotationEditorView: View {
         onCopyColor(colorFormat.code(for: picked))
     }
 
+    // MARK: - Inserting
+
+    private func pasteImage() {
+        if let picture = onReadClipboardImage() {
+            insert(picture)
+        }
+    }
+
+    /// Puts `picture` in the middle of what is visible, at its own size in
+    /// points unless that would cover more than most of it, and selects it
+    /// so it can be moved straight away.
+    private func insert(_ picture: NSImage) {
+        guard
+            let cgImage = picture.cgImage(forProposedRect: nil, context: nil, hints: nil),
+            let data = NSBitmapImageRep(cgImage: cgImage).representation(using: .png, properties: [:]),
+            image.size.width > 0, image.size.height > 0
+        else {
+            return
+        }
+        let crop = document.crop
+        let visible = CGSize(width: image.size.width * crop.width, height: image.size.height * crop.height)
+        let shrink = min(1, visible.width * 0.6 / max(picture.size.width, 1), visible.height * 0.6 / max(picture.size.height, 1))
+        let size = CGSize(
+            width: picture.size.width * shrink / image.size.width,
+            height: picture.size.height * shrink / image.size.height
+        )
+        let inserted = Annotation(
+            tool: .image,
+            start: CGPoint(x: crop.midX - size.width / 2, y: crop.midY - size.height / 2),
+            end: CGPoint(x: crop.midX + size.width / 2, y: crop.midY + size.height / 2),
+            imageData: data,
+            style: style
+        )
+        change { $0.annotations.append(inserted) }
+        selection = inserted.id
+        selectedTool = .select
+    }
+
+    private func placeSticker(_ sticker: String) {
+        var stickerStyle = style
+        stickerStyle.textAppearance = .plain
+        stickerStyle.fontSize = 48
+        stickerStyle.hasShadow = false
+        let crop = document.crop
+        var placed = AnnotationRenderer.fitted(
+            Annotation(tool: .text, start: CGPoint(x: crop.midX, y: crop.midY), end: CGPoint(x: crop.midX, y: crop.midY), text: sticker, style: stickerStyle),
+            imageSize: image.size
+        )
+        placed = placed.moved(by: CGVector(dx: -placed.bounds.width / 2, dy: -placed.bounds.height / 2), within: crop)
+        change { $0.annotations.append(placed) }
+        selection = placed.id
+        selectedTool = .select
+    }
+
+    private func reorder(_ move: StackingMove) {
+        guard let selection else {
+            return
+        }
+        change { $0.move(selection, move) }
+    }
+
     private func dropStaleSelection() {
         if let selection, !document.annotations.contains(where: { $0.id == selection }) {
             self.selection = nil
@@ -200,7 +269,7 @@ struct AnnotationEditorView: View {
 
     private var toolbar: some View {
         HStack(spacing: 6) {
-            ForEach(AnnotationTool.allCases) { tool in
+            ForEach(AnnotationTool.toolbar) { tool in
                 Button {
                     selectedTool = tool
                 } label: {
@@ -248,6 +317,20 @@ struct AnnotationEditorView: View {
                 .help("\(L10n.text("annotation.delete"))  ⌫")
 
             Menu {
+                Button(L10n.text("annotation.insertImage"), systemImage: "photo.badge.plus") {
+                    onChooseImage(insert)
+                }
+                Button(L10n.text("annotation.pasteImage"), systemImage: "doc.on.clipboard", action: pasteImage)
+
+                Divider()
+
+                Button(L10n.text("annotation.bringToFront"), action: { reorder(.front) })
+                Button(L10n.text("annotation.bringForward"), action: { reorder(.forward) })
+                Button(L10n.text("annotation.sendBackward"), action: { reorder(.backward) })
+                Button(L10n.text("annotation.sendToBack"), action: { reorder(.back) })
+
+                Divider()
+
                 Button(L10n.text("annotation.deleteAll"), role: .destructive, action: deleteAll)
                     .disabled(document.annotations.isEmpty)
             } label: {
@@ -264,10 +347,13 @@ struct AnnotationEditorView: View {
 
             effectsMenu
 
+            stickerMenu
+
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 6)
+        .background(hiddenShortcuts)
     }
 
     private var styleBar: some View {
@@ -286,6 +372,49 @@ struct AnnotationEditorView: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 6)
         .frame(minHeight: 40)
+    }
+
+    /// Menu items' shortcuts work only while the menu is open, so these sit
+    /// on buttons that are always there, unseen.
+    private var hiddenShortcuts: some View {
+        Group {
+            Button("", action: pasteImage)
+                .keyboardShortcut("v", modifiers: [.command])
+            Button("", action: { reorder(.front) })
+                .keyboardShortcut("]", modifiers: [.command, .shift])
+            Button("", action: { reorder(.forward) })
+                .keyboardShortcut("]", modifiers: [.command])
+            Button("", action: { reorder(.backward) })
+                .keyboardShortcut("[", modifiers: [.command])
+            Button("", action: { reorder(.back) })
+                .keyboardShortcut("[", modifiers: [.command, .shift])
+        }
+        // ⌘V and the brackets belong to the text field while typing.
+        .disabled(isEditingText || selectedTool == .liveText)
+        .frame(width: 0, height: 0)
+        .opacity(0)
+        .accessibilityHidden(true)
+    }
+
+    private static let stickers = ["👍", "👎", "👉", "👀", "❤️", "⭐️", "✅", "❌", "⚠️", "❓", "💡", "🔥", "🎉", "😀", "😢", "🙏"]
+
+    /// Emoji placed as large plain text, so they size like any label.
+    private var stickerMenu: some View {
+        Menu {
+            ForEach(Self.stickers, id: \.self) { sticker in
+                Button(sticker) {
+                    placeSticker(sticker)
+                }
+            }
+        } label: {
+            Label(L10n.text("annotation.stickers"), systemImage: "face.smiling")
+                .labelStyle(.iconOnly)
+                .frame(width: 30, height: 28)
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help("\(L10n.text("annotation.stickers"))\n\(L10n.text("annotation.stickersUsage"))")
     }
 
     /// Effects frame the whole image, so they sit apart from the tools and
