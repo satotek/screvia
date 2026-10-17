@@ -3030,13 +3030,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Capturing"
+            "value": "When capturing"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "撮影"
+            "value": "撮影時"
           }
         }
       }
@@ -3153,22 +3153,6 @@
         }
       }
     },
-    "preferences.defaultFormat": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Default format"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "標準形式"
-          }
-        }
-      }
-    },
     "preferences.downscaleRetina": {
       "localizations": {
         "en": {
@@ -3233,18 +3217,18 @@
         }
       }
     },
-    "preferences.fileNameExample": {
+    "preferences.fileNameExampleValue": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Example"
+            "value": "Example: %@"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "例"
+            "value": "例：%@"
           }
         }
       }
@@ -3585,22 +3569,6 @@
         }
       }
     },
-    "preferences.quickAccess": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quick Access"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quick Access"
-          }
-        }
-      }
-    },
     "preferences.reset": {
       "localizations": {
         "en": {
@@ -3613,6 +3581,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "設定をすべてリセット"
+          }
+        }
+      }
+    },
+    "preferences.retina": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retina screens"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retina 画面"
           }
         }
       }
@@ -3649,18 +3633,50 @@
         }
       }
     },
-    "preferences.screenshotFrame": {
+    "preferences.saving": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Screenshot frame"
+            "value": "Saving"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "スクリーンショットのフレーム"
+            "value": "保存"
+          }
+        }
+      }
+    },
+    "preferences.seconds": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d s"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d 秒"
+          }
+        }
+      }
+    },
+    "preferences.shadow": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shadow"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "影"
           }
         }
       }
@@ -3766,13 +3782,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Text Capture"
+            "value": "Text recognition"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "テキストを撮影"
+            "value": "テキスト認識"
           }
         }
       }
@@ -3853,22 +3869,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "撮った画像はクリップボードにだけ入ります。履歴とサムネイルは、Screvia を終了するまで使えます。"
-          }
-        }
-      }
-    },
-    "preferences.whereCapturesGo": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Where captures go"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "撮影画像の保存場所"
           }
         }
       }
