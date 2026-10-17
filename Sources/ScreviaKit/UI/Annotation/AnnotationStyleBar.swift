@@ -62,6 +62,33 @@ struct AnnotationStyleBar: View {
                 magnifierControls
             }
 
+            if tool == .arrow {
+                arrowControls
+            }
+
+            if tool == .rectangle {
+                Picker(L10n.text("style.cornerRadius"), selection: binding(\.cornerRadius)) {
+                    ForEach(AnnotationStyle.cornerRadii, id: \.self) { radius in
+                        Text(radius == 0 ? L10n.text("style.squareCorners") : L10n.format("effects.points", Int(radius)))
+                            .tag(radius)
+                    }
+                }
+                .fixedSize()
+                .help(L10n.text("style.cornerRadius"))
+            }
+
+            if tool == .step {
+                Picker(L10n.text("style.stepFormat"), selection: binding(\.stepFormat)) {
+                    ForEach(StepFormat.allCases) { format in
+                        Text(format.label(1)).tag(format)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .fixedSize()
+                .help(L10n.text("style.stepFormat"))
+            }
+
             if tool.usesShadow {
                 Toggle(L10n.text("style.shadow"), isOn: binding(\.hasShadow))
                     .toggleStyle(.checkbox)
@@ -85,6 +112,28 @@ struct AnnotationStyleBar: View {
         }
         .font(.callout)
         .controlSize(.small)
+    }
+
+    private var arrowControls: some View {
+        HStack(spacing: 8) {
+            Picker(L10n.text("style.arrowHead"), selection: binding(\.arrowHead)) {
+                ForEach(ArrowHead.allCases) { head in
+                    Image(systemName: head.symbolName)
+                        .accessibilityLabel(head.title)
+                        .tag(head)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .fixedSize()
+            .help(L10n.text("style.arrowHead"))
+
+            Toggle(isOn: binding(\.arrowBothEnds)) {
+                Image(systemName: "arrow.left.and.right")
+            }
+            .toggleStyle(.button)
+            .help(L10n.text("style.arrowBothEnds"))
+        }
     }
 
     private var magnifierControls: some View {

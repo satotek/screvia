@@ -232,6 +232,71 @@ nonisolated enum MagnifierShape: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+nonisolated enum ArrowHead: String, Codable, CaseIterable, Identifiable {
+    /// Two strokes, as the arrow has always been drawn.
+    case open
+    case filled
+
+    var id: String { rawValue }
+
+    var title: String {
+        L10n.text("style.arrowHead.\(rawValue)")
+    }
+
+    var symbolName: String {
+        switch self {
+        case .open: "arrow.right"
+        case .filled: "arrowtriangle.right.fill"
+        }
+    }
+}
+
+/// How steps count: ①②③, Ⓐ Ⓑ Ⓒ or Roman numerals, as ShareX offers.
+nonisolated enum StepFormat: String, Codable, CaseIterable, Identifiable {
+    case number
+    case letter
+    case roman
+
+    var id: String { rawValue }
+
+    var title: String {
+        L10n.text("style.stepFormat.\(rawValue)")
+    }
+
+    /// The label for the `number`th step, counting from 1. Letters run on
+    /// past Z as AA, AB, as spreadsheet columns do.
+    func label(_ number: Int) -> String {
+        let number = max(number, 1)
+        switch self {
+        case .number:
+            return "\(number)"
+        case .letter:
+            var remaining = number
+            var label = ""
+            while remaining > 0 {
+                remaining -= 1
+                label = String(UnicodeScalar(UInt8(65 + remaining % 26))) + label
+                remaining /= 26
+            }
+            return label
+        case .roman:
+            let numerals: [(Int, String)] = [
+                (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"),
+                (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")
+            ]
+            var remaining = number
+            var label = ""
+            for (value, numeral) in numerals {
+                while remaining >= value {
+                    label += numeral
+                    remaining -= value
+                }
+            }
+            return label
+        }
+    }
+}
+
 /// How an annotation looks. Sizes are in image points, so they keep their
 /// proportion to the image at every zoom level and in the export.
 nonisolated struct AnnotationStyle: Codable, Equatable {
@@ -247,6 +312,12 @@ nonisolated struct AnnotationStyle: Codable, Equatable {
     var magnification: CGFloat = 2
     /// Round by default, like ShareX's.
     var magnifierShape: MagnifierShape = .circle
+    var arrowHead: ArrowHead = .open
+    /// A head at the start as well as the end.
+    var arrowBothEnds = false
+    /// For rectangles; zero is square corners.
+    var cornerRadius: CGFloat = 0
+    var stepFormat: StepFormat = .number
 
     static let standard = AnnotationStyle(
         color: .red,
@@ -261,6 +332,7 @@ nonisolated struct AnnotationStyle: Codable, Equatable {
     static let lineWidthRange: ClosedRange<CGFloat> = 1...24
     static let fontSizeRange: ClosedRange<CGFloat> = 8...144
     static let magnifications: [CGFloat] = [1.5, 2, 3, 4]
+    static let cornerRadii: [CGFloat] = [0, 4, 8, 16]
 }
 
 // In an extension, so the memberwise initializer survives.
@@ -268,11 +340,13 @@ nonisolated extension AnnotationStyle {
     private enum CodingKeys: String, CodingKey {
         case color, fillColor, lineWidth, fontSize, isBold, textAppearance, hasShadow
         case magnification, magnifierShape
+        case arrowHead, arrowBothEnds, cornerRadius, stepFormat
     }
 
     /// The style is kept in preferences and in archived edits, both written
-    /// before the magnifier had settings. Synthesized decoding would reject
-    /// them for the missing keys, losing the remembered style and the edit.
+    /// before the later settings existed. Synthesized decoding would reject
+    /// them for the missing keys, losing the remembered style and the edit,
+    /// so every setting added since the first release is optional here.
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         color = try container.decode(AnnotationColor.self, forKey: .color)
@@ -284,6 +358,10 @@ nonisolated extension AnnotationStyle {
         hasShadow = try container.decode(Bool.self, forKey: .hasShadow)
         magnification = try container.decodeIfPresent(CGFloat.self, forKey: .magnification) ?? 2
         magnifierShape = try container.decodeIfPresent(MagnifierShape.self, forKey: .magnifierShape) ?? .circle
+        arrowHead = try container.decodeIfPresent(ArrowHead.self, forKey: .arrowHead) ?? .open
+        arrowBothEnds = try container.decodeIfPresent(Bool.self, forKey: .arrowBothEnds) ?? false
+        cornerRadius = try container.decodeIfPresent(CGFloat.self, forKey: .cornerRadius) ?? 0
+        stepFormat = try container.decodeIfPresent(StepFormat.self, forKey: .stepFormat) ?? .number
     }
 }
 
@@ -301,6 +379,9 @@ nonisolated struct Annotation: Identifiable, Equatable, Codable {
     /// every other tool, which is also what edits saved before balloons
     /// decode to.
     var tail: CGPoint?
+    /// The point a bent line or arrow passes through halfway along, in the
+    /// same space as `start`. Nil is straight.
+    var bend: CGPoint?
     /// The middle of what a magnifier enlarges, in the same space as
     /// `start`. Nil enlarges what is under the magnifier, following it as it
     /// moves; set, the magnifier can sit away from what it shows.
@@ -315,6 +396,7 @@ nonisolated struct Annotation: Identifiable, Equatable, Codable {
         points: [CGPoint] = [],
         text: String? = nil,
         tail: CGPoint? = nil,
+        bend: CGPoint? = nil,
         focus: CGPoint? = nil,
         style: AnnotationStyle = .standard
     ) {
@@ -325,6 +407,7 @@ nonisolated struct Annotation: Identifiable, Equatable, Codable {
         self.points = points
         self.text = text
         self.tail = tail
+        self.bend = bend
         self.focus = focus
         self.style = style
     }
@@ -332,7 +415,7 @@ nonisolated struct Annotation: Identifiable, Equatable, Codable {
     /// A copy with a new identity, so it can be selected and undone apart
     /// from the original.
     func duplicated() -> Annotation {
-        Annotation(tool: tool, start: start, end: end, points: points, text: text, tail: tail, focus: focus, style: style)
+        Annotation(tool: tool, start: start, end: end, points: points, text: text, tail: tail, bend: bend, focus: focus, style: style)
     }
 
     /// The number each step marker shows: its position among the steps, so

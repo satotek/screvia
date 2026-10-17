@@ -158,13 +158,15 @@ final class EditArchiveTests: XCTestCase {
     }
 
     /// The style is remembered in preferences and archived with each edit,
-    /// both written before the magnifier had a zoom and a shape.
+    /// both written before the later settings, from the magnifier's zoom
+    /// and shape on, existed.
     func testAStyleFromBeforeMagnifierSettingsStillDecodes() throws {
         var json = try XCTUnwrap(
             try JSONSerialization.jsonObject(with: JSONEncoder().encode(AnnotationStyle.standard)) as? [String: Any]
         )
-        json["magnification"] = nil
-        json["magnifierShape"] = nil
+        for key in ["magnification", "magnifierShape", "arrowHead", "arrowBothEnds", "cornerRadius", "stepFormat"] {
+            json[key] = nil
+        }
 
         let decoded = try JSONDecoder().decode(AnnotationStyle.self, from: JSONSerialization.data(withJSONObject: json))
 

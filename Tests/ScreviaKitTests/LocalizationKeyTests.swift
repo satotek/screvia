@@ -75,6 +75,11 @@ final class LocalizationKeyTests: XCTestCase {
         try assertTranslated(ColorCodeFormat.allCases.map { "colorFormat.\($0.rawValue)" })
     }
 
+    func testArrowHeadsAndStepFormats() throws {
+        try assertTranslated(ArrowHead.allCases.map { "style.arrowHead.\($0.rawValue)" })
+        try assertTranslated(StepFormat.allCases.map { "style.stepFormat.\($0.rawValue)" })
+    }
+
     func testMagnifierShapes() throws {
         try assertTranslated(MagnifierShape.allCases.map { "style.magnifierShape.\($0.rawValue)" })
     }

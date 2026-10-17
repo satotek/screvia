@@ -54,13 +54,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Drag from where the arrow starts to what it points at."
+            "value": "Drag from where the arrow starts to what it points at. Drag the handle in the middle to bend it."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "矢印の根元から、指したい場所までドラッグします。"
+            "value": "矢印の根元から、指したい場所までドラッグします。真ん中のハンドルをドラッグすると曲げられます。"
           }
         }
       }
@@ -470,13 +470,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Drag to draw a straight line."
+            "value": "Drag to draw a straight line. Drag the handle in the middle to bend it."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ドラッグで直線を引きます。"
+            "value": "ドラッグで直線を引きます。真ん中のハンドルをドラッグすると曲げられます。"
           }
         }
       }
@@ -3649,6 +3649,70 @@
         }
       }
     },
+    "style.arrowBothEnds": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heads at both ends"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "両端に矢印"
+          }
+        }
+      }
+    },
+    "style.arrowHead": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arrowhead"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "矢印の先"
+          }
+        }
+      }
+    },
+    "style.arrowHead.filled": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filled"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "塗り"
+          }
+        }
+      }
+    },
+    "style.arrowHead.open": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "線"
+          }
+        }
+      }
+    },
     "style.bold": {
       "localizations": {
         "en": {
@@ -3661,6 +3725,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "太字"
+          }
+        }
+      }
+    },
+    "style.cornerRadius": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Corner Radius"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "角の丸み"
           }
         }
       }
@@ -3837,6 +3917,86 @@
           "stringUnit": {
             "state": "translated",
             "value": "影"
+          }
+        }
+      }
+    },
+    "style.squareCorners": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Square"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "角なし"
+          }
+        }
+      }
+    },
+    "style.stepFormat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numbering"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "番号の形式"
+          }
+        }
+      }
+    },
+    "style.stepFormat.letter": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letters"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アルファベット"
+          }
+        }
+      }
+    },
+    "style.stepFormat.number": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numbers"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "数字"
+          }
+        }
+      }
+    },
+    "style.stepFormat.roman": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Roman numerals"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ローマ数字"
           }
         }
       }

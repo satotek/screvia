@@ -44,11 +44,15 @@ nonisolated enum AnnotationRenderer {
         case .select, .crop, .liveText:
             break
         case .rectangle:
+            let radius = min(style.cornerRadius * pointScale, rect.width / 2, rect.height / 2)
+            let box = CGPath(roundedRect: rect, cornerWidth: radius, cornerHeight: radius, transform: nil)
             if let fill = style.fillColor {
                 context.setFillColor(fill.cgColor)
-                context.fill(rect)
+                context.addPath(box)
+                context.fillPath()
             }
-            context.stroke(rect)
+            context.addPath(box)
+            context.strokePath()
         case .ellipse:
             if let fill = style.fillColor {
                 context.setFillColor(fill.cgColor)
@@ -80,17 +84,15 @@ nonisolated enum AnnotationRenderer {
             }
             drawMagnifier(filteredRegion, shape: style.magnifierShape, in: rect, context: context)
         case .step:
-            drawStep(stepNumber, style: style, in: rect, context: context)
+            drawStep(style.stepFormat.label(stepNumber), style: style, in: rect, context: context)
         case .blur, .pixelate:
             if let filteredRegion {
                 drawImage(filteredRegion, in: rect, context: context)
             } else {
                 drawRedactionSketch(for: annotation.tool, in: rect, context: context, pointScale: pointScale)
             }
-        case .line:
-            context.move(to: AnnotationSpace.point(annotation.start, in: imageRect))
-            context.addLine(to: AnnotationSpace.point(annotation.end, in: imageRect))
-            context.strokePath()
+        case .line, .arrow:
+            drawLine(annotation, in: context, imageRect: imageRect, pointScale: pointScale)
         case .freehand:
             let stroke = annotation.points.map { AnnotationSpace.point($0, in: imageRect) }
             guard let first = stroke.first else {
@@ -100,23 +102,84 @@ nonisolated enum AnnotationRenderer {
             // A lone point still shows, as a dot the width of the line.
             context.addLines(between: stroke.count == 1 ? [first, first] : stroke)
             context.strokePath()
-        case .arrow:
-            let start = AnnotationSpace.point(annotation.start, in: imageRect)
-            let end = AnnotationSpace.point(annotation.end, in: imageRect)
-            let angle = atan2(end.y - start.y, end.x - start.x)
-            let wingLength = (10 + style.lineWidth) * pointScale
-
-            context.move(to: start)
-            context.addLine(to: end)
-            for wing in [angle - .pi / 6, angle + .pi / 6] {
-                context.move(to: CGPoint(
-                    x: end.x - wingLength * cos(wing),
-                    y: end.y - wingLength * sin(wing)
-                ))
-                context.addLine(to: end)
-            }
-            context.strokePath()
         }
+    }
+
+    /// A line or arrow, straight or bent through its `bend`, with heads
+    /// pointing along the curve where it ends.
+    private static func drawLine(
+        _ annotation: Annotation,
+        in context: CGContext,
+        imageRect: CGRect,
+        pointScale: CGFloat
+    ) {
+        let style = annotation.style
+        let start = AnnotationSpace.point(annotation.start, in: imageRect)
+        let end = AnnotationSpace.point(annotation.end, in: imageRect)
+        let control = annotation.bendControl.map { AnnotationSpace.point($0, in: imageRect) }
+        let headLength = (10 + style.lineWidth) * pointScale
+
+        var heads: [(tip: CGPoint, from: CGPoint)] = []
+        if annotation.tool == .arrow {
+            heads.append((end, control ?? start))
+            if style.arrowBothEnds {
+                heads.append((start, control ?? end))
+            }
+        }
+
+        // A filled head covers the line's end, which would otherwise poke
+        // out past its tip as a round cap.
+        func trimmed(_ tip: CGPoint, from: CGPoint) -> CGPoint {
+            guard style.arrowHead == .filled, heads.contains(where: { $0.tip == tip }) else {
+                return tip
+            }
+            let length = hypot(tip.x - from.x, tip.y - from.y)
+            guard length > 0 else {
+                return tip
+            }
+            let back = min(headLength * 0.6, length / 2) / length
+            return CGPoint(x: tip.x - (tip.x - from.x) * back, y: tip.y - (tip.y - from.y) * back)
+        }
+
+        let lineStart = trimmed(start, from: control ?? end)
+        let lineEnd = trimmed(end, from: control ?? start)
+        context.move(to: lineStart)
+        if let control {
+            context.addQuadCurve(to: lineEnd, control: control)
+        } else {
+            context.addLine(to: lineEnd)
+        }
+
+        for head in heads {
+            let angle = atan2(head.tip.y - head.from.y, head.tip.x - head.from.x)
+            let wings = [angle - .pi / 6, angle + .pi / 6].map { wing in
+                CGPoint(x: head.tip.x - headLength * cos(wing), y: head.tip.y - headLength * sin(wing))
+            }
+            switch style.arrowHead {
+            case .open:
+                for wing in wings {
+                    context.move(to: wing)
+                    context.addLine(to: head.tip)
+                }
+            case .filled:
+                break
+            }
+        }
+        context.strokePath()
+
+        guard style.arrowHead == .filled else {
+            return
+        }
+        context.setFillColor(style.color.cgColor)
+        for head in heads {
+            let angle = atan2(head.tip.y - head.from.y, head.tip.x - head.from.x)
+            context.move(to: head.tip)
+            for wing in [angle - .pi / 6, angle + .pi / 6] {
+                context.addLine(to: CGPoint(x: head.tip.x - headLength * cos(wing), y: head.tip.y - headLength * sin(wing)))
+            }
+            context.closePath()
+        }
+        context.fillPath()
     }
 
     /// Draws a document's annotations in order, numbering the steps.
@@ -486,16 +549,19 @@ nonisolated enum AnnotationRenderer {
         context.strokePath()
     }
 
-    private static func drawStep(_ number: Int, style: AnnotationStyle, in rect: CGRect, context: CGContext) {
+    private static func drawStep(_ text: String, style: AnnotationStyle, in rect: CGRect, context: CGContext) {
         let diameter = min(rect.width, rect.height)
         let circle = CGRect(x: rect.midX - diameter / 2, y: rect.midY - diameter / 2, width: diameter, height: diameter)
         context.setFillColor(style.color.cgColor)
         context.fillEllipse(in: circle)
         context.setShadow(offset: .zero, blur: 0, color: nil)
 
-        let label = "\(number)" as NSString
+        let label = text as NSString
+        // A long label, as Roman numerals get, shrinks to stay in the circle.
+        let fullSize = diameter * 0.55
+        let fullWidth = label.size(withAttributes: [.font: NSFont.systemFont(ofSize: fullSize, weight: .bold)]).width
         let attributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: diameter * 0.55, weight: .bold),
+            .font: NSFont.systemFont(ofSize: fullSize * min(1, diameter * 0.78 / max(fullWidth, 1)), weight: .bold),
             .foregroundColor: NSColor(cgColor: style.color.contrasting.cgColor) ?? .white
         ]
         let size = label.size(withAttributes: attributes)

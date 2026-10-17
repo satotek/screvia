@@ -274,4 +274,61 @@ final class AnnotationRendererTests: XCTestCase {
         XCTAssertEqual(region.width, 40)
         XCTAssertEqual(region.height, 20)
     }
+
+    // MARK: - Arrows and corners
+
+    /// A white 3× image (300×150 pixels), red arrow across the middle.
+    private func flattenedArrow(_ configure: (inout AnnotationStyle) -> Void, bend: CGPoint? = nil) -> NSImage {
+        var style = AnnotationStyle.standard
+        style.lineWidth = 2
+        configure(&style)
+        let arrow = Annotation(
+            tool: .arrow,
+            start: CGPoint(x: 0.1, y: 0.5),
+            end: CGPoint(x: 0.9, y: 0.5),
+            bend: bend,
+            style: style
+        )
+        return AnnotationRenderer.flatten(threeTimesImage(), document: AnnotationDocument(annotations: [arrow]))
+    }
+
+    /// Inside the head, a little behind the tip and off the line: an open
+    /// head leaves it white, a filled one covers it.
+    func testAFilledHeadIsFilled() {
+        // The tip is at x 270; the head runs back 36 pixels at ±30°.
+        XCTAssertEqual(pixel(of: flattenedArrow { $0.arrowHead = .open }, x: 250, y: 80).g, 255)
+        XCTAssertLessThan(pixel(of: flattenedArrow { $0.arrowHead = .filled }, x: 250, y: 80).g, 100)
+    }
+
+    func testHeadsAtBothEnds() {
+        let single = flattenedArrow { $0.arrowHead = .filled }
+        let double = flattenedArrow { $0.arrowHead = .filled; $0.arrowBothEnds = true }
+
+        XCTAssertEqual(pixel(of: single, x: 50, y: 80).g, 255, "no head at the start")
+        XCTAssertLessThan(pixel(of: double, x: 50, y: 80).g, 100, "a head at the start")
+    }
+
+    /// Bent up through (0.5, 0.2): the middle of the image's width is
+    /// drawn at the bend, not on the straight line below it.
+    func testABentArrowIsDrawnThroughItsBend() {
+        let bent = flattenedArrow({ _ in }, bend: CGPoint(x: 0.5, y: 0.2))
+
+        XCTAssertLessThan(pixel(of: bent, x: 150, y: 30).g, 100, "at the bend")
+        XCTAssertEqual(pixel(of: bent, x: 150, y: 75).g, 255, "not on the straight line")
+    }
+
+    /// The corner of the box is left out once it is rounded.
+    func testRoundedCornersLeaveTheCornerOut() {
+        func corner(radius: CGFloat) -> UInt8 {
+            var style = AnnotationStyle.standard
+            style.lineWidth = 2
+            style.cornerRadius = radius
+            let box = Annotation(tool: .rectangle, start: CGPoint(x: 0.1, y: 0.2), end: CGPoint(x: 0.9, y: 0.8), style: style)
+            let flattened = AnnotationRenderer.flatten(threeTimesImage(), document: AnnotationDocument(annotations: [box]))
+            return pixel(of: flattened, x: 30, y: 30).g
+        }
+
+        XCTAssertLessThan(corner(radius: 0), 100)
+        XCTAssertEqual(corner(radius: 16), 255)
+    }
 }

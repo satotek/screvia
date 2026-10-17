@@ -77,10 +77,11 @@ final class AnnotationGeometryTests: XCTestCase {
         XCTAssertNil(annotation.handle(at: CGPoint(x: 60, y: 30), in: imageRect, radius: 4))
     }
 
-    func testArrowsHaveOnlyEndpointHandles() {
+    /// Its ends and the bend in the middle, never a box's corners.
+    func testArrowsHaveEndAndBendHandles() {
         let arrow = box(CGPoint(x: 0.9, y: 0.1), CGPoint(x: 0.2, y: 0.8), tool: .arrow)
 
-        XCTAssertEqual(arrow.handles, [.start, .end])
+        XCTAssertEqual(arrow.handles, [.start, .end, .bend])
         assertPoint(arrow.location(of: .start), CGPoint(x: 0.9, y: 0.1))
     }
 
@@ -352,5 +353,53 @@ final class AnnotationGeometryTests: XCTestCase {
         // The area is x 0...0.2, y 0.1...0.3: (0...40, 10...30) in view space.
         XCTAssertTrue(magnifier(focus: CGPoint(x: 0.1, y: 0.2)).contains(CGPoint(x: 20, y: 20), in: imageRect, tolerance: 0))
         XCTAssertFalse(magnifier().contains(CGPoint(x: 20, y: 20), in: imageRect, tolerance: 0))
+    }
+
+    // MARK: - Bending lines
+
+    private func arrow(bend: CGPoint? = nil) -> Annotation {
+        Annotation(tool: .arrow, start: CGPoint(x: 0.1, y: 0.5), end: CGPoint(x: 0.9, y: 0.5), bend: bend)
+    }
+
+    /// The handle sits halfway along, and the curve goes through it.
+    func testABentArrowPassesThroughItsHandle() throws {
+        XCTAssertEqual(arrow().handles, [.start, .end, .bend])
+        assertPoint(arrow().location(of: .bend), CGPoint(x: 0.5, y: 0.5))
+
+        let bent = arrow().resized(.bend, to: CGPoint(x: 0.5, y: 0.2))
+
+        assertPoint(try XCTUnwrap(bent.bend), CGPoint(x: 0.5, y: 0.2))
+        assertPoint(bent.curve[12], CGPoint(x: 0.5, y: 0.2))
+        XCTAssertEqual(bent.bounds.minY, 0.2, accuracy: 1e-9)
+    }
+
+    /// Dragged back onto the straight line, it straightens.
+    func testABendDraggedBackStraightens() {
+        let bent = arrow(bend: CGPoint(x: 0.5, y: 0.2))
+
+        XCTAssertNil(bent.resized(.bend, to: CGPoint(x: 0.501, y: 0.5)).bend)
+    }
+
+    /// A click follows the curve, not the straight line between the ends.
+    func testABentArrowIsHitAlongItsCurve() {
+        let bent = arrow(bend: CGPoint(x: 0.5, y: 0.2))
+
+        // (0.5, 0.2) is (100, 20) in the 200×100 view; (0.5, 0.5) is (100, 50).
+        XCTAssertTrue(bent.contains(CGPoint(x: 100, y: 21), in: imageRect, tolerance: 4))
+        XCTAssertFalse(bent.contains(CGPoint(x: 100, y: 50), in: imageRect, tolerance: 4))
+    }
+
+    func testMovingABentArrowTakesItsBendAlong() throws {
+        let moved = arrow(bend: CGPoint(x: 0.5, y: 0.2)).moved(by: CGVector(dx: 0, dy: 0.1))
+
+        assertPoint(try XCTUnwrap(moved.bend), CGPoint(x: 0.5, y: 0.3))
+    }
+
+    // MARK: - Step formats
+
+    func testStepLabels() {
+        XCTAssertEqual([1, 26, 27, 28, 52, 53].map(StepFormat.letter.label), ["A", "Z", "AA", "AB", "AZ", "BA"])
+        XCTAssertEqual([1, 4, 9, 14, 40, 1994].map(StepFormat.roman.label), ["I", "IV", "IX", "XIV", "XL", "MCMXCIV"])
+        XCTAssertEqual(StepFormat.number.label(12), "12")
     }
 }
