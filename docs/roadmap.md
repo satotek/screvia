@@ -15,7 +15,7 @@ the self-timer landed):
 | | Screvia has | Screvia lacks |
 | --- | --- | --- |
 | macOS (⇧⌘5) | Scrolling capture, backgrounds, pinning, history, an editor | Screen recording |
-| CleanShot X | Price, local-only | Recording, re-editing, hiding desktop icons, cloud |
+| CleanShot X | Price, local-only | Recording, cloud |
 | Shottr | A ShareX-style editor | Pixel loupe and measuring, colour picker |
 | Snagit | Price, native and light | Recording, templates, step capture |
 | Xnapper | Price | Automatic balancing, social presets |
@@ -28,8 +28,10 @@ the self-timer landed):
 2. **Small, high-value capture features** (done): OCR with Vision on
    device, as a capture mode and in the editor; a self-timer counting down
    in the menu bar; and capturing the previous area again.
-3. **Re-editing after saving**: keep the annotation document beside the
-   image so annotations stay editable.
+3. **Re-editing after saving** (done): the original and the annotations of
+   every saved edit are kept in Application Support, so reopening the file
+   from history or Finder brings the annotations back, until another app
+   changes the file.
 4. **The rest of the editor's phase 2**: speech balloons, magnifier, image
    effects.
 5. **Pixel loupe and measuring while selecting, colour picker.**

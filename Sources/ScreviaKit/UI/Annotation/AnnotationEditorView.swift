@@ -5,14 +5,18 @@ struct AnnotationEditorView: View {
     let image: NSImage
     let previewImage: NSImage
     let initialStyle: AnnotationStyle
+    /// The file Save replaces, when this is a saved edit opened again.
+    let replacingFileName: String?
     let onStyleChange: (AnnotationStyle) -> Void
-    let onSave: (NSImage) -> Void
-    let onSaveAs: (NSImage) -> Void
+    /// Get the flattened image and the document it came from, so the edit
+    /// can be opened again.
+    let onSave: (NSImage, AnnotationDocument) -> Void
+    let onSaveAs: (NSImage, AnnotationDocument) -> Void
     let onCopy: (NSImage) -> Void
     let onCopyText: (NSImage) -> Void
 
     @State private var selectedTool: AnnotationTool = .rectangle
-    @State private var document = AnnotationDocument()
+    @State private var document: AnnotationDocument
     @State private var undoStack: [AnnotationDocument] = []
     @State private var redoStack: [AnnotationDocument] = []
     @State private var zoomScale: CGFloat = 1
@@ -24,21 +28,25 @@ struct AnnotationEditorView: View {
         image: NSImage,
         previewImage: NSImage,
         initialStyle: AnnotationStyle,
+        initialDocument: AnnotationDocument = AnnotationDocument(),
+        replacingFileName: String? = nil,
         onStyleChange: @escaping (AnnotationStyle) -> Void,
-        onSave: @escaping (NSImage) -> Void,
-        onSaveAs: @escaping (NSImage) -> Void,
+        onSave: @escaping (NSImage, AnnotationDocument) -> Void,
+        onSaveAs: @escaping (NSImage, AnnotationDocument) -> Void,
         onCopy: @escaping (NSImage) -> Void,
         onCopyText: @escaping (NSImage) -> Void
     ) {
         self.image = image
         self.previewImage = previewImage
         self.initialStyle = initialStyle
+        self.replacingFileName = replacingFileName
         self.onStyleChange = onStyleChange
         self.onSave = onSave
         self.onSaveAs = onSaveAs
         self.onCopy = onCopy
         self.onCopyText = onCopyText
         _style = State(initialValue: initialStyle)
+        _document = State(initialValue: initialDocument)
     }
 
     private var selectedAnnotation: Annotation? {
@@ -327,14 +335,15 @@ struct AnnotationEditorView: View {
             .disabled(isEditingText || selectedTool == .liveText)
 
             Button(L10n.text("app.saveAs")) {
-                onSaveAs(flattenedImage())
+                onSaveAs(flattenedImage(), document)
             }
             .keyboardShortcut("s", modifiers: [.command, .shift])
 
             Button(L10n.text("app.save")) {
-                onSave(flattenedImage())
+                onSave(flattenedImage(), document)
             }
             .keyboardShortcut("s", modifiers: [.command])
+            .help(replacingFileName.map { L10n.format("annotation.saveReplacesHelp", $0) } ?? "")
             .buttonStyle(.borderedProminent)
         }
         .padding(.horizontal, 14)
@@ -353,8 +362,8 @@ struct AnnotationEditorView: View {
         previewImage: PreviewFixtures.sampleImage(),
         initialStyle: .standard,
         onStyleChange: { _ in },
-        onSave: { _ in },
-        onSaveAs: { _ in },
+        onSave: { _, _ in },
+        onSaveAs: { _, _ in },
         onCopy: { _ in },
         onCopyText: { _ in }
     )

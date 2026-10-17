@@ -18,6 +18,7 @@ final class CaptureCoordinator: ObservableObject {
     private let pinnedImageController = PinnedImageController()
     private let editorController = AnnotationEditorController()
     private let historyStore = CaptureHistoryStore()
+    private let editArchive = EditArchive(directory: EditArchive.standardDirectory)
 
     private let toastController = ToastController()
     private let textCaptureController = TextCaptureWindowController()
@@ -40,6 +41,10 @@ final class CaptureCoordinator: ObservableObject {
         captureHistory = historyStore.entries
         // History does not outlive a launch, so neither do unsaved captures.
         try? FileManager.default.removeItem(at: Self.unsavedDirectory)
+        let editArchive = editArchive
+        Task {
+            await editArchive.pruneInBackground()
+        }
     }
 
     /// Where captures go when "Save to file" is off: out of the user's
@@ -360,7 +365,13 @@ final class CaptureCoordinator: ObservableObject {
 
     func editHistoryEntry(_ entry: CaptureHistoryEntry) {
         Task { [weak self] in
-            guard let self, let capture = await self.capture(from: entry) else {
+            guard let self else {
+                return
+            }
+            if await self.reopenEdit(of: entry.fileURL, displayID: entry.displayID, kind: entry.kind) {
+                return
+            }
+            guard let capture = await self.capture(from: entry) else {
                 return
             }
             // Saved PNGs carry no DPI, so they load at one point per pixel.
@@ -416,11 +427,15 @@ final class CaptureCoordinator: ObservableObject {
     }
 
     /// Saving writes a new file to the capture folder; `url` is never
-    /// overwritten unless the user picks it in Save As.
+    /// overwritten unless the user picks it in Save As, or it is an image
+    /// the editor saved, which opens with its annotations to change.
     func editImage(at url: URL) {
         let scale = Self.importScale
         let displayID = Self.displayUnderPointer
         Task { [weak self] in
+            if await self?.reopenEdit(of: url, displayID: displayID, kind: .standard) == true {
+                return
+            }
             do {
                 guard let data = await Self.readData(at: url) else {
                     throw ImageImport.ImportError.unreadable
@@ -590,24 +605,89 @@ final class CaptureCoordinator: ObservableObject {
     }
 
     private func openEditor(for capture: CaptureItem) {
-        openEditor(
-            image: capture.image,
-            suggestedName: capture.fileURL.deletingPathExtension().lastPathComponent,
-            displayID: capture.displayID,
-            kind: capture.kind
-        )
+        Task { [weak self] in
+            guard let self else {
+                return
+            }
+            if await self.reopenEdit(of: capture.fileURL, displayID: capture.displayID, kind: capture.kind) {
+                return
+            }
+            self.openEditor(
+                image: capture.image,
+                suggestedName: capture.fileURL.deletingPathExtension().lastPathComponent,
+                displayID: capture.displayID,
+                kind: capture.kind
+            )
+        }
     }
 
-    private func openEditor(image: NSImage, suggestedName: String, displayID: UInt32, kind: CaptureKind) {
+    /// Opens the edit that saved `fileURL`, with its annotations still
+    /// editable. False when the editor did not save the file, or another
+    /// app changed it since.
+    private func reopenEdit(of fileURL: URL, displayID: UInt32, kind: CaptureKind) async -> Bool {
+        guard
+            let edit = await editArchive.loadEdit(for: fileURL),
+            let original = edit.original
+        else {
+            return false
+        }
+        openEditor(
+            image: original,
+            document: edit.document,
+            replacing: fileURL,
+            suggestedName: fileURL.deletingPathExtension().lastPathComponent,
+            displayID: displayID,
+            kind: kind
+        )
+        return true
+    }
+
+    /// Keeps what it takes to reopen the edit that saved `fileURL`. Failing
+    /// costs only that, so it is logged rather than shown: the image itself
+    /// is saved.
+    private func archiveEdit(original: NSImage, document: AnnotationDocument, for fileURL: URL) {
+        let editArchive = editArchive
+        Task {
+            do {
+                try await editArchive.storeInBackground(original: original, document: document, for: fileURL)
+            } catch {
+                Log.storage.error("Could not keep the edit for reopening: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+    }
+
+    /// `replacing` is the file a reopened edit saves over; otherwise saving
+    /// writes a new file.
+    private func openEditor(
+        image: NSImage,
+        document: AnnotationDocument = AnnotationDocument(),
+        replacing: URL? = nil,
+        suggestedName: String,
+        displayID: UInt32,
+        kind: CaptureKind
+    ) {
         editorController.show(
             image: image,
+            document: document,
+            replacing: replacing,
             suggestedName: suggestedName,
             style: settings.annotationStyle,
             onStyleChange: { [weak self] style in
                 self?.settings.annotationStyle = style
             },
-            onSave: { [weak self] annotatedImage in
+            onSave: { [weak self] annotatedImage, document in
                 guard let self else {
+                    return
+                }
+                if let replacing {
+                    self.saveEdit(
+                        annotatedImage,
+                        over: replacing,
+                        original: image,
+                        document: document,
+                        displayID: displayID,
+                        kind: kind
+                    )
                     return
                 }
 
@@ -640,6 +720,7 @@ final class CaptureCoordinator: ObservableObject {
                             return
                         }
 
+                        self.archiveEdit(original: image, document: document, for: result.savedImage.fileURL)
                         if copyToClipboard {
                             if let data = result.savedImage.data {
                                 self.imageStore.copyToClipboard(data: data, format: format)
@@ -662,14 +743,19 @@ final class CaptureCoordinator: ObservableObject {
                     }
                 }
             },
-            onSaveAs: { [weak self] annotatedImage, url in
+            onSaveAs: { [weak self] annotatedImage, document, url in
                 guard let self else {
                     return
                 }
-                do {
-                    try self.imageStore.write(annotatedImage, to: url, jpegQuality: self.settings.jpegQuality)
-                } catch {
-                    ErrorPresenter.present(error)
+                let jpegQuality = self.settings.jpegQuality
+                let pipeline = self.captureProcessingPipeline
+                Task { [weak self] in
+                    do {
+                        try await pipeline.write(annotatedImage, to: url, jpegQuality: jpegQuality)
+                        self?.archiveEdit(original: image, document: document, for: url)
+                    } catch {
+                        ErrorPresenter.present(error)
+                    }
                 }
             },
             onCopy: { [weak self] annotatedImage in
@@ -679,5 +765,41 @@ final class CaptureCoordinator: ObservableObject {
                 self?.copyText(in: annotatedImage)
             }
         )
+    }
+
+    /// Saves a reopened edit over its own file, which keeps its name and
+    /// format and moves to the front of the history.
+    private func saveEdit(
+        _ annotatedImage: NSImage,
+        over fileURL: URL,
+        original: NSImage,
+        document: AnnotationDocument,
+        displayID: UInt32,
+        kind: CaptureKind
+    ) {
+        let jpegQuality = settings.jpegQuality
+        let copyToClipboard = copiesToClipboard
+        let showThumbnail = settings.showThumbnail
+        let pipeline = captureProcessingPipeline
+
+        Task { [weak self] in
+            do {
+                try await pipeline.write(annotatedImage, to: fileURL, jpegQuality: jpegQuality)
+                guard let self else {
+                    return
+                }
+
+                self.archiveEdit(original: original, document: document, for: fileURL)
+                if copyToClipboard {
+                    self.imageStore.copyToClipboard(annotatedImage)
+                }
+                self.publishCapture(
+                    CaptureItem(image: annotatedImage, fileURL: fileURL, displayID: displayID, kind: kind),
+                    showThumbnail: showThumbnail
+                )
+            } catch {
+                ErrorPresenter.present(error)
+            }
+        }
     }
 }

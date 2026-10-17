@@ -49,6 +49,8 @@ app at all.
 - Open any image, not only captures: from the clipboard, a file, a drop on the
   menu bar icon, or Finder's Open With
 - Undo/redo with `⌘Z` / `⇧⌘Z`, and Save As
+- Reopen a saved edit with its annotations still editable, from history or
+  the file itself; the saved file stays an ordinary image
 
 **Output**
 
