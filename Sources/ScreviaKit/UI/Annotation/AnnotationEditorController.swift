@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 
 final class AnnotationEditorController {
     private var window: NSWindow?
+    private var closeObserver: (any NSObjectProtocol)?
 
     /// `suggestedName` seeds Save As, without an extension. `replacing` is
     /// the file Save writes over, when `image` and `document` are a saved
@@ -64,8 +65,34 @@ final class AnnotationEditorController {
         window.isReleasedWhenClosed = false
 
         self.window = window
-        NSApp.activate(ignoringOtherApps: true)
+        showInDock(while: window)
         window.makeKeyAndOrderFront(nil)
+    }
+
+    /// A menu bar app has no Dock icon, which leaves an editor window
+    /// unreachable from the Dock and ⌘-Tab once it is behind another app.
+    /// While the editor is open the app is a regular one. That also lets it
+    /// become active reliably, which AppKit needs before it shows tooltips.
+    private func showInDock(while window: NSWindow) {
+        if let closeObserver {
+            NotificationCenter.default.removeObserver(closeObserver)
+        }
+        closeObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.willCloseNotification,
+            object: window,
+            queue: .main
+        ) { [weak self] _ in
+            // Posted on the main queue, as asked above.
+            MainActor.assumeIsolated {
+                NSApp.setActivationPolicy(.accessory)
+                if let observer = self?.closeObserver {
+                    NotificationCenter.default.removeObserver(observer)
+                    self?.closeObserver = nil
+                }
+            }
+        }
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate()
     }
 
     /// A sheet on the editor, so it is clear which image is being saved.
