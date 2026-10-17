@@ -108,6 +108,10 @@ nonisolated extension Annotation {
         if tool == .balloon {
             return [.tail]
         }
+        if tool == .text, textWidth != nil {
+            // Its width is the user's; its height follows the text.
+            return [.box(x: .min, y: nil), .box(x: .max, y: nil)]
+        }
         if tool == .magnifier, style.magnifierShape == .circle {
             // Corners only: a circle grows in both directions at once.
             return boxHandles.filter { handle in

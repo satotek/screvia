@@ -7,6 +7,8 @@ struct InlineTextField: View {
     /// jump in size when editing ends.
     let font: NSFont
     let horizontalPadding: CGFloat
+    /// Wraps within the field's width, for a text box dragged out.
+    var wraps = false
     let onCommit: () -> Void
     let onCancel: () -> Void
 
@@ -17,7 +19,8 @@ struct InlineTextField: View {
             "",
             text: $text,
             prompt: Text(L10n.text("annotation.textPlaceholder"))
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(.white.opacity(0.55)),
+            axis: wraps ? .vertical : .horizontal
         )
         .textFieldStyle(.plain)
         .font(Font(font))

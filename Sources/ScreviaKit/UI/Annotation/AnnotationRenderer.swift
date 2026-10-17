@@ -63,7 +63,14 @@ nonisolated enum AnnotationRenderer {
             context.setFillColor(CGColor(srgbRed: 1, green: 0.84, blue: 0, alpha: 0.35))
             context.fill(rect)
         case .text:
-            drawText(annotation.text ?? "", style: style, in: rect, context: context, pointScale: pointScale)
+            drawText(
+                annotation.text ?? "",
+                style: style,
+                wraps: annotation.textWidth != nil,
+                in: rect,
+                context: context,
+                pointScale: pointScale
+            )
         case .balloon:
             drawBalloon(
                 annotation.text ?? "",
@@ -228,7 +235,7 @@ nonisolated enum AnnotationRenderer {
             let diameter = stepDiameter(for: annotation.style)
             size = CGSize(width: diameter, height: diameter)
         } else {
-            size = textBoxSize(annotation.text ?? "", style: annotation.style)
+            size = textBoxSize(annotation.text ?? "", style: annotation.style, width: annotation.textWidth)
         }
 
         var fitted = annotation
@@ -247,10 +254,22 @@ nonisolated enum AnnotationRenderer {
 
     /// In image points. Empty text is measured as a few characters' width,
     /// so a new text box has room for the caret.
-    static func textBoxSize(_ text: String, style: AnnotationStyle) -> CGSize {
-        let measured = (text.isEmpty ? "MMMM" : text as NSString)
-            .size(withAttributes: [.font: font(for: style, pointScale: 1)])
+    ///
+    /// With a `width`, the text wraps to it and the box grows downwards.
+    static func textBoxSize(_ text: String, style: AnnotationStyle, width: CGFloat? = nil) -> CGSize {
         let padding = textPadding(for: style)
+        let attributes: [NSAttributedString.Key: Any] = [.font: font(for: style, pointScale: 1)]
+        if let width {
+            let measured = (text.isEmpty ? "M" : text as NSString).boundingRect(
+                with: CGSize(width: max(width - padding.width * 2, 1), height: .greatestFiniteMagnitude),
+                options: [.usesLineFragmentOrigin, .usesFontLeading],
+                attributes: attributes
+            )
+            // A little over the measured height: lines laid out at the
+            // export's scale come out slightly taller than measured here.
+            return CGSize(width: width, height: ceil(measured.height + style.fontSize * 0.15) + padding.height * 2)
+        }
+        let measured = (text.isEmpty ? "MMMM" : text as NSString).size(withAttributes: attributes)
         return CGSize(
             width: ceil(measured.width) + padding.width * 2,
             height: ceil(measured.height) + padding.height * 2
@@ -258,7 +277,14 @@ nonisolated enum AnnotationRenderer {
     }
 
     static func font(for style: AnnotationStyle, pointScale: CGFloat) -> NSFont {
-        NSFont.systemFont(ofSize: style.fontSize * pointScale, weight: style.isBold ? .bold : .regular)
+        let system = NSFont.systemFont(ofSize: style.fontSize * pointScale, weight: style.isBold ? .bold : .regular)
+        guard
+            style.fontDesign != .standard,
+            let descriptor = system.fontDescriptor.withDesign(style.fontDesign.systemDesign)
+        else {
+            return system
+        }
+        return NSFont(descriptor: descriptor, size: system.pointSize) ?? system
     }
 
     private static func textPadding(for style: AnnotationStyle) -> CGSize {
@@ -383,6 +409,7 @@ nonisolated enum AnnotationRenderer {
     private static func drawText(
         _ text: String,
         style: AnnotationStyle,
+        wraps: Bool,
         in rect: CGRect,
         context: CGContext,
         pointScale: CGFloat
@@ -401,7 +428,15 @@ nonisolated enum AnnotationRenderer {
             context.setShadow(offset: .zero, blur: 0, color: nil)
         }
 
-        drawLabel(text, style: style, outlined: style.textAppearance == .outline, in: rect, context: context, pointScale: pointScale)
+        drawLabel(
+            text,
+            style: style,
+            outlined: style.textAppearance == .outline,
+            wraps: wraps,
+            in: rect,
+            context: context,
+            pointScale: pointScale
+        )
     }
 
     /// The text of a text box or balloon, at the padding the box was sized
@@ -410,6 +445,7 @@ nonisolated enum AnnotationRenderer {
         _ text: String,
         style: AnnotationStyle,
         outlined: Bool,
+        wraps: Bool = false,
         in rect: CGRect,
         context: CGContext,
         pointScale: CGFloat
@@ -420,20 +456,32 @@ nonisolated enum AnnotationRenderer {
 
         let font = font(for: style, pointScale: pointScale)
         let padding = textPadding(for: style)
-        let origin = CGPoint(x: rect.minX + padding.width * pointScale, y: rect.minY + padding.height * pointScale)
+        let inner = rect.insetBy(dx: padding.width * pointScale, dy: padding.height * pointScale)
+
+        func draw(_ attributes: [NSAttributedString.Key: Any]) {
+            if wraps {
+                // Unbounded below: the box was measured at one point per
+                // point, and line heights round differently at the export's
+                // scale, which could leave the last line out.
+                let column = CGRect(x: inner.minX, y: inner.minY, width: inner.width, height: .greatestFiniteMagnitude)
+                (text as NSString).draw(with: column, options: [.usesLineFragmentOrigin, .usesFontLeading], attributes: attributes)
+            } else {
+                (text as NSString).draw(at: inner.origin, withAttributes: attributes)
+            }
+        }
 
         NSGraphicsContext.saveGraphicsState()
         NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: true)
         if outlined {
             // A positive stroke width strokes without filling; drawn first
             // and wide, the fill on top leaves only the outside of it.
-            (text as NSString).draw(at: origin, withAttributes: [
+            draw([
                 .font: font,
                 .strokeColor: NSColor(cgColor: style.color.contrasting.cgColor) ?? .black,
                 .strokeWidth: 12
             ])
         }
-        (text as NSString).draw(at: origin, withAttributes: [
+        draw([
             .font: font,
             .foregroundColor: NSColor(cgColor: style.color.cgColor) ?? .white
         ])

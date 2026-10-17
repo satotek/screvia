@@ -806,13 +806,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Click where the text goes, then type. Double-click text to change it."
+            "value": "Click where the text goes, then type; drag instead for a box the text wraps in. Double-click text to change it."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "クリックした場所に文字を入力します。文字はダブルクリックで直せます。"
+            "value": "クリックした場所に文字を入力します。ドラッグすると、その幅で折り返す枠になります。文字はダブルクリックで直せます。"
           }
         }
       }
@@ -3773,6 +3773,86 @@
           "stringUnit": {
             "state": "translated",
             "value": "塗り"
+          }
+        }
+      }
+    },
+    "style.fontDesign": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Font"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "フォント"
+          }
+        }
+      }
+    },
+    "style.fontDesign.monospaced": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monospaced"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等幅"
+          }
+        }
+      }
+    },
+    "style.fontDesign.rounded": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rounded"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "丸み"
+          }
+        }
+      }
+    },
+    "style.fontDesign.serif": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serif"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "明朝風"
+          }
+        }
+      }
+    },
+    "style.fontDesign.standard": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "標準"
           }
         }
       }

@@ -66,11 +66,16 @@ straight line straightens them. Arrows have open or filled heads, at one end
 or both; rectangles have rounded corners; steps count in numbers, letters or
 Roman numerals.
 
+Text comes in the system font's four designs (standard, rounded, serif,
+monospaced) rather than a list of every installed font, which would be
+hundreds long; each falls back to the system's Japanese font. Dragging with
+the text tool makes a box that wraps at that width, with side handles to
+change it; a click still makes one that grows with its single line.
+
 - Tools: inserted images, emoji stickers, smart eraser
 - Stacking order, paste from the clipboard
 - Auto crop, rotate and flip, resize, canvas size
 - More image effects
-- Font choice; text that wraps inside a dragged box
 
 **Not planned.** Cursor drawing (the capture settings cover it), cut out,
 upload, print.

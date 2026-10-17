@@ -180,6 +180,15 @@ final class AnnotationGeometryTests: XCTestCase {
         XCTAssertEqual(box(.zero, CGPoint(x: 0.1, y: 0.1), tool: .step).handles, [])
     }
 
+    /// A text box that wraps is as wide as the user made it, so its sides
+    /// have handles; its height still follows the text.
+    func testAWrappingTextBoxHasSideHandles() {
+        var text = box(.zero, CGPoint(x: 0.2, y: 0.1), tool: .text)
+        text.textWidth = 200
+
+        XCTAssertEqual(text.handles, [.box(x: .min, y: nil), .box(x: .max, y: nil)])
+    }
+
     func testStepsAreNumberedInOrderAndRenumberOnDelete() {
         let first = box(.zero, .zero, tool: .step)
         let arrow = box(.zero, CGPoint(x: 1, y: 1), tool: .arrow)

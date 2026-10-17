@@ -125,17 +125,20 @@ struct AnnotationCanvas: View {
                         let pointScale = layout.imageRect.width / max(imageSize.width, 1)
                         let rect = AnnotationSpace.rect(annotation.bounds, in: layout.imageRect)
                         let font = AnnotationRenderer.font(for: annotation.style, pointScale: pointScale)
+                        let slack = annotation.textWidth == nil ? font.pointSize : 0
                         InlineTextField(
                             text: textBinding(for: editingTextID),
                             font: font,
                             horizontalPadding: annotation.style.fontSize * 0.45 * pointScale,
+                            wraps: annotation.textWidth != nil,
                             onCommit: commitTextEditing,
                             onCancel: cancelTextEditing
                         )
                         // A caret's width of slack, so typing never clips
-                        // before the box catches up.
-                        .frame(width: rect.width + font.pointSize, height: rect.height)
-                        .position(x: rect.midX + font.pointSize / 2, y: rect.midY)
+                        // before the box catches up. A wrapping box keeps
+                        // its width; the text wraps instead.
+                        .frame(width: rect.width + slack, height: rect.height)
+                        .position(x: rect.midX + slack / 2, y: rect.midY)
                         .zIndex(2)
                     }
                 }
@@ -246,6 +249,15 @@ struct AnnotationCanvas: View {
             let area = Path(AnnotationSpace.rect(Self.box(start, end), in: imageRect))
             context.stroke(area, with: .color(.black.opacity(0.6)), style: StrokeStyle(lineWidth: 1))
             context.stroke(area, with: .color(.white), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+        }
+
+        // A text box being dragged out, before there is text to show.
+        if case let .drawing(start, end) = dragAction, selectedTool == .text, wrapWidth(from: start, to: end) != nil {
+            context.stroke(
+                Path(AnnotationSpace.rect(Self.box(start, end), in: imageRect)),
+                with: .color(.accentColor),
+                style: StrokeStyle(lineWidth: 1, dash: [4, 3])
+            )
         }
 
         if case let .cropping(start, end) = dragAction {
@@ -419,7 +431,11 @@ struct AnnotationCanvas: View {
                 within: document.crop
             ))
         case let .resizing(original, handle, _):
-            let resized = original.resized(handle, to: point, within: document.crop)
+            var resized = original.resized(handle, to: point, within: document.crop)
+            if resized.textWidth != nil {
+                resized.textWidth = max(resized.bounds.width * imageSize.width, Self.minimumWrapWidth)
+                resized = AnnotationRenderer.fitted(resized, imageSize: imageSize)
+            }
             replace(original.anchor(opposite: handle).map { resized.squared(imageSize: imageSize, from: $0) } ?? resized)
         case let .aiming(original, _):
             replace(original.aimed(
@@ -501,7 +517,11 @@ struct AnnotationCanvas: View {
     private func finishDrawing(from start: CGPoint, to end: CGPoint) {
         switch selectedTool {
         case .text:
-            beginTextEditing(.text, at: start)
+            if let width = wrapWidth(from: start, to: end) {
+                beginTextEditing(.text, at: Self.box(start, end).origin, textWidth: width)
+            } else {
+                beginTextEditing(.text, at: start)
+            }
         case .balloon:
             let balloon = placedBalloon(pointingAt: start, at: end)
             beginTextEditing(.balloon, at: balloon.start, tail: balloon.tail)
@@ -579,10 +599,26 @@ struct AnnotationCanvas: View {
         return balloon
     }
 
-    private func beginTextEditing(_ tool: AnnotationTool, at origin: CGPoint, tail: CGPoint? = nil) {
+    /// Narrower than this, a drag with the text tool is a click: a box
+    /// that grows with its one line.
+    private static let minimumWrapWidth: CGFloat = 40
+
+    /// The width, in image points, a text box dragged from `start` to `end`
+    /// wraps at, or nil when the drag was too short to mean one.
+    private func wrapWidth(from start: CGPoint, to end: CGPoint) -> CGFloat? {
+        let width = abs(end.x - start.x) * imageSize.width
+        return width >= Self.minimumWrapWidth ? width : nil
+    }
+
+    private func beginTextEditing(
+        _ tool: AnnotationTool,
+        at origin: CGPoint,
+        textWidth: CGFloat? = nil,
+        tail: CGPoint? = nil
+    ) {
         documentBeforeTextEditing = document
         let annotation = AnnotationRenderer.fitted(
-            Annotation(tool: tool, start: origin, end: origin, text: "", tail: tail, style: style),
+            Annotation(tool: tool, start: origin, end: origin, text: "", textWidth: textWidth, tail: tail, style: style),
             imageSize: imageSize
         )
         document.annotations.append(annotation)

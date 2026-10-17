@@ -251,6 +251,30 @@ nonisolated enum ArrowHead: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+/// The system font's designs. Every one falls back to the system's own
+/// Japanese font, so labels in either language keep the chosen weight.
+nonisolated enum FontDesign: String, Codable, CaseIterable, Identifiable {
+    case standard
+    case rounded
+    case serif
+    case monospaced
+
+    var id: String { rawValue }
+
+    var title: String {
+        L10n.text("style.fontDesign.\(rawValue)")
+    }
+
+    var systemDesign: NSFontDescriptor.SystemDesign {
+        switch self {
+        case .standard: .default
+        case .rounded: .rounded
+        case .serif: .serif
+        case .monospaced: .monospaced
+        }
+    }
+}
+
 /// How steps count: ①②③, Ⓐ Ⓑ Ⓒ or Roman numerals, as ShareX offers.
 nonisolated enum StepFormat: String, Codable, CaseIterable, Identifiable {
     case number
@@ -318,6 +342,7 @@ nonisolated struct AnnotationStyle: Codable, Equatable {
     /// For rectangles; zero is square corners.
     var cornerRadius: CGFloat = 0
     var stepFormat: StepFormat = .number
+    var fontDesign: FontDesign = .standard
 
     static let standard = AnnotationStyle(
         color: .red,
@@ -340,7 +365,7 @@ nonisolated extension AnnotationStyle {
     private enum CodingKeys: String, CodingKey {
         case color, fillColor, lineWidth, fontSize, isBold, textAppearance, hasShadow
         case magnification, magnifierShape
-        case arrowHead, arrowBothEnds, cornerRadius, stepFormat
+        case arrowHead, arrowBothEnds, cornerRadius, stepFormat, fontDesign
     }
 
     /// The style is kept in preferences and in archived edits, both written
@@ -362,6 +387,7 @@ nonisolated extension AnnotationStyle {
         arrowBothEnds = try container.decodeIfPresent(Bool.self, forKey: .arrowBothEnds) ?? false
         cornerRadius = try container.decodeIfPresent(CGFloat.self, forKey: .cornerRadius) ?? 0
         stepFormat = try container.decodeIfPresent(StepFormat.self, forKey: .stepFormat) ?? .number
+        fontDesign = try container.decodeIfPresent(FontDesign.self, forKey: .fontDesign) ?? .standard
     }
 }
 
@@ -375,6 +401,9 @@ nonisolated struct Annotation: Identifiable, Equatable, Codable {
     /// The stroke of a freehand drawing, in the same space as `start`.
     var points: [CGPoint]
     var text: String?
+    /// The width text wraps at, in image points, for a text box dragged
+    /// out rather than clicked. Nil sizes the box to one line of text.
+    var textWidth: CGFloat?
     /// Where a speech balloon points, in the same space as `start`. Nil for
     /// every other tool, which is also what edits saved before balloons
     /// decode to.
@@ -395,6 +424,7 @@ nonisolated struct Annotation: Identifiable, Equatable, Codable {
         end: CGPoint,
         points: [CGPoint] = [],
         text: String? = nil,
+        textWidth: CGFloat? = nil,
         tail: CGPoint? = nil,
         bend: CGPoint? = nil,
         focus: CGPoint? = nil,
@@ -406,6 +436,7 @@ nonisolated struct Annotation: Identifiable, Equatable, Codable {
         self.end = end
         self.points = points
         self.text = text
+        self.textWidth = textWidth
         self.tail = tail
         self.bend = bend
         self.focus = focus
@@ -415,7 +446,7 @@ nonisolated struct Annotation: Identifiable, Equatable, Codable {
     /// A copy with a new identity, so it can be selected and undone apart
     /// from the original.
     func duplicated() -> Annotation {
-        Annotation(tool: tool, start: start, end: end, points: points, text: text, tail: tail, bend: bend, focus: focus, style: style)
+        Annotation(tool: tool, start: start, end: end, points: points, text: text, textWidth: textWidth, tail: tail, bend: bend, focus: focus, style: style)
     }
 
     /// The number each step marker shows: its position among the steps, so
