@@ -335,10 +335,15 @@ nonisolated enum AnnotationRenderer {
 
     /// The document burnt into the image and cropped, at the image's full
     /// pixel size.
+    ///
+    /// `image` is the original as captured; the document's orientation turns
+    /// it first, since annotation space is the turned image.
     static func flatten(_ image: NSImage, document: AnnotationDocument) -> NSImage {
+        let image = document.orientation.applied(to: image)
         let crop = document.crop.intersection(AnnotationSpace.unit)
         guard
-            !document.annotations.isEmpty || crop != AnnotationSpace.unit || !document.effects.isEmpty,
+            !document.annotations.isEmpty || crop != AnnotationSpace.unit || !document.effects.isEmpty
+                || document.outputScale != 1,
             let source = image.cgImage(forProposedRect: nil, context: nil, hints: nil),
             image.size.width > 0, !crop.isEmpty
         else {
@@ -382,10 +387,13 @@ nonisolated enum AnnotationRenderer {
         guard
             let flattened = context.makeImage(),
             let cropped = flattened.cropping(to: AnnotationSpace.rect(crop, in: canvas).integral),
-            let output = applying(document.effects, to: cropped, pixelsPerPoint: pixelsPerPoint, colorSpace: colorSpace)
+            let framed = applying(document.effects, to: cropped, pixelsPerPoint: pixelsPerPoint, colorSpace: colorSpace),
+            let output = scaled(framed, by: document.outputScale, colorSpace: colorSpace)
         else {
             return image
         }
+        // Resize changes the points as well as the pixels, so a halved
+        // image is half the size wherever it is pasted.
         return NSImage(
             cgImage: output,
             size: NSSize(
@@ -393,6 +401,28 @@ nonisolated enum AnnotationRenderer {
                 height: CGFloat(output.height) / pixelsPerPoint
             )
         )
+    }
+
+    private static func scaled(_ image: CGImage, by scale: CGFloat, colorSpace: CGColorSpace) -> CGImage? {
+        guard scale > 0, scale != 1 else {
+            return image
+        }
+        let width = max(Int((CGFloat(image.width) * scale).rounded()), 1)
+        let height = max(Int((CGFloat(image.height) * scale).rounded()), 1)
+        guard let context = CGContext(
+            data: nil,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else {
+            return nil
+        }
+        context.interpolationQuality = .high
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        return context.makeImage()
     }
 
     /// The image framed by `effects`: its border, then room for the shadow
@@ -408,13 +438,14 @@ nonisolated enum AnnotationRenderer {
             return image
         }
 
+        let padding = (effects.margin * pixelsPerPoint).rounded()
         let border = (effects.borderThickness * pixelsPerPoint).rounded()
         let margin = effects.hasShadow ? (ImageEffects.shadowMargin * pixelsPerPoint).rounded() : 0
         let framed = CGRect(
             x: margin,
             y: margin,
-            width: CGFloat(image.width) + border * 2,
-            height: CGFloat(image.height) + border * 2
+            width: CGFloat(image.width) + (padding + border) * 2,
+            height: CGFloat(image.height) + (padding + border) * 2
         )
         guard let context = CGContext(
             data: nil,
@@ -437,10 +468,19 @@ nonisolated enum AnnotationRenderer {
             )
         }
         // Under the image even without a border, as what casts the shadow.
-        context.setFillColor(effects.borderColor?.cgColor ?? CGColor(gray: 1, alpha: 1))
-        context.fill(framed)
+        let marginColor = effects.marginColor?.cgColor ?? CGColor(gray: 0, alpha: 0)
+        if effects.borderColor != nil || effects.hasShadow {
+            context.setFillColor(effects.borderColor?.cgColor ?? marginColor)
+            context.fill(framed)
+        }
         context.setShadow(offset: .zero, blur: 0, color: nil)
-        context.draw(image, in: framed.insetBy(dx: border, dy: border))
+        let inner = framed.insetBy(dx: border, dy: border)
+        if padding > 0 {
+            context.clear(inner)
+            context.setFillColor(marginColor)
+            context.fill(inner)
+        }
+        context.draw(image, in: inner.insetBy(dx: padding, dy: padding))
         return context.makeImage()
     }
 

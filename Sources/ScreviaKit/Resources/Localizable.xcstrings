@@ -2113,6 +2113,38 @@
         }
       }
     },
+    "effects.margin": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Margin"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "余白"
+          }
+        }
+      }
+    },
+    "effects.marginColor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Margin Colour"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "余白の色"
+          }
+        }
+      }
+    },
     "effects.noBorder": {
       "localizations": {
         "en": {
@@ -2125,6 +2157,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "枠線なし"
+          }
+        }
+      }
+    },
+    "effects.noMargin": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Margin"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "余白なし"
           }
         }
       }
@@ -2177,18 +2225,34 @@
         }
       }
     },
-    "effects.usage": {
+    "effects.transparent": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Add a border or a drop shadow around the whole image."
+            "value": "Transparent"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "画像全体のまわりに、枠線や影を付けます。"
+            "value": "透明"
+          }
+        }
+      }
+    },
+    "effects.usage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a margin, a border or a drop shadow around the whole image."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画像全体のまわりに、余白・枠線・影を付けます。"
           }
         }
       }
@@ -2445,6 +2509,134 @@
           "stringUnit": {
             "state": "translated",
             "value": "TIFF"
+          }
+        }
+      }
+    },
+    "image.autoCrop": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trim Plain Border"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "余白を自動で切り抜く"
+          }
+        }
+      }
+    },
+    "image.flipHorizontal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Flip Horizontal"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "左右反転"
+          }
+        }
+      }
+    },
+    "image.flipVertical": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Flip Vertical"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上下反転"
+          }
+        }
+      }
+    },
+    "image.resize": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resize"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "サイズ変更"
+          }
+        }
+      }
+    },
+    "image.rotateLeft": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rotate Left"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "左に回転"
+          }
+        }
+      }
+    },
+    "image.rotateRight": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rotate Right"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "右に回転"
+          }
+        }
+      }
+    },
+    "image.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Image"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画像の操作"
+          }
+        }
+      }
+    },
+    "image.usage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn, mirror, trim or resize the whole image."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画像全体を回転・反転・切り抜き・サイズ変更します。"
           }
         }
       }

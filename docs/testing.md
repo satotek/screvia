@@ -81,7 +81,13 @@ proportions when aimed past the edge, border and shadow framing the
 cropped image at full resolution, filled heads and heads at both ends, a
 bent arrow drawn through its bend, rounded corners, a dragged-out text box
 keeping its width and growing down, each font design being its own font,
-and an inserted picture drawn in its box.
+an inserted picture drawn in its box, export turning the original,
+resize scaling points and pixels, and a margin growing the canvas.
+
+**`ImageOrientationTests`** — turns and flips composing into one
+orientation that shows each point where the changes one by one would, four
+turns and two flips undoing themselves, turning an image's pixels, and
+annotations turning with it, labels keeping their size.
 
 **`CanvasLayoutTests`** — fitting the image inside the margin, a cropped
 image extending past the visible rect so annotation space still lines up,
@@ -89,7 +95,8 @@ and zoom growing the scrollable content.
 
 **`PixelReaderTests`** — the eyedropper reading the full image from the
 top, the far edge staying inside, an area averaging its sRGB values rather
-than light, and each colour code format.
+than light, each colour code format, and Auto Crop finding what is inside a
+plain border.
 
 **`HistoryThumbnailLoaderTests`** — thumbnail sizing and cache-key
 distinctness, including a file replaced at the same path.

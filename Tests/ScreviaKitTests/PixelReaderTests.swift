@@ -49,4 +49,29 @@ final class PixelReaderTests: XCTestCase {
     func testGreysHaveNoHue() {
         XCTAssertEqual(ColorCodeFormat.cssHSL.code(for: AnnotationColor(red: 0.5, green: 0.5, blue: 0.5)), "hsl(0, 0%, 50%)")
     }
+
+    /// White all round a black block: Auto Crop keeps just the block.
+    func testContentBoundsLeaveOutAPlainBorder() throws {
+        let context = try XCTUnwrap(CGContext(
+            data: nil, width: 100, height: 50, bitsPerComponent: 8, bytesPerRow: 0,
+            space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ))
+        context.setFillColor(CGColor(gray: 1, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: 100, height: 50))
+        context.setFillColor(CGColor(gray: 0, alpha: 1))
+        // Bottom-left origin: columns 20..<70, rows 10..<30 from the top.
+        context.fill(CGRect(x: 20, y: 20, width: 50, height: 20))
+        let reader = try XCTUnwrap(PixelReader(NSImage(cgImage: try XCTUnwrap(context.makeImage()), size: NSSize(width: 100, height: 50))))
+
+        let bounds = try XCTUnwrap(reader.contentBounds())
+
+        XCTAssertEqual(bounds.minX, 0.2, accuracy: 1e-9)
+        XCTAssertEqual(bounds.minY, 0.2, accuracy: 1e-9)
+        XCTAssertEqual(bounds.width, 0.5, accuracy: 1e-9)
+        XCTAssertEqual(bounds.height, 0.4, accuracy: 1e-9)
+    }
+
+    func testAPlainImageHasNoContentToTrimTo() throws {
+        XCTAssertNil(try XCTUnwrap(PixelReader(TestImages.nsImage(width: 10, height: 10))).contentBounds())
+    }
 }
