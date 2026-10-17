@@ -369,6 +369,22 @@
         }
       }
     },
+    "annotation.saveReplacesHelp": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replaces %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ を上書きします"
+          }
+        }
+      }
+    },
     "annotation.select": {
       "localizations": {
         "en": {

@@ -5,14 +5,18 @@ import UniformTypeIdentifiers
 final class AnnotationEditorController {
     private var window: NSWindow?
 
-    /// `suggestedName` seeds Save As, without an extension.
+    /// `suggestedName` seeds Save As, without an extension. `replacing` is
+    /// the file Save writes over, when `image` and `document` are a saved
+    /// edit opened again.
     func show(
         image: NSImage,
+        document: AnnotationDocument = AnnotationDocument(),
+        replacing: URL? = nil,
         suggestedName: String,
         style: AnnotationStyle,
         onStyleChange: @escaping (AnnotationStyle) -> Void,
-        onSave: @escaping (NSImage) -> Void,
-        onSaveAs: @escaping (NSImage, URL) -> Void,
+        onSave: @escaping (NSImage, AnnotationDocument) -> Void,
+        onSaveAs: @escaping (NSImage, AnnotationDocument, URL) -> Void,
         onCopy: @escaping (NSImage) -> Void,
         onCopyText: @escaping (NSImage) -> Void
     ) {
@@ -22,15 +26,17 @@ final class AnnotationEditorController {
             image: image,
             previewImage: ImagePreview.downsample(image),
             initialStyle: style,
+            initialDocument: document,
+            replacingFileName: replacing?.lastPathComponent,
             onStyleChange: onStyleChange,
-            onSave: { [weak self] image in
-                onSave(image)
+            onSave: { [weak self] image, document in
+                onSave(image, document)
                 self?.window?.close()
                 self?.window = nil
             },
-            onSaveAs: { [weak self] image in
+            onSaveAs: { [weak self] image, document in
                 self?.chooseDestination(suggestedName: suggestedName) { url in
-                    onSaveAs(image, url)
+                    onSaveAs(image, document, url)
                 }
             },
             onCopy: onCopy,
@@ -44,6 +50,8 @@ final class AnnotationEditorController {
             defer: false
         )
         window.title = L10n.text("annotation.editorTitle")
+        // Says which file Save will replace.
+        window.subtitle = replacing?.lastPathComponent ?? ""
         window.minSize = NSSize(width: 720, height: 500)
         // Only the minimum size comes from SwiftUI. By default the hosting
         // view also resizes the window to the content's ideal size, and the

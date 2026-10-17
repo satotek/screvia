@@ -39,4 +39,9 @@ actor CaptureProcessingPipeline {
             savedImage: savedImage
         )
     }
+
+    /// Writes over `url`: Save As, and saving an edit that was opened again.
+    func write(_ image: NSImage, to url: URL, jpegQuality: Double) throws {
+        try imageStore.write(image, to: url, jpegQuality: jpegQuality)
+    }
 }

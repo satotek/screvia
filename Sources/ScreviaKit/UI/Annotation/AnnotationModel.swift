@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-nonisolated enum AnnotationTool: String, CaseIterable, Identifiable {
+nonisolated enum AnnotationTool: String, Codable, CaseIterable, Identifiable {
     case select
     case rectangle
     case ellipse
@@ -201,7 +201,7 @@ nonisolated struct AnnotationStyle: Codable, Equatable {
 
 /// `start` and `end` are fractions of the image (0...1, top-left origin), so
 /// an annotation stays put under zoom and survives the downsampled preview.
-nonisolated struct Annotation: Identifiable, Equatable {
+nonisolated struct Annotation: Identifiable, Equatable, Codable {
     let id: UUID
     let tool: AnnotationTool
     var start: CGPoint
@@ -247,7 +247,7 @@ nonisolated struct Annotation: Identifiable, Equatable {
 }
 
 /// Everything the editor can undo: the annotations, and the crop.
-nonisolated struct AnnotationDocument: Equatable {
+nonisolated struct AnnotationDocument: Equatable, Codable {
     var annotations: [Annotation] = []
     /// The visible part of the image, in annotation space. Cropping only
     /// narrows this, so annotations outside it survive an undo.

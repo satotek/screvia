@@ -77,6 +77,11 @@ and zoom growing the scrollable content.
 **`HistoryThumbnailLoaderTests`** — thumbnail sizing and cache-key
 distinctness, including a file replaced at the same path.
 
+**`EditArchiveTests`** — a saved edit coming back with its document, point
+size and pixels, only for its own file, and not once another app changed
+the file; pruning edits whose file is gone or changed, then the oldest past
+the limit.
+
 **`ImageImportTests`** — imported images sized like a capture from this
 screen without losing pixels, non-images rejected, and the clipboard read
 whether it holds pixels or a copied image file (on a private pasteboard, so
