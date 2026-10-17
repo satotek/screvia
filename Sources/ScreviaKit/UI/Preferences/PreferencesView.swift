@@ -16,6 +16,11 @@ enum PreferencesTab: String, CaseIterable, Identifiable {
         L10n.text("preferences.\(rawValue)")
     }
 
+    /// A note under the whole pane.
+    var footer: String? {
+        self == .shortcuts ? L10n.text("preferences.shortcutsHint") : nil
+    }
+
     var symbol: String {
         switch self {
         case .general:
@@ -39,18 +44,29 @@ struct PreferencesPane: View {
     @ObservedObject var settings: ScreviaSettings
 
     var body: some View {
-        PreferencesGrid {
-            switch tab {
-            case .general:
-                GeneralPreferences(settings: settings)
-            case .saving:
-                SavingPreferences(settings: settings)
-            case .capture:
-                CapturePreferences(settings: settings)
-            case .appearance:
-                AppearancePreferences(settings: settings)
-            case .shortcuts:
-                ShortcutPreferences()
+        VStack(spacing: 16) {
+            PreferencesGrid {
+                switch tab {
+                case .general:
+                    GeneralPreferences(settings: settings)
+                case .saving:
+                    SavingPreferences(settings: settings)
+                case .capture:
+                    CapturePreferences(settings: settings)
+                case .appearance:
+                    AppearancePreferences(settings: settings)
+                case .shortcuts:
+                    ShortcutPreferences()
+                }
+            }
+
+            // Below the grid rather than in it: a note wider than the rows
+            // would widen the grid and push them off the window's middle.
+            if let footer = tab.footer {
+                Text(footer)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
             }
         }
         .toggleStyle(.checkbox)
@@ -348,13 +364,6 @@ struct ShortcutPreferences: View {
         }
 
         PreferencesSeparator()
-
-        PreferencesRow {
-            // One line, so it is left as wide as it is.
-            Text(L10n.text("preferences.shortcutsHint"))
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-        }
     }
 }
 
@@ -369,16 +378,18 @@ struct ShortcutRow: View {
 
     var body: some View {
         PreferencesRow(action.title) {
-            HStack(spacing: 6) {
-                // The recorder owns persistence: clicking it captures the next
-                // key combination and writes it straight to UserDefaults.
-                KeyboardShortcuts.Recorder(for: action.shortcutName) { newValue in
-                    shortcut = newValue
-                }
-                .frame(width: 150)
-
-                // Kept in the layout even when hidden so the recorders stay
-                // aligned rather than shifting as rows are customized.
+            // The recorder owns persistence: clicking it captures the next
+            // key combination and writes it straight to UserDefaults.
+            KeyboardShortcuts.Recorder(for: action.shortcutName) { newValue in
+                shortcut = newValue
+            }
+            // The recorder keeps its own width and would sit centred in a
+            // wider frame, apart from its label.
+            .fixedSize()
+            // Beside the recorder but taking no room: the rows keep their
+            // place as they are customised, and the hidden button does not
+            // push the list off the window's middle.
+            .overlay(alignment: .trailing) {
                 Button {
                     KeyboardShortcuts.reset(action.shortcutName)
                     shortcut = action.shortcutName.initialShortcut
@@ -392,6 +403,7 @@ struct ShortcutRow: View {
                 .help(L10n.text("preferences.shortcutRevert"))
                 .opacity(isCustomized ? 1 : 0)
                 .disabled(!isCustomized)
+                .offset(x: 28)
             }
         }
         .onAppear {
