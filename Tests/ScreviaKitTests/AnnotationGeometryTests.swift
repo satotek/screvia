@@ -32,6 +32,29 @@ final class AnnotationGeometryTests: XCTestCase {
         XCTAssertFalse(annotation.contains(CGPoint(x: 150, y: 80), in: imageRect, tolerance: 0))
     }
 
+    /// With a drawing tool, an unfilled box is see-through: its outline
+    /// picks it up, and inside is left for drawing.
+    func testSeeThroughBoxesAreHitOnTheirOutlineWithADrawingTool() {
+        let box = box(CGPoint(x: 0.1, y: 0.1), CGPoint(x: 0.5, y: 0.5))
+        var filled = box
+        filled.style.fillColor = .blue
+
+        XCTAssertFalse(box.contains(CGPoint(x: 60, y: 30), in: imageRect, tolerance: 6, insideCounts: false))
+        XCTAssertTrue(box.contains(CGPoint(x: 21, y: 30), in: imageRect, tolerance: 6, insideCounts: false))
+        XCTAssertTrue(filled.contains(CGPoint(x: 60, y: 30), in: imageRect, tolerance: 6, insideCounts: false))
+    }
+
+    func testSeeThroughEllipsesAreHitOnTheirCurve() {
+        // A circle 80 wide around (60, 30) in a 200×100 view: 0.1...0.5
+        // across, 0.1...0.5 down, so 80×40.
+        let ellipse = box(CGPoint(x: 0.1, y: 0.1), CGPoint(x: 0.5, y: 0.5), tool: .ellipse)
+
+        XCTAssertTrue(ellipse.contains(CGPoint(x: 100, y: 30), in: imageRect, tolerance: 6, insideCounts: false))
+        XCTAssertFalse(ellipse.contains(CGPoint(x: 60, y: 30), in: imageRect, tolerance: 6, insideCounts: false))
+        // Inside the box, but outside the curve.
+        XCTAssertFalse(ellipse.contains(CGPoint(x: 26, y: 13), in: imageRect, tolerance: 2, insideCounts: false))
+    }
+
     func testArrowsAreHitOnlyNearTheLine() {
         let arrow = box(CGPoint(x: 0, y: 0), CGPoint(x: 1, y: 1), tool: .arrow)
 
@@ -195,5 +218,139 @@ final class AnnotationGeometryTests: XCTestCase {
 
         XCTAssertNotEqual(copy.id, original.id)
         XCTAssertEqual(copy.points, original.points)
+    }
+
+    // MARK: - Speech balloons
+
+    private func balloon() -> Annotation {
+        Annotation(
+            tool: .balloon,
+            start: CGPoint(x: 0.1, y: 0.1),
+            end: CGPoint(x: 0.3, y: 0.2),
+            text: "Hi",
+            tail: CGPoint(x: 0.6, y: 0.8)
+        )
+    }
+
+    /// The box follows the font, so the tail's tip is the only grip.
+    func testBalloonsAreDraggedOnlyByTheirTail() throws {
+        let dragged = balloon().resized(.tail, to: CGPoint(x: 0.9, y: 0.1))
+
+        XCTAssertEqual(balloon().handles, [.tail])
+        assertPoint(try XCTUnwrap(dragged.tail), CGPoint(x: 0.9, y: 0.1))
+        assertRect(dragged.bounds, balloon().bounds)
+    }
+
+    func testMovingABalloonTakesItsTailAlong() throws {
+        let moved = balloon().moved(by: CGVector(dx: 0.1, dy: 0.1))
+
+        assertPoint(try XCTUnwrap(moved.tail), CGPoint(x: 0.7, y: 0.9))
+    }
+
+    /// The box can still move, but the tip stays where it can be grabbed.
+    func testABalloonsTailStaysInsideTheCrop() throws {
+        let crop = CGRect(x: 0, y: 0, width: 0.7, height: 1)
+
+        let moved = balloon().moved(by: CGVector(dx: 0.2, dy: 0), within: crop)
+
+        assertPoint(try XCTUnwrap(moved.tail), CGPoint(x: 0.7, y: 0.8))
+        XCTAssertEqual(moved.bounds.minX, 0.3, accuracy: 1e-9)
+    }
+
+    /// The tail reaches well outside the box, and grabbing it should pick
+    /// the balloon.
+    func testABalloonIsHitOnItsTail() {
+        // The tail runs from the box's middle (40, 15) to its tip (120, 80).
+        XCTAssertTrue(balloon().contains(CGPoint(x: 100, y: 64), in: imageRect, tolerance: 6))
+        XCTAssertFalse(balloon().contains(CGPoint(x: 100, y: 20), in: imageRect, tolerance: 6))
+    }
+
+    // MARK: - Magnifier
+
+    private func magnifier(focus: CGPoint? = nil, zoom: CGFloat = 2) -> Annotation {
+        var style = AnnotationStyle.standard
+        style.magnification = zoom
+        return Annotation(
+            tool: .magnifier,
+            start: CGPoint(x: 0.4, y: 0.4),
+            end: CGPoint(x: 0.8, y: 0.8),
+            focus: focus,
+            style: style
+        )
+    }
+
+    /// Smaller by the magnification, centred on the magnifier until its
+    /// focus is dragged elsewhere.
+    func testAMagnifierEnlargesAnAreaAroundItsFocus() {
+        assertRect(magnifier().sampledArea, CGRect(x: 0.5, y: 0.5, width: 0.2, height: 0.2))
+        assertRect(magnifier(zoom: 4).sampledArea, CGRect(x: 0.55, y: 0.55, width: 0.1, height: 0.1))
+        assertRect(
+            magnifier(focus: CGPoint(x: 0.1, y: 0.2)).sampledArea,
+            CGRect(x: 0, y: 0.1, width: 0.2, height: 0.2)
+        )
+    }
+
+    /// Aiming moves what it enlarges, starting from its own middle, and
+    /// leaves the magnifier where it is.
+    func testAimingAMagnifierLeavesItInPlace() throws {
+        let aimed = magnifier().aimed(by: CGVector(dx: -0.5, dy: -0.4))
+        let again = aimed.aimed(by: CGVector(dx: 0.1, dy: 0))
+
+        assertPoint(try XCTUnwrap(aimed.focus), CGPoint(x: 0.1, y: 0.2))
+        assertPoint(try XCTUnwrap(again.focus), CGPoint(x: 0.2, y: 0.2))
+        assertRect(aimed.bounds, magnifier().bounds)
+        XCTAssertTrue(aimed.isMagnifyingElsewhere)
+        XCTAssertFalse(magnifier().isMagnifyingElsewhere)
+    }
+
+    func testAimingStopsAtTheCrop() throws {
+        let crop = CGRect(x: 0.2, y: 0.2, width: 0.6, height: 0.6)
+
+        let aimed = magnifier().aimed(by: CGVector(dx: -0.9, dy: 0), within: crop)
+
+        assertPoint(try XCTUnwrap(aimed.focus), CGPoint(x: 0.2, y: 0.6))
+    }
+
+    /// No handle in the middle, where it would take the drag that moves the
+    /// magnifier; a round one has only corners, since it grows both ways.
+    func testARoundMagnifierHasOnlyCornerHandles() {
+        var square = magnifier()
+        square.style.magnifierShape = .rectangle
+
+        XCTAssertEqual(magnifier().handles.count, 4)
+        XCTAssertEqual(square.handles.count, 8)
+        XCTAssertFalse(magnifier().handles.contains(.tail))
+    }
+
+    /// Square in image points, not in annotation space: on a 200×100 image
+    /// a circle is half as wide in fractions as it is tall.
+    func testARoundMagnifierStaysACircleFromItsAnchor() {
+        let drawn = Annotation(tool: .magnifier, start: CGPoint(x: 0.5, y: 0.5), end: CGPoint(x: 0.6, y: 0.9))
+        let squared = drawn.squared(imageSize: CGSize(width: 200, height: 100), from: CGPoint(x: 0.5, y: 0.5))
+
+        // The longer side is 40 points tall, so 0.2 of the width.
+        assertRect(squared.bounds, CGRect(x: 0.5, y: 0.5, width: 0.2, height: 0.4))
+
+        let upward = drawn.squared(imageSize: CGSize(width: 200, height: 100), from: CGPoint(x: 0.6, y: 0.9))
+        assertRect(upward.bounds, CGRect(x: 0.4, y: 0.5, width: 0.2, height: 0.4))
+    }
+
+    func testDraggingACornerAnchorsTheOppositeOne() {
+        XCTAssertEqual(magnifier().anchor(opposite: .box(x: .max, y: .min)), CGPoint(x: 0.4, y: 0.8))
+        XCTAssertNil(magnifier().anchor(opposite: .box(x: .max, y: nil)))
+    }
+
+    func testMovingAMagnifierTakesItsFocusAlong() throws {
+        let moved = magnifier(focus: CGPoint(x: 0.1, y: 0.2)).moved(by: CGVector(dx: 0.1, dy: 0.1))
+
+        assertPoint(try XCTUnwrap(moved.focus), CGPoint(x: 0.2, y: 0.3))
+    }
+
+    /// The marked area away from the magnifier is part of it, so a click
+    /// there selects it.
+    func testAMagnifierIsHitOnTheAreaItEnlarges() {
+        // The area is x 0...0.2, y 0.1...0.3: (0...40, 10...30) in view space.
+        XCTAssertTrue(magnifier(focus: CGPoint(x: 0.1, y: 0.2)).contains(CGPoint(x: 20, y: 20), in: imageRect, tolerance: 0))
+        XCTAssertFalse(magnifier().contains(CGPoint(x: 20, y: 20), in: imageRect, tolerance: 0))
     }
 }

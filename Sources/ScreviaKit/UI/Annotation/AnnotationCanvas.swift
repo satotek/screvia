@@ -6,7 +6,8 @@ struct AnnotationCanvas: View {
     let image: NSImage
     /// The full capture's size in points, the unit styles are given in.
     let imageSize: CGSize
-    let selectedTool: AnnotationTool
+    /// A plain click on empty space switches this to the select tool.
+    @Binding var selectedTool: AnnotationTool
     /// The style new annotations get.
     let style: AnnotationStyle
     @Binding var document: AnnotationDocument
@@ -28,12 +29,15 @@ struct AnnotationCanvas: View {
         /// accumulates. `before` is the undo snapshot.
         case moving(original: Annotation, before: AnnotationDocument)
         case resizing(original: Annotation, handle: AnnotationHandle, before: AnnotationDocument)
+        /// Moving what a magnifier enlarges, not the magnifier.
+        case aiming(original: Annotation, before: AnnotationDocument)
         /// A click on empty space with the select tool.
         case idle
     }
 
     private struct FilteredRegion {
-        let bounds: CGRect
+        /// The annotation's `sampledArea` when this was made.
+        let area: CGRect
         let image: CGImage
     }
 
@@ -73,6 +77,8 @@ struct AnnotationCanvas: View {
 
             ScrollView([.horizontal, .vertical], showsIndicators: true) {
                 ZStack {
+                    effectsBackdrop(layout: layout)
+
                     Image(nsImage: image)
                         .resizable()
                         .frame(width: layout.imageRect.width, height: layout.imageRect.height)
@@ -165,6 +171,28 @@ struct AnnotationCanvas: View {
 
     // MARK: - Drawing
 
+    /// The border and shadow export adds, drawn behind the image: a box the
+    /// border's width larger than what is visible, casting the shadow.
+    @ViewBuilder
+    private func effectsBackdrop(layout: CanvasLayout) -> some View {
+        let effects = document.effects
+        if !effects.isEmpty {
+            let pointScale = layout.imageRect.width / max(imageSize.width, 1)
+            let border = effects.borderThickness * pointScale
+            let frame = layout.visibleRect.insetBy(dx: -border, dy: -border)
+            Rectangle()
+                .fill(effects.borderColor.map { Color(cgColor: $0.cgColor) } ?? .white)
+                .frame(width: frame.width, height: frame.height)
+                .shadow(
+                    color: .black.opacity(effects.hasShadow ? 0.35 : 0),
+                    // SwiftUI's radius is about half a Core Graphics blur.
+                    radius: ImageEffects.shadowBlur * pointScale / 2,
+                    y: ImageEffects.shadowDrop * pointScale
+                )
+                .position(x: frame.midX, y: frame.midY)
+        }
+    }
+
     private func draw(in context: inout GraphicsContext, layout: CanvasLayout) {
         let imageRect = layout.imageRect
         let pointScale = imageRect.width / max(imageSize.width, 1)
@@ -172,9 +200,8 @@ struct AnnotationCanvas: View {
         context.drawLayer { layer in
             layer.clip(to: Path(layout.visibleRect))
             layer.withCGContext { cgContext in
-                // The text being edited is shown by its text field instead.
                 AnnotationRenderer.draw(
-                    annotations.filter { $0.id != editingTextID },
+                    annotationsOutsideTextField,
                     in: cgContext,
                     imageRect: imageRect,
                     pointScale: pointScale,
@@ -205,10 +232,29 @@ struct AnnotationCanvas: View {
         }
     }
 
+    /// The text being edited is shown by its text field instead. A balloon
+    /// keeps its box and tail, with the field over the box.
+    private var annotationsOutsideTextField: [Annotation] {
+        annotations.compactMap { annotation in
+            guard annotation.id == editingTextID else {
+                return annotation
+            }
+            guard annotation.tool == .balloon else {
+                return nil
+            }
+            var empty = annotation
+            empty.text = ""
+            return empty
+        }
+    }
+
     private func inProgressAnnotation() -> Annotation? {
         switch dragAction {
+        case let .drawing(start, end) where selectedTool == .balloon:
+            return placedBalloon(pointingAt: start, at: end)
         case let .drawing(start, end) where selectedTool != .text && selectedTool != .step:
             return Annotation(tool: selectedTool, start: start, end: end, style: style)
+                .squared(imageSize: imageSize, from: start)
         case let .sketching(points):
             return Annotation(tool: .freehand, start: .zero, end: .zero, points: points, style: style)
         default:
@@ -255,30 +301,40 @@ struct AnnotationCanvas: View {
 
     /// A handle of the selected annotation wins over everything, so a shape
     /// can be resized right after it is drawn without switching tools.
-    /// Moving needs the select tool; with a drawing tool, a drag that starts
-    /// on an existing shape draws a new one on top.
+    /// A drag that starts on an existing shape moves it with any tool, except
+    /// inside a see-through box with a drawing tool, which draws there.
     private func beginDrag(at point: CGPoint, layout: CanvasLayout) {
         if editingTextID != nil {
             commitTextEditing()
         }
 
         let imageRect = layout.imageRect
+
         if let selectedAnnotation,
            let handle = selectedAnnotation.handle(at: point, in: imageRect, radius: Self.handleHitRadius) {
             dragAction = .resizing(original: selectedAnnotation, handle: handle, before: document)
             return
         }
 
+        let insideCounts = selectedTool == .select
         let hit = layout.visibleRect.contains(point)
-            ? annotations.last { $0.contains(point, in: imageRect, tolerance: Self.hitTolerance) }
+            ? annotations.last {
+                $0.contains(point, in: imageRect, tolerance: Self.hitTolerance, insideCounts: insideCounts)
+            }
             : nil
+
+        if let magnifier = magnifierToAim(at: point, hit: hit, imageRect: imageRect) {
+            selection = magnifier.id
+            dragAction = .aiming(original: magnifier, before: document)
+            return
+        }
         let start = AnnotationSpace.normalizedPoint(point, in: imageRect, within: document.crop)
 
         switch selectedTool {
         case .select:
             selection = hit?.id
             dragAction = hit.map { .moving(original: $0, before: document) } ?? .idle
-        case .text where hit?.tool == .text:
+        case .text where hit?.tool == .text, .balloon where hit?.tool == .balloon:
             if let hit {
                 beginTextEditing(existing: hit)
             }
@@ -286,12 +342,20 @@ struct AnnotationCanvas: View {
         case .crop:
             selection = nil
             dragAction = .cropping(start: start, end: start)
-        case .freehand:
-            selection = nil
-            dragAction = .sketching(points: [start])
         default:
-            selection = nil
-            dragAction = .drawing(start: start, end: start)
+            // As in ShareX, any tool picks up an annotation it lands on, so
+            // one just drawn can be adjusted without switching tools; empty
+            // space is where drawing starts.
+            if let hit {
+                selection = hit.id
+                dragAction = .moving(original: hit, before: document)
+            } else if selectedTool == .freehand {
+                selection = nil
+                dragAction = .sketching(points: [start])
+            } else {
+                selection = nil
+                dragAction = .drawing(start: start, end: start)
+            }
         }
     }
 
@@ -319,9 +383,35 @@ struct AnnotationCanvas: View {
                 within: document.crop
             ))
         case let .resizing(original, handle, _):
-            replace(original.resized(handle, to: point, within: document.crop))
+            let resized = original.resized(handle, to: point, within: document.crop)
+            replace(original.anchor(opposite: handle).map { resized.squared(imageSize: imageSize, from: $0) } ?? resized)
+        case let .aiming(original, _):
+            replace(original.aimed(
+                by: CGVector(
+                    dx: value.translation.width / imageRect.width,
+                    dy: value.translation.height / imageRect.height
+                ),
+                within: document.crop
+            ))
         case .idle, nil:
             break
+        }
+    }
+
+    /// The magnifier a drag at `point` aims rather than moves: ⌥-dragging
+    /// one, or dragging the marked area of one aimed elsewhere. The
+    /// selected magnifier counts with any tool, so one just drawn can be
+    /// aimed straight away; others need the select tool, as moving does.
+    private func magnifierToAim(at point: CGPoint, hit: Annotation?, imageRect: CGRect) -> Annotation? {
+        let candidates = [selectedAnnotation, selectedTool == .select ? hit : nil]
+            .compactMap { $0 }
+            .filter { $0.tool == .magnifier }
+        return candidates.first { magnifier in
+            if AnnotationSpace.rect(magnifier.bounds, in: imageRect).contains(point) {
+                return NSEvent.modifierFlags.contains(.option)
+            }
+            return magnifier.isMagnifyingElsewhere
+                && AnnotationSpace.rect(magnifier.sampledArea, in: imageRect).contains(point)
         }
     }
 
@@ -343,6 +433,7 @@ struct AnnotationCanvas: View {
             let crop = Self.box(start, end)
             // A stray click must not crop to a sliver.
             guard crop.width > 0.01, crop.height > 0.01 else {
+                selectedTool = .select
                 return
             }
             let before = document
@@ -352,11 +443,11 @@ struct AnnotationCanvas: View {
         case let .moving(original, before):
             if document != before {
                 onRecordUndo(before)
-            } else if original.tool == .text, isDoubleClick(on: original.id) {
+            } else if original.tool.hasText, isDoubleClick(on: original.id) {
                 beginTextEditing(existing: original)
             }
             refreshFilteredRegions()
-        case let .resizing(_, _, before):
+        case let .resizing(_, _, before), let .aiming(_, before):
             if document != before {
                 onRecordUndo(before)
             }
@@ -369,7 +460,10 @@ struct AnnotationCanvas: View {
     private func finishDrawing(from start: CGPoint, to end: CGPoint) {
         switch selectedTool {
         case .text:
-            beginTextEditing(at: start)
+            beginTextEditing(.text, at: start)
+        case .balloon:
+            let balloon = placedBalloon(pointingAt: start, at: end)
+            beginTextEditing(.balloon, at: balloon.start, tail: balloon.tail)
         case .step:
             // Centred on the click, then kept inside the visible image.
             let placed = AnnotationRenderer.fitted(
@@ -386,9 +480,13 @@ struct AnnotationCanvas: View {
                 ? max(width, height) > 0.005
                 : min(width, height) > 0.005
             guard isLongEnough else {
+                // A click where a drag would draw: done drawing. Tools a
+                // click itself uses (text, balloon, step, freehand's dot)
+                // never get here.
+                selectedTool = .select
                 return
             }
-            add(Annotation(tool: selectedTool, start: start, end: end, style: style))
+            add(Annotation(tool: selectedTool, start: start, end: end, style: style).squared(imageSize: imageSize, from: start))
         }
     }
 
@@ -421,10 +519,29 @@ struct AnnotationCanvas: View {
 
     // MARK: - Text
 
-    private func beginTextEditing(at origin: CGPoint) {
+    /// A balloon dragged out from what it points at to where it sits. A
+    /// plain click has nothing to point at yet, so the tail goes below and to
+    /// the left, where the user can drag it.
+    private func placedBalloon(pointingAt tip: CGPoint, at origin: CGPoint) -> Annotation {
+        var balloon = AnnotationRenderer.fitted(
+            Annotation(tool: .balloon, start: origin, end: origin, text: "", style: style),
+            imageSize: imageSize
+        )
+        let box = balloon.bounds
+        let dragged = hypot(origin.x - tip.x, origin.y - tip.y) > 0.01
+        balloon.tail = dragged
+            ? tip
+            : AnnotationSpace.clamped(
+                CGPoint(x: box.minX + box.width * 0.2, y: box.maxY + box.height * 0.8),
+                to: document.crop
+            )
+        return balloon
+    }
+
+    private func beginTextEditing(_ tool: AnnotationTool, at origin: CGPoint, tail: CGPoint? = nil) {
         documentBeforeTextEditing = document
         let annotation = AnnotationRenderer.fitted(
-            Annotation(tool: .text, start: origin, end: origin, text: "", style: style),
+            Annotation(tool: tool, start: origin, end: origin, text: "", tail: tail, style: style),
             imageSize: imageSize
         )
         document.annotations.append(annotation)
@@ -495,48 +612,51 @@ struct AnnotationCanvas: View {
         documentBeforeTextEditing = nil
     }
 
-    // MARK: - Redaction filters
+    // MARK: - Regions that sample the image
 
     private func filteredImage(for annotation: Annotation) -> CGImage? {
-        guard let region = filteredRegions[annotation.id], region.bounds == annotation.bounds else {
+        guard let region = filteredRegions[annotation.id], region.area == annotation.sampledArea else {
             return nil
         }
         return region.image
     }
 
+    /// Blur and pixelation wait until a drag ends, being too slow to redo
+    /// every frame. A magnifier only crops, so it follows the drag live.
     private func refreshFilteredRegions() {
+        let isDragging: Bool
         switch dragAction {
         case .moving, .resizing:
-            return
+            isDragging = true
         default:
-            break
+            isDragging = false
         }
 
-        let redactions = annotations.filter { $0.tool.filterName != nil }
+        let sampling = annotations.filter(\.tool.samplesImage)
         filteredRegions = filteredRegions.filter { id, region in
-            redactions.contains { $0.id == id && $0.bounds == region.bounds }
+            sampling.contains { $0.id == id && $0.sampledArea == region.area }
         }
 
         guard
-            redactions.contains(where: { filteredRegions[$0.id] == nil }),
+            sampling.contains(where: { filteredRegions[$0.id] == nil }),
             let source = image.cgImage(forProposedRect: nil, context: nil, hints: nil)
         else {
             return
         }
 
         let pixels = CGRect(x: 0, y: 0, width: source.width, height: source.height)
-        for annotation in redactions where filteredRegions[annotation.id] == nil {
-            guard
-                let filterName = annotation.tool.filterName,
-                let filtered = filteredRegion(
-                    of: source,
-                    in: AnnotationSpace.rect(annotation.bounds, in: pixels),
-                    filterName: filterName
-                )
-            else {
+        for annotation in sampling where filteredRegions[annotation.id] == nil {
+            if isDragging, annotation.tool.filterName != nil {
                 continue
             }
-            filteredRegions[annotation.id] = FilteredRegion(bounds: annotation.bounds, image: filtered)
+            guard let filtered = sampledRegion(
+                for: annotation.tool,
+                of: source,
+                in: AnnotationSpace.rect(annotation.sampledArea, in: pixels)
+            ) else {
+                continue
+            }
+            filteredRegions[annotation.id] = FilteredRegion(area: annotation.sampledArea, image: filtered)
         }
     }
 }

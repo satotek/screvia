@@ -55,6 +55,7 @@ final class LocalizationKeyTests: XCTestCase {
 
     func testAnnotationTools() throws {
         try assertTranslated(AnnotationTool.allCases.map { "annotation.\($0.rawValue)" })
+        try assertTranslated(AnnotationTool.allCases.map { "annotation.\($0.rawValue).usage" })
     }
 
     func testTextLanguages() throws {
@@ -63,5 +64,14 @@ final class LocalizationKeyTests: XCTestCase {
 
     func testTextAppearances() throws {
         try assertTranslated(TextAppearance.allCases.map { "style.text.\($0.rawValue)" })
+    }
+
+    func testPaletteColourNames() throws {
+        try assertTranslated(AnnotationColor.palette.compactMap { AnnotationColor.paletteKeys[$0] }.map { "color.\($0)" })
+        XCTAssertEqual(AnnotationColor.paletteKeys.count, AnnotationColor.palette.count)
+    }
+
+    func testMagnifierShapes() throws {
+        try assertTranslated(MagnifierShape.allCases.map { "style.magnifierShape.\($0.rawValue)" })
     }
 }

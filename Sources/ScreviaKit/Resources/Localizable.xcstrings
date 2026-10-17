@@ -49,6 +49,54 @@
         }
       }
     },
+    "annotation.arrow.usage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag from where the arrow starts to what it points at."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "矢印の根元から、指したい場所までドラッグします。"
+          }
+        }
+      }
+    },
+    "annotation.balloon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speech Balloon"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "吹き出し"
+          }
+        }
+      }
+    },
+    "annotation.balloon.usage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag from what it points at to where the balloon goes, then type."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "指したい場所から吹き出しを置く場所までドラッグし、文字を入力します。"
+          }
+        }
+      }
+    },
     "annotation.blur": {
       "localizations": {
         "en": {
@@ -61,6 +109,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "ぼかし"
+          }
+        }
+      }
+    },
+    "annotation.blur.usage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag over what to hide, to blur it."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隠したいところをドラッグして、ぼかします。"
           }
         }
       }
@@ -141,6 +205,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "トリミング"
+          }
+        }
+      }
+    },
+    "annotation.crop.usage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag over the part to keep."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "残したい範囲をドラッグします。"
           }
         }
       }
@@ -241,6 +321,22 @@
         }
       }
     },
+    "annotation.ellipse.usage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag to draw an ellipse."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ドラッグで楕円を描きます。"
+          }
+        }
+      }
+    },
     "annotation.freehand": {
       "localizations": {
         "en": {
@@ -253,6 +349,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "フリーハンド"
+          }
+        }
+      }
+    },
+    "annotation.freehand.usage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag to draw freely."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ドラッグしたとおりに線を描きます。"
           }
         }
       }
@@ -273,6 +385,22 @@
         }
       }
     },
+    "annotation.highlight.usage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag over text to highlight it."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文字の上をドラッグして、蛍光ペンを引きます。"
+          }
+        }
+      }
+    },
     "annotation.line": {
       "localizations": {
         "en": {
@@ -285,6 +413,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "直線"
+          }
+        }
+      }
+    },
+    "annotation.line.usage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag to draw a straight line."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ドラッグで直線を引きます。"
           }
         }
       }
@@ -305,6 +449,22 @@
         }
       }
     },
+    "annotation.liveText.usage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select text in the image, to copy it."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画像の中の文字を選んで、コピーできます。"
+          }
+        }
+      }
+    },
     "annotation.liveTextHint": {
       "localizations": {
         "en": {
@@ -317,6 +477,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "文字をドラッグして選び、⌘C か右クリックでコピーします。"
+          }
+        }
+      }
+    },
+    "annotation.magnifier": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Magnifier"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拡大鏡"
+          }
+        }
+      }
+    },
+    "annotation.magnifier.usage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag to enlarge what is under it. ⌥-drag it to enlarge somewhere else."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ドラッグした場所を拡大します。⌥ を押しながらドラッグすると、拡大する場所を動かせます。"
+          }
+        }
+      }
+    },
+    "annotation.magnifierHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⌥-drag to choose what it enlarges"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⌥ を押しながらドラッグすると、拡大する場所を動かせます"
           }
         }
       }
@@ -353,6 +561,22 @@
         }
       }
     },
+    "annotation.pixelate.usage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag over what to hide, to pixelate it."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隠したいところをドラッグして、モザイクをかけます。"
+          }
+        }
+      }
+    },
     "annotation.rectangle": {
       "localizations": {
         "en": {
@@ -365,6 +589,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "矩形"
+          }
+        }
+      }
+    },
+    "annotation.rectangle.usage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag to draw a rectangle."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ドラッグで四角形を描きます。"
           }
         }
       }
@@ -401,6 +641,22 @@
         }
       }
     },
+    "annotation.select.usage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select, move and resize annotations. Any tool moves an annotation dragged from it, and a click on empty space comes back here."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "注釈を選んで、移動やサイズ変更をします。どのツールでも図形をドラッグすれば動かせて、何もない場所をクリックするとこのツールに戻ります。"
+          }
+        }
+      }
+    },
     "annotation.step": {
       "localizations": {
         "en": {
@@ -417,6 +673,22 @@
         }
       }
     },
+    "annotation.step.usage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click to place ①②③ in order. Deleting one renumbers the rest."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "クリックで ①②③ と順に番号を置きます。消すと番号が詰まります。"
+          }
+        }
+      }
+    },
     "annotation.text": {
       "localizations": {
         "en": {
@@ -429,6 +701,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "テキスト"
+          }
+        }
+      }
+    },
+    "annotation.text.usage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click where the text goes, then type. Double-click text to change it."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "クリックした場所に文字を入力します。文字はダブルクリックで直せます。"
           }
         }
       }
@@ -1309,6 +1597,246 @@
           "stringUnit": {
             "state": "translated",
             "value": "セージ"
+          }
+        }
+      }
+    },
+    "color.black": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Black"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "黒"
+          }
+        }
+      }
+    },
+    "color.blue": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blue"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "青"
+          }
+        }
+      }
+    },
+    "color.green": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Green"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "緑"
+          }
+        }
+      }
+    },
+    "color.orange": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orange"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "オレンジ"
+          }
+        }
+      }
+    },
+    "color.purple": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purple"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "紫"
+          }
+        }
+      }
+    },
+    "color.red": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Red"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "赤"
+          }
+        }
+      }
+    },
+    "color.white": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "White"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "白"
+          }
+        }
+      }
+    },
+    "color.yellow": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yellow"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "黄"
+          }
+        }
+      }
+    },
+    "effects.border": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Border"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "枠線"
+          }
+        }
+      }
+    },
+    "effects.borderWidth": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Border Width"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "枠線の太さ"
+          }
+        }
+      }
+    },
+    "effects.noBorder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Border"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "枠線なし"
+          }
+        }
+      }
+    },
+    "effects.points": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d pt"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d pt"
+          }
+        }
+      }
+    },
+    "effects.shadow": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drop Shadow"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "影を付ける"
+          }
+        }
+      }
+    },
+    "effects.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Image Effects"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画像エフェクト"
+          }
+        }
+      }
+    },
+    "effects.usage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a border or a drop shadow around the whole image."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画像全体のまわりに、枠線や影を付けます。"
           }
         }
       }
@@ -3005,6 +3533,86 @@
           "stringUnit": {
             "state": "translated",
             "value": "太さ %d"
+          }
+        }
+      }
+    },
+    "style.magnification": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zoom"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倍率"
+          }
+        }
+      }
+    },
+    "style.magnificationValue": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@×"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@倍"
+          }
+        }
+      }
+    },
+    "style.magnifierShape": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shape"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "形"
+          }
+        }
+      }
+    },
+    "style.magnifierShape.circle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Circle"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "丸"
+          }
+        }
+      }
+    },
+    "style.magnifierShape.rectangle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rectangle"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "四角"
           }
         }
       }

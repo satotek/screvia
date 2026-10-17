@@ -9,9 +9,10 @@ nonisolated enum AnnotationRenderer {
     /// `imageRect`. `pointScale` is context units per image point, which turns
     /// sizes given in image points into context units.
     ///
-    /// `filteredRegion` is the blurred or pixelated region for a redaction
-    /// tool. Without it the region gets a cheap sketch, which the canvas
-    /// shows while a filter is pending.
+    /// `filteredRegion` is what a tool that samples the image shows of it:
+    /// the blurred or pixelated region, or the magnifier's enlargement.
+    /// Without it the region gets a cheap sketch, which the canvas shows while
+    /// one is pending.
     static func draw(
         _ annotation: Annotation,
         in context: CGContext,
@@ -59,6 +60,25 @@ nonisolated enum AnnotationRenderer {
             context.fill(rect)
         case .text:
             drawText(annotation.text ?? "", style: style, in: rect, context: context, pointScale: pointScale)
+        case .balloon:
+            drawBalloon(
+                annotation.text ?? "",
+                style: style,
+                in: rect,
+                tail: annotation.tail.map { AnnotationSpace.point($0, in: imageRect) },
+                context: context,
+                pointScale: pointScale
+            )
+        case .magnifier:
+            if annotation.isMagnifyingElsewhere {
+                drawMagnifiedArea(
+                    AnnotationSpace.rect(annotation.sampledArea, in: imageRect),
+                    shape: style.magnifierShape,
+                    joinedTo: rect,
+                    context: context
+                )
+            }
+            drawMagnifier(filteredRegion, shape: style.magnifierShape, in: rect, context: context)
         case .step:
             drawStep(stepNumber, style: style, in: rect, context: context)
         case .blur, .pixelate:
@@ -124,7 +144,18 @@ nonisolated enum AnnotationRenderer {
 
     /// The annotation with its box fitted to its content, for the tools sized
     /// by font rather than by dragging. The top-left corner stays put.
+    /// A round magnifier, as when its shape is switched to round, becomes
+    /// the largest circle inside its box.
     static func fitted(_ annotation: Annotation, imageSize: CGSize) -> Annotation {
+        if annotation.tool == .magnifier, annotation.style.magnifierShape == .circle,
+           imageSize.width > 0, imageSize.height > 0 {
+            let box = annotation.bounds
+            let side = min(box.width * imageSize.width, box.height * imageSize.height)
+            var fitted = annotation
+            fitted.start = CGPoint(x: box.midX - side / imageSize.width / 2, y: box.midY - side / imageSize.height / 2)
+            fitted.end = CGPoint(x: box.midX + side / imageSize.width / 2, y: box.midY + side / imageSize.height / 2)
+            return fitted
+        }
         guard annotation.tool.isSizedByFont, imageSize.width > 0, imageSize.height > 0 else {
             return annotation
         }
@@ -178,7 +209,7 @@ nonisolated enum AnnotationRenderer {
     static func flatten(_ image: NSImage, document: AnnotationDocument) -> NSImage {
         let crop = document.crop.intersection(AnnotationSpace.unit)
         guard
-            !document.annotations.isEmpty || crop != AnnotationSpace.unit,
+            !document.annotations.isEmpty || crop != AnnotationSpace.unit || !document.effects.isEmpty,
             let source = image.cgImage(forProposedRect: nil, context: nil, hints: nil),
             image.size.width > 0, !crop.isEmpty
         else {
@@ -211,30 +242,77 @@ nonisolated enum AnnotationRenderer {
             imageRect: canvas,
             pointScale: canvas.width / image.size.width,
             filteredRegion: { annotation in
-                annotation.tool.filterName.flatMap { filterName in
-                    filteredRegion(
-                        of: source,
-                        in: AnnotationSpace.rect(annotation.bounds, in: canvas),
-                        filterName: filterName
-                    )
-                }
+                annotation.tool.samplesImage
+                    ? sampledRegion(for: annotation.tool, of: source, in: AnnotationSpace.rect(annotation.sampledArea, in: canvas))
+                    : nil
             }
         )
 
         // CGImage cropping, like annotation space, counts from the top.
+        let pixelsPerPoint = canvas.width / image.size.width
         guard
             let flattened = context.makeImage(),
-            let output = flattened.cropping(to: AnnotationSpace.rect(crop, in: canvas).integral)
+            let cropped = flattened.cropping(to: AnnotationSpace.rect(crop, in: canvas).integral),
+            let output = applying(document.effects, to: cropped, pixelsPerPoint: pixelsPerPoint, colorSpace: colorSpace)
         else {
             return image
         }
         return NSImage(
             cgImage: output,
             size: NSSize(
-                width: image.size.width * CGFloat(output.width) / canvas.width,
-                height: image.size.height * CGFloat(output.height) / canvas.height
+                width: CGFloat(output.width) / pixelsPerPoint,
+                height: CGFloat(output.height) / pixelsPerPoint
             )
         )
+    }
+
+    /// The image framed by `effects`: its border, then room for the shadow
+    /// around that. The image itself is untouched, so the crop and the
+    /// annotations keep their pixels.
+    static func applying(
+        _ effects: ImageEffects,
+        to image: CGImage,
+        pixelsPerPoint: CGFloat,
+        colorSpace: CGColorSpace
+    ) -> CGImage? {
+        guard !effects.isEmpty else {
+            return image
+        }
+
+        let border = (effects.borderThickness * pixelsPerPoint).rounded()
+        let margin = effects.hasShadow ? (ImageEffects.shadowMargin * pixelsPerPoint).rounded() : 0
+        let framed = CGRect(
+            x: margin,
+            y: margin,
+            width: CGFloat(image.width) + border * 2,
+            height: CGFloat(image.height) + border * 2
+        )
+        guard let context = CGContext(
+            data: nil,
+            width: Int(framed.width + margin * 2),
+            height: Int(framed.height + margin * 2),
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else {
+            return nil
+        }
+
+        // A bottom-left origin here, so a negative offset drops the shadow.
+        if effects.hasShadow {
+            context.setShadow(
+                offset: CGSize(width: 0, height: -ImageEffects.shadowDrop * pixelsPerPoint),
+                blur: ImageEffects.shadowBlur * pixelsPerPoint,
+                color: CGColor(gray: 0, alpha: 0.35)
+            )
+        }
+        // Under the image even without a border, as what casts the shadow.
+        context.setFillColor(effects.borderColor?.cgColor ?? CGColor(gray: 1, alpha: 1))
+        context.fill(framed)
+        context.setShadow(offset: .zero, blur: 0, color: nil)
+        context.draw(image, in: framed.insetBy(dx: border, dy: border))
+        return context.makeImage()
     }
 
     // MARK: - Pieces
@@ -260,6 +338,19 @@ nonisolated enum AnnotationRenderer {
             context.setShadow(offset: .zero, blur: 0, color: nil)
         }
 
+        drawLabel(text, style: style, outlined: style.textAppearance == .outline, in: rect, context: context, pointScale: pointScale)
+    }
+
+    /// The text of a text box or balloon, at the padding the box was sized
+    /// with.
+    private static func drawLabel(
+        _ text: String,
+        style: AnnotationStyle,
+        outlined: Bool,
+        in rect: CGRect,
+        context: CGContext,
+        pointScale: CGFloat
+    ) {
         guard !text.isEmpty else {
             return
         }
@@ -270,7 +361,7 @@ nonisolated enum AnnotationRenderer {
 
         NSGraphicsContext.saveGraphicsState()
         NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: true)
-        if style.textAppearance == .outline {
+        if outlined {
             // A positive stroke width strokes without filling; drawn first
             // and wide, the fill on top leaves only the outside of it.
             (text as NSString).draw(at: origin, withAttributes: [
@@ -284,6 +375,115 @@ nonisolated enum AnnotationRenderer {
             .foregroundColor: NSColor(cgColor: style.color.cgColor) ?? .white
         ])
         NSGraphicsContext.restoreGraphicsState()
+    }
+
+    /// A rounded box with a tail pointing at `tail`, outlined and its text
+    /// in the stroke colour, on the fill colour or white. Box and tail are
+    /// one outline, so no seam shows where they meet.
+    private static func drawBalloon(
+        _ text: String,
+        style: AnnotationStyle,
+        in rect: CGRect,
+        tail: CGPoint?,
+        context: CGContext,
+        pointScale: CGFloat
+    ) {
+        context.addPath(balloonOutline(around: rect, pointingAt: tail, cornerRadius: style.fontSize * 0.5 * pointScale))
+        context.setFillColor((style.fillColor ?? .white).cgColor)
+        context.drawPath(using: .fillStroke)
+        context.setShadow(offset: .zero, blur: 0, color: nil)
+        drawLabel(text, style: style, outlined: false, in: rect, context: context, pointScale: pointScale)
+    }
+
+    static func balloonOutline(around rect: CGRect, pointingAt tip: CGPoint?, cornerRadius: CGFloat) -> CGPath {
+        let radius = min(cornerRadius, rect.width / 2, rect.height / 2)
+        let body = CGPath(roundedRect: rect, cornerWidth: radius, cornerHeight: radius, transform: nil)
+        // A tip inside the box would turn the tail inside out.
+        guard let tip, !rect.contains(tip) else {
+            return body
+        }
+
+        // The tail's base crosses the middle of the box, square to the tip,
+        // so the box hides it and only the part outside shows.
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        let across = atan2(tip.y - center.y, tip.x - center.x) + .pi / 2
+        let halfBase = min(rect.width, rect.height) * 0.45
+        let tail = CGMutablePath()
+        tail.move(to: CGPoint(x: center.x + halfBase * cos(across), y: center.y + halfBase * sin(across)))
+        tail.addLine(to: tip)
+        tail.addLine(to: CGPoint(x: center.x - halfBase * cos(across), y: center.y - halfBase * sin(across)))
+        tail.closeSubpath()
+        return body.union(tail)
+    }
+
+    private static func magnifierPath(_ shape: MagnifierShape, in rect: CGRect) -> CGPath {
+        switch shape {
+        case .rectangle: CGPath(rect: rect, transform: nil)
+        case .circle: CGPath(ellipseIn: rect, transform: nil)
+        }
+    }
+
+    /// Marks what a magnifier placed elsewhere enlarges, with a line to the
+    /// magnifier. Drawn first, so the magnifier covers the line's far end.
+    private static func drawMagnifiedArea(
+        _ area: CGRect,
+        shape: MagnifierShape,
+        joinedTo lens: CGRect,
+        context: CGContext
+    ) {
+        let from = CGPoint(x: area.midX, y: area.midY)
+        let to = CGPoint(x: lens.midX, y: lens.midY)
+        let dx = to.x - from.x
+        let dy = to.y - from.y
+        // Leave the area at its outline, so the line does not cross what it
+        // marks: where the ray meets the box, or the ellipse.
+        let exit: CGFloat
+        switch shape {
+        case .rectangle:
+            exit = min(
+                dx == 0 ? .infinity : area.width / 2 / abs(dx),
+                dy == 0 ? .infinity : area.height / 2 / abs(dy)
+            )
+        case .circle:
+            let a = dx / (area.width / 2)
+            let b = dy / (area.height / 2)
+            exit = 1 / max(hypot(a, b), .ulpOfOne)
+        }
+
+        context.saveGState()
+        context.setLineDash(phase: 0, lengths: [])
+        if exit < 1 {
+            context.move(to: CGPoint(x: from.x + dx * exit, y: from.y + dy * exit))
+            context.addLine(to: to)
+        }
+        context.addPath(magnifierPath(shape, in: area))
+        context.strokePath()
+        context.restoreGState()
+    }
+
+    /// The enlargement, framed in the stroke colour. Only the frame casts a
+    /// shadow; inside, the image is meant to look like the image.
+    private static func drawMagnifier(_ enlarged: CGImage?, shape: MagnifierShape, in rect: CGRect, context: CGContext) {
+        let outline = magnifierPath(shape, in: rect)
+        context.addPath(outline)
+        context.strokePath()
+
+        context.saveGState()
+        context.setShadow(offset: .zero, blur: 0, color: nil)
+        context.addPath(outline)
+        context.clip()
+        if let enlarged {
+            context.interpolationQuality = .high
+            drawImage(enlarged, in: rect, context: context)
+        } else {
+            context.setFillColor(CGColor(gray: 0.5, alpha: 0.25))
+            context.fill(rect)
+        }
+        context.restoreGState()
+
+        context.setShadow(offset: .zero, blur: 0, color: nil)
+        context.addPath(outline)
+        context.strokePath()
     }
 
     private static func drawStep(_ number: Int, style: AnnotationStyle, in rect: CGRect, context: CGContext) {

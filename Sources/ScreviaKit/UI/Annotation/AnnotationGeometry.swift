@@ -45,6 +45,8 @@ nonisolated enum AnnotationSpace {
 nonisolated enum AnnotationHandle: Hashable {
     case start
     case end
+    /// The tip of a speech balloon's tail.
+    case tail
     /// A point on the bounding box. A nil axis means the middle of that side,
     /// so `.box(x: .max, y: nil)` is the middle of the right edge.
     case box(x: Edge?, y: Edge?)
@@ -70,14 +72,102 @@ nonisolated extension Annotation {
         if tool.isLine {
             return [.start, .end]
         }
+        if tool == .balloon {
+            return [.tail]
+        }
+        if tool == .magnifier, style.magnifierShape == .circle {
+            // Corners only: a circle grows in both directions at once.
+            return boxHandles.filter { handle in
+                if case let .box(x, y) = handle {
+                    return x != nil && y != nil
+                }
+                return false
+            }
+        }
         if tool.isSizedByFont {
             return []
         }
+        return boxHandles
+    }
+
+    private var boxHandles: [AnnotationHandle] {
         let positions: [(AnnotationHandle.Edge?, AnnotationHandle.Edge?)] = [
             (.min, .min), (nil, .min), (.max, .min), (.max, nil),
             (.max, .max), (nil, .max), (.min, .max), (.min, nil)
         ]
         return positions.map { AnnotationHandle.box(x: $0.0, y: $0.1) }
+    }
+
+    /// The part of the image a sampling tool shows: what a redaction covers,
+    /// or what a magnifier enlarges, which is smaller by its magnification
+    /// and centred on its focus.
+    var sampledArea: CGRect {
+        let box = bounds
+        guard tool == .magnifier else {
+            return box
+        }
+        let zoom = max(style.magnification, 1)
+        let center = focus ?? CGPoint(x: box.midX, y: box.midY)
+        return CGRect(
+            x: center.x - box.width / zoom / 2,
+            y: center.y - box.height / zoom / 2,
+            width: box.width / zoom,
+            height: box.height / zoom
+        )
+    }
+
+    /// The magnifier aimed `delta` away from where it was aimed, which is its
+    /// own middle until it is first aimed elsewhere. The magnifier stays put.
+    func aimed(by delta: CGVector, within area: CGRect = AnnotationSpace.unit) -> Annotation {
+        let box = bounds
+        let from = focus ?? CGPoint(x: box.midX, y: box.midY)
+        var aimed = self
+        aimed.focus = AnnotationSpace.clamped(CGPoint(x: from.x + delta.dx, y: from.y + delta.dy), to: area)
+        return aimed
+    }
+
+    /// A round magnifier's box made square in image points, so it draws a
+    /// circle rather than an ellipse. The corner at `anchor` stays put and
+    /// the box takes its longer side.
+    func squared(imageSize: CGSize, from anchor: CGPoint) -> Annotation {
+        guard tool == .magnifier, style.magnifierShape == .circle, imageSize.width > 0, imageSize.height > 0 else {
+            return self
+        }
+        let box = bounds
+        let far = CGPoint(
+            x: abs(box.minX - anchor.x) > abs(box.maxX - anchor.x) ? box.minX : box.maxX,
+            y: abs(box.minY - anchor.y) > abs(box.maxY - anchor.y) ? box.minY : box.maxY
+        )
+        let side = max(box.width * imageSize.width, box.height * imageSize.height)
+        let corner = CGPoint(
+            x: anchor.x + (far.x < anchor.x ? -1 : 1) * side / imageSize.width,
+            y: anchor.y + (far.y < anchor.y ? -1 : 1) * side / imageSize.height
+        )
+
+        var squared = self
+        squared.start = CGPoint(x: min(anchor.x, corner.x), y: min(anchor.y, corner.y))
+        squared.end = CGPoint(x: max(anchor.x, corner.x), y: max(anchor.y, corner.y))
+        return squared
+    }
+
+    /// The corner opposite a corner handle, which stays put while it is
+    /// dragged.
+    func anchor(opposite handle: AnnotationHandle) -> CGPoint? {
+        guard case let .box(.some(x), .some(y)) = handle else {
+            return nil
+        }
+        let box = bounds
+        return CGPoint(x: x == .min ? box.maxX : box.minX, y: y == .min ? box.maxY : box.minY)
+    }
+
+    /// A magnifier whose focus was dragged off its middle, so what it
+    /// enlarges is marked where it is.
+    var isMagnifyingElsewhere: Bool {
+        guard tool == .magnifier, let focus else {
+            return false
+        }
+        let box = bounds
+        return hypot(focus.x - box.midX, focus.y - box.midY) > 0.001
     }
 
     func location(of handle: AnnotationHandle) -> CGPoint {
@@ -86,6 +176,8 @@ nonisolated extension Annotation {
             return start
         case .end:
             return end
+        case .tail:
+            return tail ?? CGPoint(x: bounds.midX, y: bounds.midY)
         case let .box(x, y):
             let bounds = bounds
             return CGPoint(
@@ -103,10 +195,22 @@ nonisolated extension Annotation {
         }
     }
 
+    /// Whether its inside covers what is under it. An unfilled box or a
+    /// highlight is see-through, so a drag inside it with a drawing tool is
+    /// more likely meant to draw there than to move it.
+    var isOpaque: Bool {
+        switch tool {
+        case .rectangle, .ellipse: style.fillColor != nil
+        case .highlight: false
+        default: true
+        }
+    }
+
     /// Whether a click at `point` (view space) lands on this annotation.
     /// Boxes count their inside, not just their outline: a thin stroke is
     /// too hard to hit, and the inside is what the user sees as the shape.
-    func contains(_ point: CGPoint, in imageRect: CGRect, tolerance: CGFloat) -> Bool {
+    /// Without `insideCounts`, a see-through box counts only its outline.
+    func contains(_ point: CGPoint, in imageRect: CGRect, tolerance: CGFloat, insideCounts: Bool = true) -> Bool {
         if tool.isLine {
             let a = AnnotationSpace.point(start, in: imageRect)
             let b = AnnotationSpace.point(end, in: imageRect)
@@ -121,9 +225,33 @@ nonisolated extension Annotation {
                 Self.distance(from: point, toSegment: a, b) <= tolerance
             }
         }
-        return AnnotationSpace.rect(bounds, in: imageRect)
-            .insetBy(dx: -tolerance, dy: -tolerance)
-            .contains(point)
+        if isMagnifyingElsewhere,
+           AnnotationSpace.rect(sampledArea, in: imageRect).insetBy(dx: -tolerance, dy: -tolerance).contains(point) {
+            return true
+        }
+        if let tail {
+            // Along the middle of the tail, which is enough to grab it.
+            let rect = AnnotationSpace.rect(bounds, in: imageRect)
+            let tip = AnnotationSpace.point(tail, in: imageRect)
+            if Self.distance(from: point, toSegment: CGPoint(x: rect.midX, y: rect.midY), tip) <= tolerance {
+                return true
+            }
+        }
+        let rect = AnnotationSpace.rect(bounds, in: imageRect)
+        guard rect.insetBy(dx: -tolerance, dy: -tolerance).contains(point) else {
+            return false
+        }
+        if insideCounts || isOpaque {
+            return true
+        }
+        if tool == .ellipse {
+            // How far out from the middle, where the outline is 1.
+            let a = max(rect.width / 2, .ulpOfOne)
+            let b = max(rect.height / 2, .ulpOfOne)
+            let reach = hypot((point.x - rect.midX) / a, (point.y - rect.midY) / b)
+            return abs(reach - 1) * min(a, b) <= tolerance
+        }
+        return !rect.insetBy(dx: tolerance, dy: tolerance).contains(point)
     }
 
     /// Moves the annotation, stopping at the edges of `area` so it can never
@@ -138,6 +266,10 @@ nonisolated extension Annotation {
         moved.start = CGPoint(x: start.x + dx, y: start.y + dy)
         moved.end = CGPoint(x: end.x + dx, y: end.y + dy)
         moved.points = points.map { CGPoint(x: $0.x + dx, y: $0.y + dy) }
+        // The box stops at the edge, but what a balloon points at or a
+        // magnifier shows may lie further out, so those are held at it.
+        moved.tail = tail.map { AnnotationSpace.clamped(CGPoint(x: $0.x + dx, y: $0.y + dy), to: area) }
+        moved.focus = focus.map { AnnotationSpace.clamped(CGPoint(x: $0.x + dx, y: $0.y + dy), to: area) }
         return moved
     }
 
@@ -155,6 +287,8 @@ nonisolated extension Annotation {
             resized.start = point
         case .end:
             resized.end = point
+        case .tail:
+            resized.tail = point
         case let .box(x, y):
             let bounds = bounds
             var (minX, maxX, minY, maxY) = (bounds.minX, bounds.maxX, bounds.minY, bounds.maxY)
