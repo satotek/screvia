@@ -32,9 +32,12 @@ the self-timer landed):
    every saved edit are kept in Application Support, so reopening the file
    from history or Finder brings the annotations back, until another app
    changes the file.
-4. **The rest of the editor's phase 2**: speech balloons, magnifier, image
-   effects.
-5. **Pixel loupe and measuring while selecting, colour picker.**
+4. **The rest of the editor's phase 2** (started): speech balloons, the
+   magnifier, and border and shadow effects are done; the rest of phase 2
+   is in [editor-roadmap.md](editor-roadmap.md).
+5. **Pixel loupe and measuring while selecting.** The colour picker is done,
+   in the editor: the colour under the pointer, Tab to copy it, and an
+   eyedropper.
 
 **Deferred.** Notarization (needs the paid Apple Developer Program) and
 automatic updates with Sparkle. Without them a first launch meets

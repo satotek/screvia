@@ -57,22 +57,34 @@ suffix that keeps two captures in the same second from overwriting each other,
 JPEG quality actually reaching the encoder, and PNG (not TIFF) reaching the
 pasteboard.
 
-**`AnnotationGeometryTests`** — hit testing boxes by their inside and lines
-and freehand by their stroke, finding handles in view space, moves stopping
+**`AnnotationGeometryTests`** — hit testing boxes by their inside (only
+their outline for see-through ones under a drawing tool) and lines and
+freehand by their stroke, finding handles in view space, moves stopping
 at the image or crop edge without snapping a shape already past it, corner
 and edge resizing, a box flipping when dragged past its opposite side,
-freehand points scaling with their box, step numbering, and duplicates
-getting a new identity.
+freehand points scaling with their box, step numbering, duplicates getting
+a new identity, a balloon's tail being its only handle, moving with it
+and catching clicks along its length, and a magnifier enlarging an area
+smaller by its zoom around a focus that it carries when moved and that
+aiming moves without moving it, staying a circle in image points with only
+corner handles when round.
 
 **`AnnotationRendererTests`** — export keeping the capture's pixel size
 rather than the main screen's scale, shapes landing in the right half
 despite the coordinate flip, crops cut at full resolution and from the top,
-text boxes following the font size, and steps staying round on a
-non-square image.
+text boxes following the font size, steps staying round on a non-square
+image, a balloon's tail reaching its tip, the magnifier showing its focus rather
+than what is under it, only inside its circle when round, and keeping its
+proportions when aimed past the edge, and border and shadow framing the cropped image at full
+resolution.
 
 **`CanvasLayoutTests`** — fitting the image inside the margin, a cropped
 image extending past the visible rect so annotation space still lines up,
 and zoom growing the scrollable content.
+
+**`PixelReaderTests`** — the eyedropper reading the full image from the
+top, the far edge staying inside, an area averaging its sRGB values rather
+than light, and each colour code format.
 
 **`HistoryThumbnailLoaderTests`** — thumbnail sizing and cache-key
 distinctness, including a file replaced at the same path.
@@ -80,7 +92,8 @@ distinctness, including a file replaced at the same path.
 **`EditArchiveTests`** — a saved edit coming back with its document, point
 size and pixels, only for its own file, and not once another app changed
 the file; pruning edits whose file is gone or changed, then the oldest past
-the limit.
+the limit; and edits and styles saved before balloons, effects and the
+magnifier's settings still decoding.
 
 **`ImageImportTests`** — imported images sized like a capture from this
 screen without losing pixels, non-images rejected, and the clipboard read

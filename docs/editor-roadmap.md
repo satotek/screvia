@@ -37,14 +37,34 @@ move, resize and delete.
 - Crop
 - Save As
 
-**Phase 2.**
+**Phase 2 (in progress).** Done so far: speech balloon, magnifier, the
+border and shadow image effects, picking up annotations with any tool, and a
+readout of the colour under the pointer (Tab copies it, in a choice of
+formats; the eyedropper picks a point or an area's average), the output
+size and the true zoom, after Shottr's.
 
-- Tools: speech balloon, magnifier, curved arrow, inserted images, emoji
-  stickers, smart eraser
+While an editor is open the app is a regular one, in the Dock and ⌘-Tab,
+and goes back to a menu bar app when it closes.
+
+Any tool picks up the annotation a drag starts on, as in ShareX, so one just
+drawn can be adjusted without switching tools. With a drawing tool an
+unfilled box or a highlight counts only its outline, so drawing inside one
+still works. A plain click on empty space, where a drag would draw, switches
+to the select tool; tools a click itself uses (text, balloon, step,
+freehand) keep it.
+
+The magnifier follows ShareX's: a circle by default, enlarging what is under
+it, dragged from anywhere inside to move. On top of that, ⌥-dragging it aims
+it at something else, as Snagit's can, leaving the magnifier where there is
+room for it; the area it enlarges is then marked and can be dragged too.
+That stays off the plain drag, since a handle in the middle would take the
+drag that moves it.
+
+- Tools: curved arrow, inserted images, emoji stickers, smart eraser
 - Corner radius, arrowhead styles, step formats (letters, Roman numerals)
 - Stacking order, paste from the clipboard
 - Auto crop, rotate and flip, resize, canvas size
-- Image effects, starting with border and shadow
+- More image effects
 - Font choice; text that wraps inside a dragged box
 
 **Not planned.** Cursor drawing (the capture settings cover it), cut out,
