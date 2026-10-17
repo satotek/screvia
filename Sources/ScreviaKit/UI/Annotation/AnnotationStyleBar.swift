@@ -39,13 +39,15 @@ struct AnnotationStyleBar: View {
                 .fixedSize()
             }
 
-            if tool == .text {
+            if tool.hasText {
                 Toggle(isOn: binding(\.isBold)) {
                     Image(systemName: "bold")
                 }
                 .toggleStyle(.button)
                 .help(L10n.text("style.bold"))
+            }
 
+            if tool == .text {
                 Picker(L10n.text("style.text"), selection: binding(\.textAppearance)) {
                     ForEach(TextAppearance.allCases) { appearance in
                         Text(appearance.title).tag(appearance)
@@ -54,6 +56,10 @@ struct AnnotationStyleBar: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()
                 .fixedSize()
+            }
+
+            if tool == .magnifier {
+                magnifierControls
             }
 
             if tool.usesShadow {
@@ -70,9 +76,39 @@ struct AnnotationStyleBar: View {
                 Text(L10n.text("annotation.liveTextHint"))
                     .foregroundStyle(.secondary)
             }
+
+            if tool == .magnifier {
+                Text(L10n.text("annotation.magnifierHint"))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
         }
         .font(.callout)
         .controlSize(.small)
+    }
+
+    private var magnifierControls: some View {
+        HStack(spacing: 8) {
+            Picker(L10n.text("style.magnification"), selection: binding(\.magnification)) {
+                ForEach(AnnotationStyle.magnifications, id: \.self) { zoom in
+                    Text(L10n.format("style.magnificationValue", zoom.formatted())).tag(zoom)
+                }
+            }
+            .fixedSize()
+            .help(L10n.text("style.magnification"))
+
+            Picker(L10n.text("style.magnifierShape"), selection: binding(\.magnifierShape)) {
+                ForEach(MagnifierShape.allCases) { shape in
+                    Image(systemName: shape.symbolName)
+                        .accessibilityLabel(shape.title)
+                        .tag(shape)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .fixedSize()
+            .help(L10n.text("style.magnifierShape"))
+        }
     }
 
     private var colorSwatches: some View {
@@ -84,6 +120,8 @@ struct AnnotationStyleBar: View {
                     swatch(color, isSelected: style.color == color)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(color.name)
+                .help(color.name)
             }
 
             ColorPicker(
@@ -112,7 +150,7 @@ struct AnnotationStyleBar: View {
                 Button {
                     onChange { $0.fillColor = color }
                 } label: {
-                    Image(nsImage: Self.swatchImage(color))
+                    Label { Text(color.name) } icon: { Image(nsImage: Self.swatchImage(color)) }
                 }
             }
         } label: {
@@ -145,7 +183,7 @@ struct AnnotationStyleBar: View {
 
     /// Menu items show images, not arbitrary views, so the fill swatches
     /// are drawn by hand.
-    private static func swatchImage(_ color: AnnotationColor) -> NSImage {
+    static func swatchImage(_ color: AnnotationColor) -> NSImage {
         NSImage(size: NSSize(width: 14, height: 14), flipped: false) { rect in
             NSColor(cgColor: color.cgColor)?.setFill()
             NSBezierPath(ovalIn: rect.insetBy(dx: 1, dy: 1)).fill()

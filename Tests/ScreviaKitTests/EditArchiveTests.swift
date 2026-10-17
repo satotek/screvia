@@ -127,4 +127,47 @@ final class EditArchiveTests: XCTestCase {
     private func entryCount() throws -> Int {
         try FileManager.default.contentsOfDirectory(atPath: archive.directory.path).count
     }
+
+    /// Edits archived before balloons and image effects have neither key.
+    /// They must still open, with no tails and no effects.
+    func testAnEditFromBeforeEffectsStillDecodes() throws {
+        let saved = document()
+        let encoded = try JSONEncoder().encode(saved)
+        var json = try XCTUnwrap(try JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        json["effects"] = nil
+        let older = try JSONSerialization.data(withJSONObject: json)
+
+        let decoded = try JSONDecoder().decode(AnnotationDocument.self, from: older)
+
+        XCTAssertEqual(decoded.annotations, saved.annotations)
+        XCTAssertEqual(decoded.effects, ImageEffects())
+        XCTAssertTrue(decoded.annotations.allSatisfy { $0.tail == nil })
+    }
+
+    func testEffectsAndTailsAreArchived() throws {
+        var saved = document()
+        saved.effects.borderColor = .green
+        saved.effects.hasShadow = true
+        saved.annotations.append(
+            Annotation(tool: .balloon, start: .zero, end: CGPoint(x: 0.2, y: 0.1), text: "!", tail: CGPoint(x: 0.5, y: 0.5))
+        )
+
+        let decoded = try JSONDecoder().decode(AnnotationDocument.self, from: JSONEncoder().encode(saved))
+
+        XCTAssertEqual(decoded, saved)
+    }
+
+    /// The style is remembered in preferences and archived with each edit,
+    /// both written before the magnifier had a zoom and a shape.
+    func testAStyleFromBeforeMagnifierSettingsStillDecodes() throws {
+        var json = try XCTUnwrap(
+            try JSONSerialization.jsonObject(with: JSONEncoder().encode(AnnotationStyle.standard)) as? [String: Any]
+        )
+        json["magnification"] = nil
+        json["magnifierShape"] = nil
+
+        let decoded = try JSONDecoder().decode(AnnotationStyle.self, from: JSONSerialization.data(withJSONObject: json))
+
+        XCTAssertEqual(decoded, .standard)
+    }
 }

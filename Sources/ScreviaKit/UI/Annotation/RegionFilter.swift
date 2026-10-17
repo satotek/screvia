@@ -48,3 +48,29 @@ nonisolated func filteredRegion(
     }
     return filterContext.createCGImage(output, from: input.extent)
 }
+
+/// What `tool` shows of the `rect` region of `image`: the region blurred or
+/// pixelated, or for the magnifier the region itself, which drawing into
+/// the larger magnifier enlarges. Pass the annotation's `sampledArea`.
+///
+/// `rect` is in the image's pixels with a top-left origin.
+nonisolated func sampledRegion(for tool: AnnotationTool, of image: CGImage, in rect: CGRect) -> CGImage? {
+    if let filterName = tool.filterName {
+        return filteredRegion(of: image, in: rect, filterName: filterName)
+    }
+    guard tool == .magnifier else {
+        return nil
+    }
+
+    // Slid back inside rather than cut at the edge, so a magnifier aimed
+    // near the edge keeps its proportions instead of stretching.
+    let bounds = CGRect(x: 0, y: 0, width: image.width, height: image.height)
+    var source = rect.integral
+    source.size = CGSize(width: min(source.width, bounds.width), height: min(source.height, bounds.height))
+    source.origin.x = min(max(source.minX, 0), bounds.maxX - source.width)
+    source.origin.y = min(max(source.minY, 0), bounds.maxY - source.height)
+    guard source.width >= 1, source.height >= 1 else {
+        return nil
+    }
+    return image.cropping(to: source)
+}

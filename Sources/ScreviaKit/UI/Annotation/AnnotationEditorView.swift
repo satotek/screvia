@@ -63,7 +63,7 @@ struct AnnotationEditorView: View {
             AnnotationCanvas(
                 image: previewImage,
                 imageSize: image.size,
-                selectedTool: selectedTool,
+                selectedTool: $selectedTool,
                 style: style,
                 document: $document,
                 selection: $selection,
@@ -178,7 +178,7 @@ struct AnnotationEditorView: View {
                     RoundedRectangle(cornerRadius: 7)
                         .fill(selectedTool == tool ? Color.accentColor.opacity(0.18) : .clear)
                 )
-                .help(tool.title)
+                .help("\(tool.title)\n\(tool.usage)")
             }
 
             Divider()
@@ -223,6 +223,12 @@ struct AnnotationEditorView: View {
             .fixedSize()
             .help(L10n.text("annotation.more"))
 
+            Divider()
+                .frame(height: 22)
+                .padding(.horizontal, 4)
+
+            effectsMenu
+
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 14)
@@ -247,6 +253,51 @@ struct AnnotationEditorView: View {
         .frame(minHeight: 40)
     }
 
+    /// Effects frame the whole image, so they sit apart from the tools and
+    /// apply whatever is selected.
+    private var effectsMenu: some View {
+        Menu {
+            Section(L10n.text("effects.border")) {
+                Button(L10n.text("effects.noBorder")) {
+                    change { $0.effects.borderColor = nil }
+                }
+                ForEach(AnnotationColor.palette, id: \.self) { color in
+                    Button {
+                        change { $0.effects.borderColor = color }
+                    } label: {
+                        Label { Text(color.name) } icon: { Image(nsImage: AnnotationStyleBar.swatchImage(color)) }
+                    }
+                }
+                Picker(L10n.text("effects.borderWidth"), selection: Binding(
+                    get: { document.effects.borderWidth },
+                    set: { width in change { $0.effects.borderWidth = width } }
+                )) {
+                    ForEach(ImageEffects.borderWidths, id: \.self) { width in
+                        Text(L10n.format("effects.points", Int(width))).tag(width)
+                    }
+                }
+                .disabled(document.effects.borderColor == nil)
+            }
+
+            Toggle(L10n.text("effects.shadow"), isOn: Binding(
+                get: { document.effects.hasShadow },
+                set: { isOn in change { $0.effects.hasShadow = isOn } }
+            ))
+        } label: {
+            Label(L10n.text("effects.title"), systemImage: "photo.artframe")
+                .labelStyle(.iconOnly)
+                .frame(width: 30, height: 28)
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .background(
+            RoundedRectangle(cornerRadius: 7)
+                .fill(document.effects.isEmpty ? .clear : Color.accentColor.opacity(0.18))
+        )
+        .help("\(L10n.text("effects.title"))\n\(L10n.text("effects.usage"))")
+    }
+
     private func iconButton(_ symbol: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
@@ -266,7 +317,7 @@ struct AnnotationEditorView: View {
             .buttonStyle(.borderless)
             .disabled(zoomScale <= AnnotationZoom.minimum)
             .keyboardShortcut("-", modifiers: [.command])
-            .help(L10n.text("annotation.zoomOut"))
+            .help("\(L10n.text("annotation.zoomOut"))  ⌘−")
 
             Text(L10n.format("annotation.zoomPercent", Int((zoomScale * 100).rounded())))
                 .font(.system(size: 10, weight: .semibold, design: .monospaced))
@@ -282,7 +333,7 @@ struct AnnotationEditorView: View {
             .buttonStyle(.borderless)
             .disabled(zoomScale >= AnnotationZoom.maximum)
             .keyboardShortcut("+", modifiers: [.command])
-            .help(L10n.text("annotation.zoomIn"))
+            .help("\(L10n.text("annotation.zoomIn"))  ⌘+")
 
             Button {
                 zoomScale = 1
@@ -292,7 +343,7 @@ struct AnnotationEditorView: View {
             }
             .buttonStyle(.borderless)
             .keyboardShortcut("0", modifiers: [.command])
-            .help(L10n.text("annotation.zoomFit"))
+            .help("\(L10n.text("annotation.zoomFit"))  ⌘0")
         }
         .padding(3)
         .background(
