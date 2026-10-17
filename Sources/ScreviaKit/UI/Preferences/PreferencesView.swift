@@ -39,7 +39,7 @@ struct PreferencesPane: View {
     @ObservedObject var settings: ScreviaSettings
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        PreferencesGrid {
             switch tab {
             case .general:
                 GeneralPreferences(settings: settings)
@@ -106,7 +106,7 @@ struct GeneralPreferences: View {
             Toggle(L10n.text("preferences.playSound"), isOn: $settings.playSound)
         }
 
-        Divider()
+        PreferencesSeparator()
 
         PreferencesRow(L10n.text("preferences.thumbnailPosition")) {
             ThumbnailPositionPicker(selection: $settings.thumbnailPosition)
@@ -130,7 +130,7 @@ struct GeneralPreferences: View {
             .fixedSize()
         }
 
-        Divider()
+        PreferencesSeparator()
 
         PreferencesRow(L10n.text("preferences.permissions")) {
             Button(L10n.text("preferences.openScreenRecordingSettings")) {
@@ -141,7 +141,7 @@ struct GeneralPreferences: View {
             }
         }
 
-        Divider()
+        PreferencesSeparator()
 
         PreferencesRow {
             Button(L10n.text("preferences.reset")) {
@@ -220,7 +220,7 @@ struct SavingPreferences: View {
             PreferencesHint(L10n.text(settings.saveToFile ? "preferences.createFolderHint" : "preferences.unsavedHint"))
         }
 
-        Divider()
+        PreferencesSeparator()
 
         Group {
             PreferencesRow(L10n.text("preferences.fileName")) {
@@ -290,7 +290,7 @@ struct CapturePreferences: View {
             PreferencesHint(L10n.text("preferences.windowShadowHint"))
         }
 
-        Divider()
+        PreferencesSeparator()
 
         PreferencesRow(L10n.text("preferences.textCapture")) {
             Picker(L10n.text("preferences.textLanguage"), selection: $settings.textLanguage) {
@@ -329,11 +329,12 @@ struct AppearancePreferences: View {
             Toggle(L10n.text("preferences.addSoftShadow"), isOn: $settings.shadowEnabled)
         }
 
-        Divider()
+        PreferencesSeparator()
 
         PreferencesRow(L10n.text("preferences.preview")) {
             FramedPreview(settings: settings)
-                .frame(width: 300, height: 140)
+                .frame(maxWidth: .infinity)
+                .frame(height: 140)
                 .alignmentGuide(.firstTextBaseline) { $0[.top] + 14 }
             PreferencesHint(L10n.text("preferences.styleHint"))
         }
@@ -346,10 +347,13 @@ struct ShortcutPreferences: View {
             ShortcutRow(action: action)
         }
 
-        Divider()
+        PreferencesSeparator()
 
         PreferencesRow {
-            PreferencesHint(L10n.text("preferences.shortcutsHint"))
+            // One line, so it is left as wide as it is.
+            Text(L10n.text("preferences.shortcutsHint"))
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
         }
     }
 }
