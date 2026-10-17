@@ -2945,22 +2945,6 @@
         }
       }
     },
-    "preferences.autoSaved": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Changes are saved automatically"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "変更は自動保存されます"
-          }
-        }
-      }
-    },
     "preferences.background": {
       "localizations": {
         "en": {
@@ -3853,22 +3837,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "サムネイルの位置"
-          }
-        }
-      }
-    },
-    "preferences.title": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Screvia Settings"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Screvia 設定"
           }
         }
       }

@@ -7,6 +7,7 @@ enum PreferencesTab: String, CaseIterable, Identifiable {
     case general
     case capture
     case appearance
+    case shortcuts
 
     var id: String { rawValue }
 
@@ -22,84 +23,42 @@ enum PreferencesTab: String, CaseIterable, Identifiable {
             return "viewfinder"
         case .appearance:
             return "rectangle.on.rectangle"
+        case .shortcuts:
+            return "keyboard"
         }
     }
 }
 
-struct PreferencesView: View {
+/// One pane of the Settings window, at the size the window takes for it.
+struct PreferencesPane: View {
+    let tab: PreferencesTab
     @ObservedObject var settings: ScreviaSettings
-    @State private var selectedTab: PreferencesTab = .general
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 0) {
-                sidebar
-                Divider()
-                content
+        Group {
+            switch tab {
+            case .general:
+                GeneralPreferences(settings: settings)
+            case .capture:
+                CapturePreferences(settings: settings)
+            case .appearance:
+                AppearancePreferences(settings: settings)
+            case .shortcuts:
+                ShortcutPreferences()
             }
-
-            Divider()
-            HStack {
-                Button(L10n.text("preferences.reset")) {
-                    settings.reset()
-                }
-                .buttonStyle(.borderless)
-                .foregroundStyle(.secondary)
-
-                Spacer()
-                Text(L10n.text("preferences.autoSaved"))
-                    .font(.system(size: 11))
-                    .foregroundStyle(.tertiary)
-            }
-            .padding(.horizontal, 18)
-            .padding(.vertical, 11)
         }
+        .frame(width: 600, height: tab.height)
     }
+}
 
-    private var sidebar: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Text("SCREVIA")
-                .font(.system(size: 11, weight: .black, design: .rounded))
-                .tracking(1.5)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 12)
-                .padding(.bottom, 8)
-
-            ForEach(PreferencesTab.allCases) { tab in
-                Button {
-                    selectedTab = tab
-                } label: {
-                    Label(tab.title, systemImage: tab.symbol)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(selectedTab == tab ? .primary : .secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 8)
-                        .background(
-                            selectedTab == tab ? ScreviaTheme.accent.opacity(0.14) : .clear,
-                            in: RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        )
-                }
-                .buttonStyle(.plain)
-            }
-
-            Spacer()
-        }
-        .padding(14)
-        .frame(width: 168)
-        .frame(maxHeight: .infinity)
-        .background(Color.primary.opacity(0.025))
-    }
-
-    @ViewBuilder
-    private var content: some View {
-        switch selectedTab {
-        case .general:
-            GeneralPreferences(settings: settings)
-        case .capture:
-            CapturePreferences(settings: settings)
-        case .appearance:
-            AppearancePreferences(settings: settings)
+extension PreferencesTab {
+    /// Tall enough for the pane's controls; the longest scroll a little.
+    var height: CGFloat {
+        switch self {
+        case .general: 640
+        case .capture: 600
+        case .appearance: 470
+        case .shortcuts: 400
         }
     }
 }
@@ -245,10 +204,14 @@ struct GeneralPreferences: View {
                     NSWorkspace.shared.open(url)
                 }
             }
+
+            Section {
+                Button(L10n.text("preferences.reset")) {
+                    settings.reset()
+                }
+            }
         }
         .formStyle(.grouped)
-        .padding(12)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
             refreshLaunchAtLoginStatus()
         }
@@ -340,20 +303,23 @@ struct CapturePreferences: View {
                         .frame(width: 28, alignment: .trailing)
                 }
             }
+        }
+        .formStyle(.grouped)
+    }
+}
 
-            Section(L10n.text("preferences.shortcuts")) {
+struct ShortcutPreferences: View {
+    var body: some View {
+        Form {
+            Section {
                 ForEach(ShortcutAction.allCases, id: \.shortcutName) { action in
                     ShortcutRow(action: action)
                 }
-
+            } footer: {
                 Text(L10n.text("preferences.shortcutsHint"))
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
-        .padding(12)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
@@ -398,8 +364,6 @@ struct AppearancePreferences: View {
             }
         }
         .formStyle(.grouped)
-        .padding(12)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
@@ -522,8 +486,7 @@ extension Comparable {
 
 #if DEBUG
 #Preview("Preferences") {
-    PreferencesView(settings: .previewInstance())
-        .frame(width: 720, height: 540)
+    PreferencesPane(tab: .general, settings: .previewInstance())
 }
 
 #Preview("Appearance / framed") {
