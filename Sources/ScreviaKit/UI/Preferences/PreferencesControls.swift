@@ -1,10 +1,28 @@
 import SwiftUI
 
 /// Laid out as Mac apps' settings are: labels right-aligned in a column,
-/// their controls to the right, groups split by a line.
-enum PreferencesLayout {
-    static let labelWidth: CGFloat = 170
-    static let spacing: CGFloat = 12
+/// their controls to the right, groups split by a line. The columns are as
+/// wide as the pane's own labels and controls, and the whole is centred, so
+/// a pane of short labels does not leave a gap on the left.
+struct PreferencesGrid<Content: View>: View {
+    let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        Grid(
+            alignment: Alignment(horizontal: .leading, vertical: .firstTextBaseline),
+            horizontalSpacing: 12,
+            verticalSpacing: 16
+        ) {
+            content
+        }
+        // Sized by its fixed controls; sliders and the preview then stretch
+        // to the column rather than to the window.
+        .fixedSize(horizontal: true, vertical: false)
+    }
 }
 
 struct PreferencesRow<Control: View>: View {
@@ -17,19 +35,30 @@ struct PreferencesRow<Control: View>: View {
     }
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: PreferencesLayout.spacing) {
+        GridRow {
             Text(label)
                 .multilineTextAlignment(.trailing)
-                .frame(width: PreferencesLayout.labelWidth, alignment: .trailing)
+                .gridColumnAlignment(.trailing)
             VStack(alignment: .leading, spacing: 8) {
                 control
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
 
-/// A line of explanation under a control, wrapped to the control column.
+/// The line between groups, as wide as the rows and no wider.
+struct PreferencesSeparator: View {
+    var body: some View {
+        Divider()
+            .gridCellUnsizedAxes(.horizontal)
+            .padding(.vertical, 2)
+    }
+}
+
+/// A line of explanation under a control, wrapped at a set width: the
+/// columns are sized to their contents, so a hint would otherwise widen
+/// the pane to fit itself on one line, and a capped width is measured
+/// before the text wraps, a line short.
 struct PreferencesHint: View {
     let text: String
 
@@ -42,10 +71,12 @@ struct PreferencesHint: View {
             .font(.system(size: 11))
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
+            .frame(width: 340, alignment: .leading)
     }
 }
 
-/// A slider with its value written beside it.
+/// A slider with its value written beside it. It stretches to the control
+/// column, so the sliders end where the widest control in the pane does.
 struct PreferencesSlider: View {
     @Binding var value: Double
     let range: ClosedRange<Double>
@@ -55,10 +86,11 @@ struct PreferencesSlider: View {
     var body: some View {
         HStack(spacing: 10) {
             Slider(value: $value, in: range, step: step)
-                .frame(width: 220)
+                .frame(minWidth: 200, maxWidth: .infinity)
             Text(format(value))
                 .font(.system(size: 11).monospacedDigit())
                 .foregroundStyle(.secondary)
+                .frame(width: 40, alignment: .trailing)
         }
     }
 }
