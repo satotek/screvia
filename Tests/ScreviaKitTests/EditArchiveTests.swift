@@ -135,6 +135,8 @@ final class EditArchiveTests: XCTestCase {
         let encoded = try JSONEncoder().encode(saved)
         var json = try XCTUnwrap(try JSONSerialization.jsonObject(with: encoded) as? [String: Any])
         json["effects"] = nil
+        json["orientation"] = nil
+        json["outputScale"] = nil
         let older = try JSONSerialization.data(withJSONObject: json)
 
         let decoded = try JSONDecoder().decode(AnnotationDocument.self, from: older)
@@ -174,5 +176,20 @@ final class EditArchiveTests: XCTestCase {
         let decoded = try JSONDecoder().decode(AnnotationStyle.self, from: JSONSerialization.data(withJSONObject: json))
 
         XCTAssertEqual(decoded, .standard)
+    }
+
+    /// Effects archived before the margin have none of its keys and get the
+    /// default; a transparent margin, written as null, stays transparent.
+    func testMarginsDecodeFromBeforeAndStayTransparent() throws {
+        let older = Data(#"{"borderWidth":6,"hasShadow":true}"#.utf8)
+        let decoded = try JSONDecoder().decode(ImageEffects.self, from: older)
+        XCTAssertEqual(decoded.margin, 0)
+        XCTAssertEqual(decoded.marginColor, .white)
+        XCTAssertTrue(decoded.hasShadow)
+
+        var clear = ImageEffects()
+        clear.margin = 16
+        clear.marginColor = nil
+        XCTAssertEqual(try JSONDecoder().decode(ImageEffects.self, from: JSONEncoder().encode(clear)), clear)
     }
 }

@@ -79,8 +79,19 @@ placed rather than drawn. Emoji stickers are large plain text, which sizes
 like any label. Bring to Front, Send to Back and the steps between move the
 selection in the stacking order, which also numbers the steps.
 
+## Turning is an orientation
+
+Like the crop, turning and mirroring the image leave the original alone.
+The document records an orientation, applied when the image is shown and
+exported, so undo and re-editing keep working on the document alone. When
+the image turns, the crop and every annotation move with the picture;
+what is measured in points (text, steps, balloons, pictures, round
+magnifiers) moves by its middle and keeps its size, so a turn's change of
+aspect does not squash it. Resize is an export scale on the finished image,
+the margin an effect inside the border, and Auto Crop sets the crop to
+what lies inside a border the colour of the top-left corner.
+
 - Tools: smart eraser
-- Auto crop, rotate and flip, resize, canvas size
 - More image effects
 
 **Not planned.** Cursor drawing (the capture settings cover it), cut out,

@@ -386,4 +386,39 @@ final class AnnotationRendererTests: XCTestCase {
         XCTAssertEqual(pixel(of: flattened, x: 225, y: 75).g, 0, "inside the picture")
         XCTAssertEqual(pixel(of: flattened, x: 75, y: 75).g, 255, "beside it")
     }
+
+    // MARK: - Whole-image operations
+
+    func testExportTurnsTheOriginal() {
+        var document = AnnotationDocument()
+        document.orientation = ImageOrientation(quarterTurns: 1)
+
+        let flattened = AnnotationRenderer.flatten(threeTimesImage(), document: document)
+
+        XCTAssertEqual(flattened.size, NSSize(width: 50, height: 100))
+    }
+
+    func testResizeScalesPointsAndPixels() {
+        var document = AnnotationDocument()
+        document.outputScale = 0.5
+
+        let flattened = AnnotationRenderer.flatten(threeTimesImage(), document: document)
+        let cgImage = flattened.cgImage(forProposedRect: nil, context: nil, hints: nil)!
+
+        XCTAssertEqual(flattened.size, NSSize(width: 50, height: 25))
+        XCTAssertEqual(cgImage.width, 150)
+    }
+
+    /// The margin grows the canvas on every side, in its colour.
+    func testAMarginGrowsTheCanvas() {
+        var document = AnnotationDocument()
+        document.effects.margin = 16
+        document.effects.marginColor = .black
+
+        let flattened = AnnotationRenderer.flatten(threeTimesImage(), document: document)
+
+        XCTAssertEqual(flattened.size, NSSize(width: 132, height: 82))
+        XCTAssertEqual(pixel(of: flattened, x: 10, y: 10).g, 0, "the margin")
+        XCTAssertEqual(pixel(of: flattened, x: 198, y: 123).g, 255, "the image")
+    }
 }

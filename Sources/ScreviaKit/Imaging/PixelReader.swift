@@ -59,6 +59,72 @@ nonisolated struct PixelReader {
     }
 }
 
+nonisolated extension PixelReader {
+    /// The part of the image inside a plain border, as a fraction with a
+    /// top-left origin, for Auto Crop: rows and columns at the edges that
+    /// are all within `tolerance` of the top-left corner's colour are left
+    /// out. Nil when there is no such border, or nothing but it.
+    func contentBounds(tolerance: Int = 8) -> CGRect? {
+        let width = image.width
+        let height = image.height
+        guard width > 0, height > 0, let sRGB = CGColorSpace(name: CGColorSpace.sRGB) else {
+            return nil
+        }
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        let drawn = pixels.withUnsafeMutableBytes { buffer -> Bool in
+            guard let context = CGContext(
+                data: buffer.baseAddress,
+                width: width,
+                height: height,
+                bitsPerComponent: 8,
+                bytesPerRow: width * 4,
+                space: sRGB,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            ) else {
+                return false
+            }
+            context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+            return true
+        }
+        guard drawn else {
+            return nil
+        }
+
+        // The bitmap's first row is the image's top.
+        let corner = Array(pixels[0..<4])
+        func isBorder(_ x: Int, _ y: Int) -> Bool {
+            let offset = (y * width + x) * 4
+            return (0..<4).allSatisfy { abs(Int(pixels[offset + $0]) - Int(corner[$0])) <= tolerance }
+        }
+        func rowIsBorder(_ y: Int) -> Bool { (0..<width).allSatisfy { isBorder($0, y) } }
+        func columnIsBorder(_ x: Int, from top: Int, to bottom: Int) -> Bool {
+            (top...bottom).allSatisfy { isBorder(x, $0) }
+        }
+
+        var top = 0
+        while top < height, rowIsBorder(top) { top += 1 }
+        guard top < height else {
+            return nil
+        }
+        var bottom = height - 1
+        while bottom > top, rowIsBorder(bottom) { bottom -= 1 }
+        var left = 0
+        while left < width, columnIsBorder(left, from: top, to: bottom) { left += 1 }
+        var right = width - 1
+        while right > left, columnIsBorder(right, from: top, to: bottom) { right -= 1 }
+
+        guard top > 0 || left > 0 || bottom < height - 1 || right < width - 1 else {
+            return nil
+        }
+        return CGRect(
+            x: CGFloat(left) / CGFloat(width),
+            y: CGFloat(top) / CGFloat(height),
+            width: CGFloat(right - left + 1) / CGFloat(width),
+            height: CGFloat(bottom - top + 1) / CGFloat(height)
+        )
+    }
+}
+
 // CIContext is expensive to create, and the eyedropper may average often.
 // It averages the sRGB values themselves, as design tools do; Core Image's
 // default linear space would make red and blue average to a lighter purple.

@@ -204,10 +204,13 @@ struct AnnotationCanvas: View {
         let effects = document.effects
         if !effects.isEmpty {
             let pointScale = layout.imageRect.width / max(imageSize.width, 1)
+            let margin = effects.margin * pointScale
             let border = effects.borderThickness * pointScale
-            let frame = layout.visibleRect.insetBy(dx: -border, dy: -border)
+            let inner = layout.visibleRect.insetBy(dx: -margin, dy: -margin)
+            let frame = inner.insetBy(dx: -border, dy: -border)
+            let marginColor = effects.marginColor.map { Color(cgColor: $0.cgColor) } ?? .clear
             Rectangle()
-                .fill(effects.borderColor.map { Color(cgColor: $0.cgColor) } ?? .white)
+                .fill(effects.borderColor.map { Color(cgColor: $0.cgColor) } ?? marginColor)
                 .frame(width: frame.width, height: frame.height)
                 .shadow(
                     color: .black.opacity(effects.hasShadow ? 0.35 : 0),
@@ -216,6 +219,12 @@ struct AnnotationCanvas: View {
                     y: ImageEffects.shadowDrop * pointScale
                 )
                 .position(x: frame.midX, y: frame.midY)
+            if margin > 0 {
+                Rectangle()
+                    .fill(marginColor)
+                    .frame(width: inner.width, height: inner.height)
+                    .position(x: inner.midX, y: inner.midY)
+            }
         }
     }
 

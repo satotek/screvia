@@ -480,6 +480,12 @@ nonisolated struct AnnotationDocument: Equatable, Codable {
     /// narrows this, so annotations outside it survive an undo.
     var crop = CGRect(x: 0, y: 0, width: 1, height: 1)
     var effects = ImageEffects()
+    /// How the image is turned; annotation space is the turned image.
+    var orientation = ImageOrientation()
+    /// What export scales the finished image by, for Resize.
+    var outputScale: CGFloat = 1
+
+    static let outputScales: [CGFloat] = [0.25, 0.5, 0.75, 1, 1.5, 2]
 }
 
 nonisolated enum StackingMove {
@@ -511,15 +517,20 @@ nonisolated extension AnnotationDocument {
         case annotations
         case crop
         case effects
+        case orientation
+        case outputScale
     }
 
     /// Edits archived before effects existed have no `effects` key, and
-    /// synthesized decoding would reject them despite the default.
+    /// synthesized decoding would reject them despite the default; the same
+    /// goes for everything added since.
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         annotations = try container.decode([Annotation].self, forKey: .annotations)
         crop = try container.decode(CGRect.self, forKey: .crop)
         effects = try container.decodeIfPresent(ImageEffects.self, forKey: .effects) ?? ImageEffects()
+        orientation = try container.decodeIfPresent(ImageOrientation.self, forKey: .orientation) ?? ImageOrientation()
+        outputScale = try container.decodeIfPresent(CGFloat.self, forKey: .outputScale) ?? 1
     }
 }
 
@@ -529,9 +540,14 @@ nonisolated struct ImageEffects: Codable, Equatable {
     var borderColor: AnnotationColor?
     var borderWidth: CGFloat = 6
     var hasShadow = false
+    /// Room added around the image, inside the border: the canvas made
+    /// larger than the picture.
+    var margin: CGFloat = 0
+    /// What fills the margin; nil leaves it transparent.
+    var marginColor: AnnotationColor? = .white
 
     var isEmpty: Bool {
-        borderColor == nil && !hasShadow
+        borderColor == nil && !hasShadow && margin == 0
     }
 
     /// The border's thickness, or zero without one.
@@ -540,8 +556,38 @@ nonisolated struct ImageEffects: Codable, Equatable {
     }
 
     static let borderWidths: [CGFloat] = [2, 6, 12]
+    static let margins: [CGFloat] = [0, 16, 32, 64]
     /// Room around the bordered image for the shadow to fade out in.
     static let shadowMargin: CGFloat = 32
     static let shadowBlur: CGFloat = 18
     static let shadowDrop: CGFloat = 6
+}
+
+nonisolated extension ImageEffects {
+    private enum CodingKeys: String, CodingKey {
+        case borderColor, borderWidth, hasShadow, margin, marginColor
+    }
+
+    /// Archived edits from before the margin have none of its keys.
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        borderColor = try container.decodeIfPresent(AnnotationColor.self, forKey: .borderColor)
+        borderWidth = try container.decodeIfPresent(CGFloat.self, forKey: .borderWidth) ?? 6
+        hasShadow = try container.decodeIfPresent(Bool.self, forKey: .hasShadow) ?? false
+        margin = try container.decodeIfPresent(CGFloat.self, forKey: .margin) ?? 0
+        // Present but null is a transparent margin; absent is the default.
+        marginColor = container.contains(.marginColor)
+            ? try container.decodeIfPresent(AnnotationColor.self, forKey: .marginColor)
+            : .white
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(borderColor, forKey: .borderColor)
+        try container.encode(borderWidth, forKey: .borderWidth)
+        try container.encode(hasShadow, forKey: .hasShadow)
+        try container.encode(margin, forKey: .margin)
+        // Written even when nil, which means transparent, not the default.
+        try container.encode(marginColor, forKey: .marginColor)
+    }
 }

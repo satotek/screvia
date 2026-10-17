@@ -21,7 +21,6 @@ struct AnnotationEditorView: View {
     let onReadClipboardImage: () -> NSImage?
     /// Asks for an image file and hands it over, for Insert Image.
     let onChooseImage: (@escaping (NSImage) -> Void) -> Void
-    private let pixelReader: PixelReader?
 
     @State private var selectedTool: AnnotationTool = .rectangle
     @State private var document: AnnotationDocument
@@ -31,6 +30,9 @@ struct AnnotationEditorView: View {
     @State private var selection: Annotation.ID?
     @State private var style: AnnotationStyle
     @State private var isEditingText = false
+    /// The image turned as the document says, which is what is shown,
+    /// sized and sampled; export turns the original itself.
+    @State private var shown: ShownImage
     @State private var displayScale: CGFloat = 1
     @State private var isPickingColor = false
     /// The colour under the pointer, while it is over the image.
@@ -68,7 +70,7 @@ struct AnnotationEditorView: View {
         self.onCopyColor = onCopyColor
         self.onReadClipboardImage = onReadClipboardImage
         self.onChooseImage = onChooseImage
-        pixelReader = PixelReader(image)
+        _shown = State(initialValue: ShownImage(original: image, preview: previewImage, orientation: initialDocument.orientation))
         _style = State(initialValue: initialStyle)
         _document = State(initialValue: initialDocument)
     }
@@ -85,8 +87,8 @@ struct AnnotationEditorView: View {
             Divider()
 
             AnnotationCanvas(
-                image: previewImage,
-                imageSize: image.size,
+                image: shown.preview,
+                imageSize: shown.image.size,
                 selectedTool: $selectedTool,
                 style: style,
                 document: $document,
@@ -97,7 +99,7 @@ struct AnnotationEditorView: View {
                 isPickingColor: isPickingColor,
                 onRecordUndo: recordUndo,
                 onHover: { point in
-                    hoverColor = point.flatMap { pixelReader?.color(at: $0) }
+                    hoverColor = point.flatMap { shown.reader?.color(at: $0) }
                 },
                 onPickColor: pickColor(in:)
             )
@@ -108,6 +110,9 @@ struct AnnotationEditorView: View {
             footer
         }
         .frame(minWidth: 820, minHeight: 520)
+        .onChange(of: document.orientation) { _, orientation in
+            shown = ShownImage(original: image, preview: previewImage, orientation: orientation)
+        }
     }
 
     // MARK: - Edits
@@ -178,7 +183,7 @@ struct AnnotationEditorView: View {
         guard let selection, let index = document.annotations.firstIndex(where: { $0.id == selection }) else {
             return
         }
-        let imageSize = image.size
+        let imageSize = shown.image.size
         change { document in
             edit(&document.annotations[index].style)
             document.annotations[index] = AnnotationRenderer.fitted(document.annotations[index], imageSize: imageSize)
@@ -190,7 +195,7 @@ struct AnnotationEditorView: View {
     /// and is copied, as Shottr's picker copies.
     private func pickColor(in area: CGRect) {
         isPickingColor = false
-        let picked = area.isEmpty ? pixelReader?.color(at: area.origin) : pixelReader?.averageColor(in: area)
+        let picked = area.isEmpty ? shown.reader?.color(at: area.origin) : shown.reader?.averageColor(in: area)
         guard let picked else {
             return
         }
@@ -213,16 +218,17 @@ struct AnnotationEditorView: View {
         guard
             let cgImage = picture.cgImage(forProposedRect: nil, context: nil, hints: nil),
             let data = NSBitmapImageRep(cgImage: cgImage).representation(using: .png, properties: [:]),
-            image.size.width > 0, image.size.height > 0
+            shown.image.size.width > 0, shown.image.size.height > 0
         else {
             return
         }
+        let imageSize = shown.image.size
         let crop = document.crop
-        let visible = CGSize(width: image.size.width * crop.width, height: image.size.height * crop.height)
+        let visible = CGSize(width: imageSize.width * crop.width, height: imageSize.height * crop.height)
         let shrink = min(1, visible.width * 0.6 / max(picture.size.width, 1), visible.height * 0.6 / max(picture.size.height, 1))
         let size = CGSize(
-            width: picture.size.width * shrink / image.size.width,
-            height: picture.size.height * shrink / image.size.height
+            width: picture.size.width * shrink / imageSize.width,
+            height: picture.size.height * shrink / imageSize.height
         )
         let inserted = Annotation(
             tool: .image,
@@ -244,7 +250,7 @@ struct AnnotationEditorView: View {
         let crop = document.crop
         var placed = AnnotationRenderer.fitted(
             Annotation(tool: .text, start: CGPoint(x: crop.midX, y: crop.midY), end: CGPoint(x: crop.midX, y: crop.midY), text: sticker, style: stickerStyle),
-            imageSize: image.size
+            imageSize: shown.image.size
         )
         placed = placed.moved(by: CGVector(dx: -placed.bounds.width / 2, dy: -placed.bounds.height / 2), within: crop)
         change { $0.annotations.append(placed) }
@@ -345,6 +351,8 @@ struct AnnotationEditorView: View {
                 .frame(height: 22)
                 .padding(.horizontal, 4)
 
+            imageMenu
+
             effectsMenu
 
             stickerMenu
@@ -417,6 +425,54 @@ struct AnnotationEditorView: View {
         .help("\(L10n.text("annotation.stickers"))\n\(L10n.text("annotation.stickersUsage"))")
     }
 
+    /// What changes the whole image rather than adding to it.
+    private var imageMenu: some View {
+        Menu {
+            Button(L10n.text("image.rotateLeft"), systemImage: "rotate.left") { reorient(.rotateLeft) }
+            Button(L10n.text("image.rotateRight"), systemImage: "rotate.right") { reorient(.rotateRight) }
+            Button(L10n.text("image.flipHorizontal"), systemImage: "arrow.left.and.right") { reorient(.flipHorizontal) }
+            Button(L10n.text("image.flipVertical"), systemImage: "arrow.up.and.down") { reorient(.flipVertical) }
+
+            Divider()
+
+            Button(L10n.text("image.autoCrop"), systemImage: "crop", action: autoCrop)
+
+            Picker(L10n.text("image.resize"), selection: Binding(
+                get: { document.outputScale },
+                set: { scale in change { $0.outputScale = scale } }
+            )) {
+                ForEach(AnnotationDocument.outputScales, id: \.self) { scale in
+                    Text(L10n.format("annotation.zoomPercent", Int((scale * 100).rounded()))).tag(scale)
+                }
+            }
+        } label: {
+            Label(L10n.text("image.title"), systemImage: "photo.on.rectangle.angled")
+                .labelStyle(.iconOnly)
+                .frame(width: 30, height: 28)
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .background(
+            RoundedRectangle(cornerRadius: 7)
+                .fill(document.orientation.isIdentity && document.outputScale == 1 ? .clear : Color.accentColor.opacity(0.18))
+        )
+        .help("\(L10n.text("image.title"))\n\(L10n.text("image.usage"))")
+    }
+
+    private func reorient(_ change: ImageOrientationChange) {
+        let size = shown.image.size
+        self.change { $0 = $0.reoriented(change, imageSize: size) }
+    }
+
+    /// Crops to what is inside a plain border, as ShareX's Auto Crop does.
+    private func autoCrop() {
+        guard let bounds = shown.reader?.contentBounds() else {
+            return
+        }
+        change { $0.crop = bounds }
+    }
+
     /// Effects frame the whole image, so they sit apart from the tools and
     /// apply whatever is selected.
     private var effectsMenu: some View {
@@ -441,6 +497,27 @@ struct AnnotationEditorView: View {
                     }
                 }
                 .disabled(document.effects.borderColor == nil)
+            }
+
+            Section(L10n.text("effects.margin")) {
+                Picker(L10n.text("effects.margin"), selection: Binding(
+                    get: { document.effects.margin },
+                    set: { margin in change { $0.effects.margin = margin } }
+                )) {
+                    ForEach(ImageEffects.margins, id: \.self) { margin in
+                        Text(margin == 0 ? L10n.text("effects.noMargin") : L10n.format("effects.points", Int(margin)))
+                            .tag(margin)
+                    }
+                }
+                Picker(L10n.text("effects.marginColor"), selection: Binding(
+                    get: { document.effects.marginColor },
+                    set: { color in change { $0.effects.marginColor = color } }
+                )) {
+                    Text(AnnotationColor.white.name).tag(AnnotationColor?.some(.white))
+                    Text(AnnotationColor.black.name).tag(AnnotationColor?.some(.black))
+                    Text(L10n.text("effects.transparent")).tag(AnnotationColor?.none)
+                }
+                .disabled(document.effects.margin == 0)
             }
 
             Toggle(L10n.text("effects.shadow"), isOn: Binding(
@@ -635,17 +712,19 @@ struct AnnotationEditorView: View {
     /// the capture has more than one per point.
     private var outputSizeDescription: String {
         let crop = document.crop
-        let width = Int((image.size.width * crop.width).rounded())
-        let height = Int((image.size.height * crop.height).rounded())
-        guard let pixels = pixelReader?.image, CGFloat(pixels.width) > image.size.width + 0.5 else {
+        let scale = document.outputScale
+        let size = shown.image.size
+        let width = Int((size.width * crop.width * scale).rounded())
+        let height = Int((size.height * crop.height * scale).rounded())
+        guard let pixels = shown.reader?.image, CGFloat(pixels.width) > size.width + 0.5 else {
             return L10n.format("annotation.sizePoints", width, height)
         }
         return L10n.format(
             "annotation.sizePointsAndPixels",
             width,
             height,
-            Int((CGFloat(pixels.width) * crop.width).rounded()),
-            Int((CGFloat(pixels.height) * crop.height).rounded())
+            Int((CGFloat(pixels.width) * crop.width * scale).rounded()),
+            Int((CGFloat(pixels.height) * crop.height * scale).rounded())
         )
     }
 
@@ -669,3 +748,18 @@ struct AnnotationEditorView: View {
     )
 }
 #endif
+
+/// The original turned as the document says, with its preview and the
+/// reader the colour readout samples, all made once per orientation.
+private struct ShownImage {
+    let image: NSImage
+    let preview: NSImage
+    let reader: PixelReader?
+
+    init(original: NSImage, preview: NSImage, orientation: ImageOrientation) {
+        image = orientation.applied(to: original)
+        self.preview = orientation.applied(to: preview)
+        reader = PixelReader(image)
+    }
+}
+
