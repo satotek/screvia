@@ -90,6 +90,7 @@ final class ScreviaSettings: ObservableObject {
         static let cornerRadius = "cornerRadius"
         static let shadowEnabled = "shadowEnabled"
         static let annotationStyle = "annotationStyle"
+        static let colorCodeFormat = "colorCodeFormat"
         static let captureDelay = "captureDelay"
         static let fileNameTemplate = "fileNameTemplate"
         static let fileNameCounter = "fileNameCounter"
@@ -165,6 +166,11 @@ final class ScreviaSettings: ObservableObject {
                 defaults.set(data, forKey: Key.annotationStyle)
             }
         }
+    }
+
+    /// How the editor writes a colour it copies.
+    @Published var colorCodeFormat: ColorCodeFormat {
+        didSet { defaults.set(colorCodeFormat.rawValue, forKey: Key.colorCodeFormat) }
     }
 
     /// Seconds between choosing what to capture and taking it, so a menu or
@@ -248,6 +254,7 @@ final class ScreviaSettings: ObservableObject {
         shadowEnabled = defaults.object(forKey: Key.shadowEnabled) as? Bool ?? false
         annotationStyle = defaults.data(forKey: Key.annotationStyle)
             .flatMap { try? JSONDecoder().decode(AnnotationStyle.self, from: $0) } ?? .standard
+        colorCodeFormat = ColorCodeFormat(rawValue: defaults.string(forKey: Key.colorCodeFormat) ?? "hex") ?? .hex
         let storedDelay = defaults.object(forKey: Key.captureDelay) as? Int ?? 0
         captureDelay = Self.captureDelayChoices.contains(storedDelay) ? storedDelay : 0
         fileNameTemplate = defaults.string(forKey: Key.fileNameTemplate) ?? FileNameTemplate.standard
@@ -301,6 +308,7 @@ final class ScreviaSettings: ObservableObject {
         cornerRadius = 16
         shadowEnabled = false
         annotationStyle = .standard
+        colorCodeFormat = .hex
         captureDelay = 0
         fileNameTemplate = FileNameTemplate.standard
         saveToFile = true

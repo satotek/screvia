@@ -15,11 +15,14 @@ final class AnnotationEditorController {
         replacing: URL? = nil,
         suggestedName: String,
         style: AnnotationStyle,
+        colorFormat: ColorCodeFormat,
         onStyleChange: @escaping (AnnotationStyle) -> Void,
+        onColorFormatChange: @escaping (ColorCodeFormat) -> Void,
         onSave: @escaping (NSImage, AnnotationDocument) -> Void,
         onSaveAs: @escaping (NSImage, AnnotationDocument, URL) -> Void,
         onCopy: @escaping (NSImage) -> Void,
-        onCopyText: @escaping (NSImage) -> Void
+        onCopyText: @escaping (NSImage) -> Void,
+        onCopyColor: @escaping (String) -> Void
     ) {
         window?.close()
 
@@ -27,9 +30,11 @@ final class AnnotationEditorController {
             image: image,
             previewImage: ImagePreview.downsample(image),
             initialStyle: style,
+            initialColorFormat: colorFormat,
             initialDocument: document,
             replacingFileName: replacing?.lastPathComponent,
             onStyleChange: onStyleChange,
+            onColorFormatChange: onColorFormatChange,
             onSave: { [weak self] image, document in
                 onSave(image, document)
                 self?.window?.close()
@@ -41,7 +46,8 @@ final class AnnotationEditorController {
                 }
             },
             onCopy: onCopy,
-            onCopyText: onCopyText
+            onCopyText: onCopyText,
+            onCopyColor: onCopyColor
         )
 
         let window = NSWindow(

@@ -672,8 +672,12 @@ final class CaptureCoordinator: ObservableObject {
             replacing: replacing,
             suggestedName: suggestedName,
             style: settings.annotationStyle,
+            colorFormat: settings.colorCodeFormat,
             onStyleChange: { [weak self] style in
                 self?.settings.annotationStyle = style
+            },
+            onColorFormatChange: { [weak self] format in
+                self?.settings.colorCodeFormat = format
             },
             onSave: { [weak self] annotatedImage, document in
                 guard let self else {
@@ -763,6 +767,10 @@ final class CaptureCoordinator: ObservableObject {
             },
             onCopyText: { [weak self] annotatedImage in
                 self?.copyText(in: annotatedImage)
+            },
+            onCopyColor: { [weak self] hex in
+                self?.imageStore.copyToClipboard(text: hex)
+                self?.toastController.show(L10n.format("toast.colorCopied", hex), symbol: "eyedropper")
             }
         )
     }
