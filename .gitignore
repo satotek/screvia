@@ -17,3 +17,7 @@ DerivedData/
 
 # macOS
 .DS_Store
+
+# Plans kept locally rather than published
+/docs/roadmap.md
+/docs/editor-roadmap.md
