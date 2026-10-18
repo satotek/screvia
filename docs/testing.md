@@ -87,8 +87,10 @@ cropped image at full resolution, filled heads and heads at both ends, a
 bent arrow drawn through its bend, rounded corners, a dragged-out text box
 keeping its width and growing down, each font design being its own font,
 an inserted picture drawn in its box, export turning the original,
-resize scaling points and pixels, a margin growing the canvas, and the
-smart eraser covering with its colour.
+resize scaling points and pixels, a margin growing the canvas, the smart
+eraser covering with its colour, rounded corners cutting the image's
+corners and, inside a border, leaving the border round the bend, and the
+greyscale and invert filters.
 
 **`ImageOrientationTests`** — turns and flips composing into one
 orientation that shows each point where the changes one by one would, four

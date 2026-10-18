@@ -2145,6 +2145,86 @@
         }
       }
     },
+    "effects.colorFilter": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colour"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "色"
+          }
+        }
+      }
+    },
+    "effects.cornerRadius": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rounded Corners"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "角の丸み"
+          }
+        }
+      }
+    },
+    "effects.filter.grayscale": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Greyscale"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "グレースケール"
+          }
+        }
+      }
+    },
+    "effects.filter.invert": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invert"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "反転"
+          }
+        }
+      }
+    },
+    "effects.filter.none": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Original"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "元の色"
+          }
+        }
+      }
+    },
     "effects.margin": {
       "localizations": {
         "en": {
@@ -2241,6 +2321,22 @@
         }
       }
     },
+    "effects.squareCorners": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "なし"
+          }
+        }
+      }
+    },
     "effects.title": {
       "localizations": {
         "en": {
@@ -2278,13 +2374,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Add a margin, a border or a drop shadow around the whole image."
+            "value": "Add a margin, a border, rounded corners or a drop shadow around the whole image, or change its colours."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "画像全体のまわりに、余白・枠線・影を付けます。"
+            "value": "画像全体のまわりに余白・枠線・角の丸み・影を付けたり、色を変えたりします。"
           }
         }
       }

@@ -525,10 +525,33 @@ struct AnnotationEditorView: View {
                 .disabled(document.effects.margin == 0)
             }
 
+            Picker(L10n.text("effects.cornerRadius"), selection: Binding(
+                get: { document.effects.cornerRadius },
+                set: { radius in change { $0.effects.cornerRadius = radius } }
+            )) {
+                ForEach(ImageEffects.cornerRadii, id: \.self) { radius in
+                    Text(radius == 0 ? L10n.text("effects.squareCorners") : L10n.format("effects.points", Int(radius)))
+                        .tag(radius)
+                }
+            }
+
             Toggle(L10n.text("effects.shadow"), isOn: Binding(
                 get: { document.effects.hasShadow },
                 set: { isOn in change { $0.effects.hasShadow = isOn } }
             ))
+
+            Section(L10n.text("effects.colorFilter")) {
+                Picker(L10n.text("effects.colorFilter"), selection: Binding(
+                    get: { document.effects.colorFilter },
+                    set: { filter in change { $0.effects.colorFilter = filter } }
+                )) {
+                    ForEach(ImageColorFilter.allCases) { filter in
+                        Text(filter.title).tag(filter)
+                    }
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
+            }
         } label: {
             Label(L10n.text("effects.title"), systemImage: "photo.artframe")
                 .labelStyle(.iconOnly)

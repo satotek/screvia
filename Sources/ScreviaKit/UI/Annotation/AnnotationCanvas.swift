@@ -94,12 +94,16 @@ struct AnnotationCanvas: View {
                 ZStack {
                     effectsBackdrop(layout: layout)
 
+                    // The image and its annotations are recoloured as export
+                    // recolours them. Only the image is masked: handles and
+                    // the crop preview may reach past its edge.
                     Image(nsImage: image)
                         .resizable()
                         .frame(width: layout.imageRect.width, height: layout.imageRect.height)
                         .position(x: layout.imageRect.midX, y: layout.imageRect.midY)
+                        .modifier(ColorFilterPreview(filter: document.effects.colorFilter))
                         .mask {
-                            Rectangle()
+                            RoundedRectangle(cornerRadius: pictureCornerRadius(layout: layout))
                                 .frame(width: layout.visibleRect.width, height: layout.visibleRect.height)
                                 .position(x: layout.visibleRect.midX, y: layout.visibleRect.midY)
                         }
@@ -107,6 +111,7 @@ struct AnnotationCanvas: View {
                     Canvas { context, _ in
                         draw(in: &context, layout: layout)
                     }
+                    .modifier(ColorFilterPreview(filter: document.effects.colorFilter))
                     .allowsHitTesting(false)
 
                     // Above the canvas and below nothing: in this mode a
@@ -212,7 +217,8 @@ struct AnnotationCanvas: View {
             let inner = layout.visibleRect.insetBy(dx: -margin, dy: -margin)
             let frame = inner.insetBy(dx: -border, dy: -border)
             let marginColor = effects.marginColor.map { Color(cgColor: $0.cgColor) } ?? .clear
-            Rectangle()
+            let radius = effects.cornerRadius * pointScale
+            RoundedRectangle(cornerRadius: min(radius, frame.width / 2, frame.height / 2))
                 .fill(effects.borderColor.map { Color(cgColor: $0.cgColor) } ?? marginColor)
                 .frame(width: frame.width, height: frame.height)
                 .shadow(
@@ -223,12 +229,21 @@ struct AnnotationCanvas: View {
                 )
                 .position(x: frame.midX, y: frame.midY)
             if margin > 0 {
-                Rectangle()
+                RoundedRectangle(cornerRadius: max(radius - border, 0))
                     .fill(marginColor)
                     .frame(width: inner.width, height: inner.height)
                     .position(x: inner.midX, y: inner.midY)
             }
         }
+    }
+
+    /// The picture's own corner radius on screen: what the rounded corners
+    /// leave once the border and margin around it have taken their share.
+    private func pictureCornerRadius(layout: CanvasLayout) -> CGFloat {
+        let effects = document.effects
+        let inset = effects.borderThickness + effects.margin
+        let pointScale = layout.imageRect.width / max(imageSize.width, 1)
+        return max(effects.cornerRadius - inset, 0) * pointScale
     }
 
     private func draw(in context: inout GraphicsContext, layout: CanvasLayout) {
@@ -771,6 +786,22 @@ struct AnnotationCanvas: View {
                 continue
             }
             filteredRegions[annotation.id] = FilteredRegion(area: annotation.sampledArea, image: filtered)
+        }
+    }
+}
+
+/// The colour filter as the canvas shows it, matching what export does.
+private struct ColorFilterPreview: ViewModifier {
+    let filter: ImageColorFilter
+
+    func body(content: Content) -> some View {
+        switch filter {
+        case .none:
+            content
+        case .grayscale:
+            content.grayscale(1)
+        case .invert:
+            content.colorInvert()
         }
     }
 }

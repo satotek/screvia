@@ -186,10 +186,14 @@ final class EditArchiveTests: XCTestCase {
         XCTAssertEqual(decoded.margin, 0)
         XCTAssertEqual(decoded.marginColor, .white)
         XCTAssertTrue(decoded.hasShadow)
+        XCTAssertEqual(decoded.cornerRadius, 0)
+        XCTAssertEqual(decoded.colorFilter, .none)
 
         var clear = ImageEffects()
         clear.margin = 16
         clear.marginColor = nil
+        clear.cornerRadius = 16
+        clear.colorFilter = .invert
         XCTAssertEqual(try JSONDecoder().decode(ImageEffects.self, from: JSONEncoder().encode(clear)), clear)
     }
 }

@@ -24,6 +24,26 @@ final class AnnotationRendererTests: XCTestCase {
         return (data[0], data[1], data[2])
     }
 
+    /// The alpha of one pixel, `y` counted from the top.
+    private func alpha(of image: NSImage, x: Int, y: Int) -> UInt8 {
+        let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil)!
+        var data = [UInt8](repeating: 0, count: 4)
+        let context = CGContext(
+            data: &data,
+            width: 1,
+            height: 1,
+            bitsPerComponent: 8,
+            bytesPerRow: 4,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        )!
+        context.draw(
+            cgImage,
+            in: CGRect(x: -x, y: y - cgImage.height + 1, width: cgImage.width, height: cgImage.height)
+        )
+        return data[3]
+    }
+
     /// A 3× capture: 300×150 pixels in a 100×50 point image.
     private func threeTimesImage() -> NSImage {
         NSImage(
@@ -218,6 +238,55 @@ final class AnnotationRendererTests: XCTestCase {
 
         let margin = ImageEffects.shadowMargin
         XCTAssertEqual(flattened.size, NSSize(width: 100 + margin * 2, height: 50 + margin * 2))
+    }
+
+    /// The corner is cut away; the middle of each edge is not.
+    func testRoundedCornersLeaveTheImagesCornersTransparent() {
+        var document = AnnotationDocument()
+        document.effects.cornerRadius = 16
+
+        let flattened = AnnotationRenderer.flatten(threeTimesImage(), document: document)
+
+        XCTAssertEqual(alpha(of: flattened, x: 1, y: 1), 0, "the corner")
+        XCTAssertEqual(alpha(of: flattened, x: 150, y: 1), 255, "the top edge")
+        XCTAssertEqual(flattened.size, NSSize(width: 100, height: 50), "rounding adds no room")
+    }
+
+    /// Inside a border the picture's corners are rounded less, by the
+    /// border's width, so the border keeps one thickness around the bend.
+    func testRoundedCornersFollowTheBorder() {
+        var document = AnnotationDocument()
+        document.effects.borderColor = .black
+        document.effects.borderWidth = 6
+        document.effects.cornerRadius = 8
+
+        let flattened = AnnotationRenderer.flatten(threeTimesImage(), document: document)
+
+        XCTAssertEqual(alpha(of: flattened, x: 1, y: 1), 0, "outside the bend")
+        XCTAssertEqual(pixel(of: flattened, x: 18, y: 18).b, 0, "the border at the picture's corner")
+        XCTAssertEqual(pixel(of: flattened, x: 168, y: 93).b, 255, "the picture")
+    }
+
+    func testGreyscaleTakesTheColourOut() {
+        var annotation = Annotation(tool: .eraser, start: .zero, end: CGPoint(x: 1, y: 1))
+        annotation.style.fillColor = .red
+        var document = AnnotationDocument(annotations: [annotation])
+        document.effects.colorFilter = .grayscale
+
+        let red = pixel(of: AnnotationRenderer.flatten(threeTimesImage(), document: document), x: 150, y: 75)
+
+        XCTAssertEqual(Int(red.r), Int(red.g), accuracy: 2)
+        XCTAssertEqual(Int(red.g), Int(red.b), accuracy: 2)
+    }
+
+    /// Inverted in sRGB: white becomes black, not a grey from inverting light.
+    func testInvertTurnsWhiteBlack() {
+        var document = AnnotationDocument()
+        document.effects.colorFilter = .invert
+
+        let flattened = AnnotationRenderer.flatten(threeTimesImage(), document: document)
+
+        XCTAssertLessThan(pixel(of: flattened, x: 150, y: 75).r, 3)
     }
 
     /// Effects frame what is kept, not the whole capture.

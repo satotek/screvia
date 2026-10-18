@@ -390,7 +390,8 @@ nonisolated enum AnnotationRenderer {
         guard
             let flattened = context.makeImage(),
             let cropped = flattened.cropping(to: AnnotationSpace.rect(crop, in: canvas).integral),
-            let framed = applying(document.effects, to: cropped, pixelsPerPoint: pixelsPerPoint, colorSpace: colorSpace),
+            let recolored = recolored(cropped, with: document.effects.colorFilter),
+            let framed = applying(document.effects, to: recolored, pixelsPerPoint: pixelsPerPoint, colorSpace: colorSpace),
             let output = scaled(framed, by: document.outputScale, colorSpace: colorSpace)
         else {
             return image
@@ -429,15 +430,16 @@ nonisolated enum AnnotationRenderer {
     }
 
     /// The image framed by `effects`: its border, then room for the shadow
-    /// around that. The image itself is untouched, so the crop and the
-    /// annotations keep their pixels.
+    /// around that, with the corners rounded. The image itself is untouched
+    /// but for its corners, so the crop and the annotations keep their
+    /// pixels. The colour filter is not applied here.
     static func applying(
         _ effects: ImageEffects,
         to image: CGImage,
         pixelsPerPoint: CGFloat,
         colorSpace: CGColorSpace
     ) -> CGImage? {
-        guard !effects.isEmpty else {
+        guard effects.borderColor != nil || effects.hasShadow || effects.margin > 0 || effects.cornerRadius > 0 else {
             return image
         }
 
@@ -470,20 +472,39 @@ nonisolated enum AnnotationRenderer {
                 color: CGColor(gray: 0, alpha: 0.35)
             )
         }
+        // The corners inside the border and margin are rounded by what is
+        // left of the radius, so every edge runs parallel to the outside.
+        let radius = (effects.cornerRadius * pixelsPerPoint).rounded()
+        func rounded(_ rect: CGRect, inset: CGFloat) -> CGPath {
+            let corner = min(max(radius - inset, 0), rect.width / 2, rect.height / 2)
+            return CGPath(roundedRect: rect, cornerWidth: corner, cornerHeight: corner, transform: nil)
+        }
+
         // Under the image even without a border, as what casts the shadow.
         let marginColor = effects.marginColor?.cgColor ?? CGColor(gray: 0, alpha: 0)
         if effects.borderColor != nil || effects.hasShadow {
             context.setFillColor(effects.borderColor?.cgColor ?? marginColor)
-            context.fill(framed)
+            context.addPath(rounded(framed, inset: 0))
+            context.fillPath()
         }
         context.setShadow(offset: .zero, blur: 0, color: nil)
         let inner = framed.insetBy(dx: border, dy: border)
         if padding > 0 {
-            context.clear(inner)
+            // Copied rather than painted over, so a transparent margin is
+            // transparent and not the border showing through.
+            context.saveGState()
+            context.setBlendMode(.copy)
             context.setFillColor(marginColor)
-            context.fill(inner)
+            context.addPath(rounded(inner, inset: border))
+            context.fillPath()
+            context.restoreGState()
         }
-        context.draw(image, in: inner.insetBy(dx: padding, dy: padding))
+        let picture = inner.insetBy(dx: padding, dy: padding)
+        context.saveGState()
+        context.addPath(rounded(picture, inset: border + padding))
+        context.clip()
+        context.draw(image, in: picture)
+        context.restoreGState()
         return context.makeImage()
     }
 

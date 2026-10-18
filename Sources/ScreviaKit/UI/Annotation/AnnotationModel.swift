@@ -551,9 +551,14 @@ nonisolated struct ImageEffects: Codable, Equatable {
     var margin: CGFloat = 0
     /// What fills the margin; nil leaves it transparent.
     var marginColor: AnnotationColor? = .white
+    /// Rounds the outside corners of the whole picture, border and margin
+    /// included; the corners inside them follow, so the edges stay parallel.
+    var cornerRadius: CGFloat = 0
+    /// Recolours the image and its annotations, not the frame around them.
+    var colorFilter: ImageColorFilter = .none
 
     var isEmpty: Bool {
-        borderColor == nil && !hasShadow && margin == 0
+        borderColor == nil && !hasShadow && margin == 0 && cornerRadius == 0 && colorFilter == .none
     }
 
     /// The border's thickness, or zero without one.
@@ -563,6 +568,7 @@ nonisolated struct ImageEffects: Codable, Equatable {
 
     static let borderWidths: [CGFloat] = [2, 6, 12]
     static let margins: [CGFloat] = [0, 16, 32, 64]
+    static let cornerRadii: [CGFloat] = [0, 8, 16, 32]
     /// Room around the bordered image for the shadow to fade out in.
     static let shadowMargin: CGFloat = 32
     static let shadowBlur: CGFloat = 18
@@ -571,10 +577,11 @@ nonisolated struct ImageEffects: Codable, Equatable {
 
 nonisolated extension ImageEffects {
     private enum CodingKeys: String, CodingKey {
-        case borderColor, borderWidth, hasShadow, margin, marginColor
+        case borderColor, borderWidth, hasShadow, margin, marginColor, cornerRadius, colorFilter
     }
 
-    /// Archived edits from before the margin have none of its keys.
+    /// Archived edits from before the margin have none of its keys, nor of
+    /// the corner radius or the colour filter.
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         borderColor = try container.decodeIfPresent(AnnotationColor.self, forKey: .borderColor)
@@ -585,6 +592,8 @@ nonisolated extension ImageEffects {
         marginColor = container.contains(.marginColor)
             ? try container.decodeIfPresent(AnnotationColor.self, forKey: .marginColor)
             : .white
+        cornerRadius = try container.decodeIfPresent(CGFloat.self, forKey: .cornerRadius) ?? 0
+        colorFilter = try container.decodeIfPresent(ImageColorFilter.self, forKey: .colorFilter) ?? .none
     }
 
     func encode(to encoder: any Encoder) throws {
@@ -595,5 +604,21 @@ nonisolated extension ImageEffects {
         try container.encode(margin, forKey: .margin)
         // Written even when nil, which means transparent, not the default.
         try container.encode(marginColor, forKey: .marginColor)
+        try container.encode(cornerRadius, forKey: .cornerRadius)
+        try container.encode(colorFilter, forKey: .colorFilter)
+    }
+}
+
+/// A change of colour over the whole image.
+nonisolated enum ImageColorFilter: String, Codable, CaseIterable, Identifiable {
+    case none
+    case grayscale
+    /// Light for dark, as for turning a dark-mode capture light for print.
+    case invert
+
+    var id: String { rawValue }
+
+    var title: String {
+        L10n.text("effects.filter.\(rawValue)")
     }
 }

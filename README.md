@@ -62,7 +62,8 @@ app at all.
   the saved image, so what you see is what gets saved
 - Open any image, not only captures: from the clipboard, a file, a drop on the
   menu bar icon, or Finder's Open With
-- A margin, a border and a drop shadow around the whole image
+- A margin, a border, rounded corners and a drop shadow around the whole
+  image, and greyscale or inverted colours
 - Rotate, flip, resize, and trim a plain border, with annotations following
   the picture
 - Undo/redo with `⌘Z` / `⇧⌘Z`, and Save As

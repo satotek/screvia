@@ -74,3 +74,33 @@ nonisolated func sampledRegion(for tool: AnnotationTool, of image: CGImage, in r
     }
     return image.cropping(to: source)
 }
+
+// Recolouring works on the sRGB values themselves, as the canvas's preview
+// does; in Core Image's default linear space, inverting mid-grey would not
+// give mid-grey back.
+private nonisolated let recolorContext = CIContext(options: [
+    .workingColorSpace: CGColorSpace(name: CGColorSpace.sRGB) as Any
+])
+
+/// `image` with `filter`'s change of colour over all of it.
+nonisolated func recolored(_ image: CGImage, with filter: ImageColorFilter) -> CGImage? {
+    let input = CIImage(cgImage: image)
+    let output: CIImage?
+    switch filter {
+    case .none:
+        return image
+    case .grayscale:
+        let controls = CIFilter(name: "CIColorControls")
+        controls?.setValue(input, forKey: kCIInputImageKey)
+        controls?.setValue(0, forKey: kCIInputSaturationKey)
+        output = controls?.outputImage
+    case .invert:
+        let invert = CIFilter(name: "CIColorInvert")
+        invert?.setValue(input, forKey: kCIInputImageKey)
+        output = invert?.outputImage
+    }
+    guard let output else {
+        return nil
+    }
+    return recolorContext.createCGImage(output, from: input.extent)
+}
