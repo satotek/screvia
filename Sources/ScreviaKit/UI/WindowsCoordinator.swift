@@ -7,8 +7,8 @@ final class WindowsCoordinator {
     private let licensesController = LicensesWindowController()
     private let permissionOnboardingController = PermissionOnboardingWindowController()
 
-    func openPreferences(settings: ScreviaSettings) {
-        preferencesController.show(settings: settings)
+    func openPreferences(settings: ScreviaSettings, updater: SoftwareUpdater) {
+        preferencesController.show(settings: settings, updater: updater)
     }
 
     func openAbout() {

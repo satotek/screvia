@@ -42,13 +42,14 @@ enum PreferencesTab: String, CaseIterable, Identifiable {
 struct PreferencesPane: View {
     let tab: PreferencesTab
     @ObservedObject var settings: ScreviaSettings
+    let updater: SoftwareUpdater
 
     var body: some View {
         VStack(spacing: 16) {
             PreferencesGrid {
                 switch tab {
                 case .general:
-                    GeneralPreferences(settings: settings)
+                    GeneralPreferences(settings: settings, updater: updater)
                 case .saving:
                     SavingPreferences(settings: settings)
                 case .capture:
@@ -79,6 +80,7 @@ struct PreferencesPane: View {
 
 struct GeneralPreferences: View {
     @ObservedObject var settings: ScreviaSettings
+    @ObservedObject var updater: SoftwareUpdater
     @State private var launchAtLoginStatus: SMAppService.Status = .notRegistered
     @State private var launchAtLoginError: String?
 
@@ -144,6 +146,18 @@ struct GeneralPreferences: View {
             }
             .labelsHidden()
             .fixedSize()
+        }
+
+        PreferencesSeparator()
+
+        PreferencesRow(L10n.text("preferences.updates")) {
+            Toggle(L10n.text("preferences.automaticallyChecks"), isOn: $updater.automaticallyChecks)
+            Toggle(L10n.text("preferences.automaticallyInstalls"), isOn: $updater.automaticallyInstalls)
+                .disabled(!updater.automaticallyChecks)
+            Button(L10n.text("preferences.checkNow")) {
+                updater.checkForUpdates()
+            }
+            PreferencesHint(L10n.text("preferences.updatesHint"))
         }
 
         PreferencesSeparator()
@@ -479,7 +493,7 @@ extension Comparable {
 
 #if DEBUG
 #Preview("Preferences") {
-    PreferencesPane(tab: .general, settings: .previewInstance())
+    PreferencesPane(tab: .general, settings: .previewInstance(), updater: SoftwareUpdater())
 }
 
 #Preview("Appearance / framed") {

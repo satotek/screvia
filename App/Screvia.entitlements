@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	The hardened runtime loads only libraries signed by the app's own team,
+	and a self-signed or ad-hoc signature has no team, so it would refuse
+	the embedded Sparkle.framework even though the same certificate signed
+	both. Apps with an Apple-issued certificate would not need this.
+	-->
+	<key>com.apple.security.cs.disable-library-validation</key>
+	<true/>
+</dict>
+</plist>

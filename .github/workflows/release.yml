@@ -38,7 +38,9 @@ jobs:
 
       # Before the slow steps, so a missing changelog section fails at once.
       - name: Write the release notes
-        run: swift scripts/ReleaseNotes.swift "$VERSION" > "$RUNNER_TEMP/release-notes.md"
+        run: |
+          swift scripts/ReleaseNotes.swift "$VERSION" > "$RUNNER_TEMP/release-notes.md"
+          swift scripts/ReleaseNotes.swift --changes-only "$VERSION" > "$RUNNER_TEMP/update-notes.md"
 
       - name: Install XcodeGen
         run: brew install xcodegen
@@ -90,7 +92,10 @@ jobs:
             echo "::error::the app reports $shown, expected $VERSION"
             exit 1
           fi
-          echo "version $shown, build $(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$plist")"
+          build=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$plist")
+          echo "version $shown, build $build"
+          # Sparkle compares build numbers, not versions, to find a newer one.
+          echo "BUILD=$build" >> "$GITHUB_ENV"
           # Intel Macs still run macOS 14, the minimum.
           archs=$(lipo -archs .build/Screvia.app/Contents/MacOS/Screvia)
           for arch in arm64 x86_64; do
@@ -100,13 +105,32 @@ jobs:
             esac
           done
 
+      # Installed copies find this release through the appcast, and accept
+      # the image only with a signature from the key whose public half is in
+      # their Info.plist. The key reaches sign_update on standard input, so it
+      # never appears in a command line.
+      - name: Sign the update and write the appcast
+        env:
+          SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
+        run: |
+          if [ -z "$SPARKLE_ED_PRIVATE_KEY" ]; then
+            echo "::error::the SPARKLE_ED_PRIVATE_KEY secret is not set"
+            exit 1
+          fi
+          # SwiftPM unpacked Sparkle's tools for the test step.
+          sign_update=.build/artifacts/sparkle/Sparkle/bin/sign_update
+          dmg="dist/Screvia-$VERSION.dmg"
+          signature=$(printf '%s' "$SPARKLE_ED_PRIVATE_KEY" | "$sign_update" --ed-key-file - -p "$dmg")
+          swift scripts/Appcast.swift "$VERSION" "$BUILD" "$dmg" "$signature" \
+            "$RUNNER_TEMP/update-notes.md" > dist/appcast.xml
+
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           dmg="dist/Screvia-$VERSION.dmg"
           shasum -a 256 "$dmg" | sed "s|dist/||" > "$dmg.sha256"
-          gh release create "$GITHUB_REF_NAME" "$dmg" "$dmg.sha256" \
+          gh release create "$GITHUB_REF_NAME" "$dmg" "$dmg.sha256" dist/appcast.xml \
             --title "Screvia $VERSION" \
             --notes-file "$RUNNER_TEMP/release-notes.md"
 

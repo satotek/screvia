@@ -90,8 +90,9 @@ Pushing a `v*` tag runs `.github/workflows/release.yml`. It checks the tag
 against `MARKETING_VERSION`, imports the certificate from the
 `SCREVIA_SIGNING_P12` and `SCREVIA_SIGNING_P12_PASSWORD` secrets into a
 throwaway keychain, runs `CreateDMG.swift`, checks that the built app reports
-the tagged version and contains both arm64 and x86_64, and publishes the image
-and its SHA-256 to GitHub Releases.
+the tagged version and contains both arm64 and x86_64, signs the image for
+Sparkle and writes `appcast.xml`, and publishes the image, its SHA-256 and the
+appcast to GitHub Releases.
 
 The release notes are the version's section of `CHANGELOG.md`, a link to the
 diff, and the install steps in `.github/release-notes.md`, put together by
@@ -111,6 +112,46 @@ than copied from commit subjects. To release:
 ```sh
 git tag -a v0.5.0 -m "Screvia 0.5.0" && git push origin main v0.5.0
 ```
+
+### Updates
+
+Installed copies update through [Sparkle](https://sparkle-project.org). Each
+release carries an `appcast.xml` describing itself, and Info.plist's
+`SUFeedURL` points at `releases/latest/download/appcast.xml`, which GitHub
+redirects to the newest release's copy. `scripts/Appcast.swift` writes it,
+with the version's CHANGELOG section as Markdown release notes.
+
+Sparkle installs an update only if both checks pass:
+
+- **EdDSA signature.** The image is signed with a private key whose public
+  half is `SUPublicEDKey` in `project.yml`. The key lives in the
+  maintainer's login keychain under the account `screvia`, and in the
+  `SPARKLE_ED_PRIVATE_KEY` secret, which the workflow feeds to `sign_update`
+  on standard input. **Without the key, no update can reach an installed
+  copy again**, so keep a backup. To set the secret from the keychain:
+
+  ```sh
+  key=$(mktemp) && .build/artifacts/sparkle/Sparkle/bin/generate_keys --account screvia -x "$key" && gh secret set SPARKLE_ED_PRIVATE_KEY < "$key"; rm -f "$key"
+  ```
+
+- **Code signature.** The new app must satisfy the installed one's
+  designated requirement, the same certificate as for the privacy grants.
+
+Two signing details follow from Sparkle being a framework, the app's only
+one:
+
+- `BuildApp.swift` re-signs the programs inside `Sparkle.framework`
+  (`Autoupdate`, `Updater.app`, the XPC services) before the framework
+  itself; signing a framework does not reach them.
+- `App/Screvia.entitlements` disables library validation. The hardened
+  runtime otherwise loads only libraries signed by the app's team, and a
+  self-signed certificate has no team, so the app crashed at launch with
+  "different Team IDs" though one certificate signed both.
+
+To try an update locally, serve a signed image and appcast from
+`localhost` and point a copy at it with
+`defaults write dev.satotek.screvia SUFeedURL http://localhost:8765/appcast.xml`;
+a user default overrides Info.plist. Delete the default afterwards.
 
 ### Versions
 

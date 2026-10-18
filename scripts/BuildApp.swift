@@ -136,8 +136,8 @@ func isAppleIssued(_ identity: String) -> Bool {
 }
 
 // Inside out: each nested bundle is sealed before the app that contains it.
-// The entitlements xcodebuild added are dropped on purpose; the ad-hoc
-// build carries none the app needs, and get-task-allow must not ship.
+// The entitlements xcodebuild added are replaced with the app's own file on
+// purpose: get-task-allow must not ship.
 func resign(_ app: URL, with identity: String) throws {
     let nested = ["Contents/Frameworks", "Contents/Resources"].flatMap { directory in
         (try? fm.contentsOfDirectory(
@@ -147,11 +147,50 @@ func resign(_ app: URL, with identity: String) throws {
     }.filter { ["bundle", "framework", "dylib"].contains($0.pathExtension) }
 
     for item in nested + [app] {
+        if item.pathExtension == "framework" {
+            for helper in helpers(in: item) {
+                // Sparkle's downloader needs its own network entitlement.
+                try run(
+                    "/usr/bin/codesign",
+                    ["--force", "--options", "runtime", "--timestamp=none",
+                     "--preserve-metadata=entitlements", "--sign", identity, helper.path]
+                )
+            }
+        }
+        let entitlements = item == app
+            ? ["--entitlements", repoRoot.appending(path: "App/Screvia.entitlements").path]
+            : []
         try run(
             "/usr/bin/codesign",
-            ["--force", "--options", "runtime", "--timestamp=none", "--sign", identity, item.path]
+            ["--force", "--options", "runtime", "--timestamp=none"] + entitlements + ["--sign", identity, item.path]
         )
     }
+}
+
+/// The programs a framework carries besides its library, such as Sparkle's
+/// installer and XPC services. Signing the framework does not re-sign them,
+/// and they would otherwise keep their vendor's signature, which Sparkle
+/// rejects as not matching the app's.
+func helpers(in framework: URL) -> [URL] {
+    let current = framework.appending(path: "Versions/Current").resolvingSymlinksInPath()
+    let services = (try? fm.contentsOfDirectory(
+        at: current.appending(path: "XPCServices"),
+        includingPropertiesForKeys: nil
+    )) ?? []
+    let top = (try? fm.contentsOfDirectory(
+        at: current,
+        includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey]
+    )) ?? []
+    let programs = top.filter { url in
+        if url.pathExtension == "app" {
+            return true
+        }
+        let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
+        return values?.isRegularFile == true && values?.isSymbolicLink != true
+            && url.lastPathComponent != framework.deletingPathExtension().lastPathComponent
+            && fm.isExecutableFile(atPath: url.path)
+    }
+    return services.filter { $0.pathExtension == "xpc" } + programs
 }
 
 // xcodebuild will not sign with a certificate unless it also knows the team.

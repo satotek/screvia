@@ -65,6 +65,16 @@ targets:
         NSHumanReadableCopyright: "Copyright © 2026 satotek. MIT License."
         NSScreenCaptureUsageDescription: >-
           Screvia uses Screen Recording access to capture images from your Mac.
+        # Sparkle. The appcast is attached to every release, and this URL
+        # always leads to the newest one. SUEnableAutomaticChecks is left
+        # out on purpose: Sparkle then asks before it checks at all.
+        SUFeedURL: https://github.com/satotek/screvia/releases/latest/download/appcast.xml
+        # The private half is in the maintainer's keychain (account
+        # "screvia") and the SPARKLE_ED_PRIVATE_KEY secret. Losing it means
+        # no update can reach an installed copy again.
+        SUPublicEDKey: b236ccUQw8Ko0vhd879k09ip1D9rAsrouS5XXVT9wfI=
+        # Checks the download's signature before unpacking it at all.
+        SUVerifyUpdateBeforeExtraction: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.satotek.screvia
@@ -83,3 +93,4 @@ targets:
         CODE_SIGN_STYLE: Manual
         DEVELOPMENT_TEAM: ""
         ENABLE_HARDENED_RUNTIME: true
+        CODE_SIGN_ENTITLEMENTS: App/Screvia.entitlements

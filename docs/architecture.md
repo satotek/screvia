@@ -210,13 +210,17 @@ log stream --predicate 'subsystem == "dev.satotek.screvia"' --level info
 
 ## Privacy
 
-No network code ships in the app. Captures are written to the configured
-folder and never leave the machine. Capture history is session-scoped: the
+Captures are written to the configured folder and never leave the machine.
+The one network request is Sparkle's update check (`SoftwareUpdater`), which
+fetches the appcast from GitHub. It runs only after the user agrees: Sparkle
+asks on the second launch, since Info.plist leaves `SUEnableAutomaticChecks`
+unset, and Settings → General can change the answer. Sparkle's system profile
+is off, so the request carries nothing about the user. Capture history is session-scoped: the
 files stay on disk, but a relaunch starts with an empty history strip.
 
 ## Dependencies
 
-Two, both build-time-resolved SwiftPM packages:
+Three, all build-time-resolved SwiftPM packages:
 
 - **[KeyboardShortcuts][ks]** — remappable global hotkeys, registered through
   Carbon's `RegisterEventHotKey` so they do not collide with other apps.
@@ -225,8 +229,15 @@ Two, both build-time-resolved SwiftPM packages:
 - **[LicenseList][ll]** — generates the open source license list from the
   resolved package checkouts at build time, so the Licenses window can never
   drift from what actually ships.
+- **[Sparkle][sp]** — update checks and installs. Its EdDSA signature on each
+  release, checked against the public key in Info.plist, is what lets an
+  unnotarized app update itself safely. The only dependency linked as a
+  framework rather than statically, which is why the app carries
+  `disable-library-validation`; see
+  [build-and-packaging.md](build-and-packaging.md#updates).
 
 Everything else is Apple frameworks only.
 
 [ks]: https://github.com/sindresorhus/KeyboardShortcuts
 [ll]: https://github.com/cybozu/LicenseList
+[sp]: https://sparkle-project.org

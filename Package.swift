@@ -16,14 +16,18 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/sindresorhus/KeyboardShortcuts", from: "3.0.1"),
-        .package(url: "https://github.com/cybozu/LicenseList", from: "2.5.0")
+        .package(url: "https://github.com/cybozu/LicenseList", from: "2.5.0"),
+        // 2.9 is the first to show Markdown release notes, which the appcast
+        // carries straight from CHANGELOG.md.
+        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.10.0")
     ],
     targets: [
         .target(
             name: "ScreviaKit",
             dependencies: [
                 .product(name: "KeyboardShortcuts", package: "KeyboardShortcuts"),
-                .product(name: "LicenseList", package: "LicenseList")
+                .product(name: "LicenseList", package: "LicenseList"),
+                .product(name: "Sparkle", package: "Sparkle")
             ],
             path: "Sources/ScreviaKit",
             resources: [

@@ -11,8 +11,8 @@
 
 Screvia lives in the menu bar. Capture a screen, a region, a window or a whole
 scrolling page, annotate it, pin it above your work, and save it — all through
-Apple's own frameworks. Nothing is uploaded, and no network code ships in the
-app at all.
+Apple's own frameworks. Nothing is uploaded: the only thing Screvia fetches
+is the list of releases, to check for updates, and only if you allow it.
 
 ## Features
 
@@ -97,6 +97,11 @@ xattr -dr com.apple.quarantine /Applications/Screvia.app
 Every release is signed with the same certificate, so updating keeps the
 Screen Recording and Accessibility permissions you already granted.
 
+From 0.5.0, Screvia can update itself. On its second launch it asks whether
+to check for updates automatically; you can change that, or check now, under
+Settings → General. Updates are verified against Screvia's signing key before
+they are installed, and need no trip to Privacy & Security.
+
 ## Requirements
 
 - macOS 14 or later, on Apple silicon or Intel
@@ -142,6 +147,7 @@ conventions.
   through Carbon so they do not collide with other apps
 - [LicenseList][licenselist] — generates the open source license list from the
   resolved package checkouts, so it can never fall out of date
+- [Sparkle][sparkle] — checks for, verifies and installs updates
 
 Everything else is built on Apple frameworks only.
 
@@ -151,4 +157,5 @@ MIT — see [LICENSE](LICENSE).
 
 [keyboardshortcuts]: https://github.com/sindresorhus/KeyboardShortcuts
 [licenselist]: https://github.com/cybozu/LicenseList
+[sparkle]: https://sparkle-project.org
 [xcodegen]: https://github.com/yonaskolb/XcodeGen

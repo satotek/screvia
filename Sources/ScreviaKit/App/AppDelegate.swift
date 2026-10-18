@@ -15,6 +15,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     private let settings = ScreviaSettings()
     private lazy var captureCoordinator = CaptureCoordinator(settings: settings)
     private let windowsCoordinator = WindowsCoordinator()
+    private let updater = SoftwareUpdater()
     private var statusItem: NSStatusItem?
     private var capturePopover: NSPopover?
 
@@ -38,6 +39,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.showCountdown(remaining)
         }
         captureCoordinator.start()
+        updater.start()
 
         if !ScreenRecordingPermission.isGranted {
             ScreenRecordingPermission.request()
@@ -101,6 +103,8 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         let appMenu = NSMenu()
         appMenu.addItem(withTitle: L10n.text("about.menuTitle"), action: #selector(openAbout), keyEquivalent: "")
             .target = self
+        appMenu.addItem(withTitle: L10n.text("app.checkForUpdates"), action: #selector(checkForUpdates), keyEquivalent: "")
+            .target = self
         appMenu.addItem(withTitle: L10n.text("app.settings"), action: #selector(openPreferences), keyEquivalent: ",")
             .target = self
         appMenu.addItem(.separator())
@@ -120,7 +124,11 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func openPreferences() {
-        windowsCoordinator.openPreferences(settings: settings)
+        windowsCoordinator.openPreferences(settings: settings, updater: updater)
+    }
+
+    @objc private func checkForUpdates() {
+        updater.checkForUpdates()
     }
 
     public func applicationWillTerminate(_ notification: Notification) {
@@ -206,7 +214,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
                 onOpenPreferences: { [weak self] in
                     self?.closeCaptureHub()
                     guard let self else { return }
-                    self.windowsCoordinator.openPreferences(settings: self.settings)
+                    self.windowsCoordinator.openPreferences(settings: self.settings, updater: self.updater)
                 },
                 onOpenAbout: { [weak self] in
                     self?.closeCaptureHub()
@@ -215,6 +223,11 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
                 onOpenLicenses: { [weak self] in
                     self?.closeCaptureHub()
                     self?.windowsCoordinator.openLicenses()
+                },
+                availableUpdate: updater.availableVersion,
+                onCheckForUpdates: { [weak self] in
+                    self?.closeCaptureHub()
+                    self?.updater.checkForUpdates()
                 },
                 // The guide rather than System Settings directly: it also
                 // offers the restart that a new grant needs.

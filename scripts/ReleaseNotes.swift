@@ -3,7 +3,10 @@
 // Prints a version's release notes: its section of CHANGELOG.md, a link to
 // the full diff, then the install notes every release carries.
 //
-//   swift scripts/ReleaseNotes.swift <version>
+//   swift scripts/ReleaseNotes.swift [--changes-only] <version>
+//
+// --changes-only leaves out the link and the install notes, for the update
+// window of an app that is already installed.
 //
 // Fails when CHANGELOG.md has no section for the version, or an empty one,
 // so a release cannot go out with notes nobody wrote.
@@ -15,9 +18,13 @@ func fail(_ message: String) -> Never {
     exit(1)
 }
 
-let arguments = CommandLine.arguments.dropFirst()
+var arguments = Array(CommandLine.arguments.dropFirst())
+let changesOnly = arguments.first == "--changes-only"
+if changesOnly {
+    arguments.removeFirst()
+}
 guard arguments.count == 1, let version = arguments.first else {
-    fail("usage: swift scripts/ReleaseNotes.swift <version>")
+    fail("usage: swift scripts/ReleaseNotes.swift [--changes-only] <version>")
 }
 
 let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
@@ -51,10 +58,12 @@ guard !notes.isEmpty else {
 let link = lines.first { $0.hasPrefix("[\(version)]: ") }.map { String($0.dropFirst("[\(version)]: ".count)) }
 
 var output = notes + "\n"
-if let link {
-    output += "\n**Full Changelog**: \(link)\n"
+if !changesOnly {
+    if let link {
+        output += "\n**Full Changelog**: \(link)\n"
+    }
+    output += "\n" + installNotes.trimmingCharacters(in: .whitespacesAndNewlines) + "\n"
 }
-output += "\n" + installNotes.trimmingCharacters(in: .whitespacesAndNewlines) + "\n"
 
 /// Joins lines wrapped in the source into one: a release body, unlike a
 /// Markdown file, turns every line break into a visible one.

@@ -6,7 +6,8 @@ import SwiftUI
 final class PreferencesWindowController {
     private var window: NSWindow?
 
-    func show(settings: ScreviaSettings) {
+    func show(settings: ScreviaSettings, updater: SoftwareUpdater) {
+        updater.refresh()
         if let window {
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
@@ -16,7 +17,7 @@ final class PreferencesWindowController {
         let tabs = NSTabViewController()
         tabs.tabStyle = .toolbar
         for tab in PreferencesTab.allCases {
-            let pane = NSHostingController(rootView: PreferencesPane(tab: tab, settings: settings))
+            let pane = NSHostingController(rootView: PreferencesPane(tab: tab, settings: settings, updater: updater))
             // The window takes each pane's size as it is chosen.
             pane.sizingOptions = .preferredContentSize
             // The tab view controller titles the window after the open pane.

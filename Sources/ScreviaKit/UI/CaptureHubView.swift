@@ -21,6 +21,9 @@ struct CaptureHubView: View {
     let onOpenPreferences: () -> Void
     let onOpenAbout: () -> Void
     let onOpenLicenses: () -> Void
+    /// The version a scheduled check found, until the user looks at it.
+    let availableUpdate: String?
+    let onCheckForUpdates: () -> Void
     let onOpenScreenRecordingSettings: () -> Void
     let onRevealFolder: () -> Void
     let onQuit: () -> Void
@@ -52,8 +55,18 @@ struct CaptureHubView: View {
 
             Spacer()
 
+            if let availableUpdate {
+                Button(action: onCheckForUpdates) {
+                    Label(L10n.format("hub.updateAvailable", availableUpdate), systemImage: "arrow.down.circle.fill")
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(ScreviaTheme.accent)
+            }
+
             Menu {
                 Button(L10n.text("app.settings"), systemImage: "gearshape", action: onOpenPreferences)
+                Button(L10n.text("app.checkForUpdates"), systemImage: "arrow.down.circle", action: onCheckForUpdates)
 
                 Divider()
 
@@ -491,6 +504,8 @@ private struct FooterButton: View {
         onOpenPreferences: {},
         onOpenAbout: {},
         onOpenLicenses: {},
+        availableUpdate: nil,
+        onCheckForUpdates: {},
         onOpenScreenRecordingSettings: {},
         onRevealFolder: {},
         onQuit: {}
@@ -518,6 +533,8 @@ private struct FooterButton: View {
         onOpenPreferences: {},
         onOpenAbout: {},
         onOpenLicenses: {},
+        availableUpdate: nil,
+        onCheckForUpdates: {},
         onOpenScreenRecordingSettings: {},
         onRevealFolder: {},
         onQuit: {}

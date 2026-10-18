@@ -15,6 +15,10 @@ version cannot be released until its section is written.
   colour around it, and picks the colour again when moved or resized.
 - Rounded corners for the whole image, and greyscale or inverted colours,
   in the editor's effects menu.
+- Screvia updates itself. It asks once whether to check for updates
+  automatically, and Settings → General can change that, download and
+  install updates on their own, or check now. Updates installed this way
+  need no trip to Privacy & Security.
 
 ## [0.4.0] - 2026-10-18
 
