@@ -91,12 +91,25 @@ against `MARKETING_VERSION`, imports the certificate from the
 `SCREVIA_SIGNING_P12` and `SCREVIA_SIGNING_P12_PASSWORD` secrets into a
 throwaway keychain, runs `CreateDMG.swift`, checks that the built app reports
 the tagged version and contains both arm64 and x86_64, and publishes the image
-and its SHA-256 to GitHub Releases with `.github/release-notes.md` above the
-generated notes.
+and its SHA-256 to GitHub Releases.
+
+The release notes are the version's section of `CHANGELOG.md`, a link to the
+diff, and the install steps in `.github/release-notes.md`, put together by
+`scripts/ReleaseNotes.swift`. The workflow fails before building if the section
+is missing or empty. GitHub's generated notes are not used: changes land on
+`main` directly, so they would list only Dependabot's pull requests.
+
+Changes go under `## [Unreleased]` as they land, written for users rather
+than copied from commit subjects. To release:
+
+1. Rename `[Unreleased]` to `[0.5.0] - <date>`, add a new empty
+   `[Unreleased]` above it, and update the comparison links at the bottom.
+2. Bump `MARKETING_VERSION` in `project.yml`.
+3. Preview the notes with `swift scripts/ReleaseNotes.swift 0.5.0`, commit,
+   then tag and push:
 
 ```sh
-# after bumping MARKETING_VERSION in project.yml
-git tag -a v0.2.0 -m "Screvia 0.2.0" && git push origin v0.2.0
+git tag -a v0.5.0 -m "Screvia 0.5.0" && git push origin main v0.5.0
 ```
 
 ### Versions

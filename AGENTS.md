@@ -18,6 +18,8 @@ a library build, so build the app before calling a change done.
 ## Conventions
 
 - User-facing strings → `Localizable.xcstrings`, read via `L10n`, en + ja.
+- A change users will notice → a line under `[Unreleased]` in `CHANGELOG.md`,
+  in the same commit. It becomes the release notes.
 - Logging → `Log`. Capture paths stay private, never `.public`.
 - Views take values and closures, not singletons — that is what keeps previews
   working.

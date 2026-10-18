@@ -36,6 +36,10 @@ jobs:
           fi
           echo "VERSION=$version" >> "$GITHUB_ENV"
 
+      # Before the slow steps, so a missing changelog section fails at once.
+      - name: Write the release notes
+        run: swift scripts/ReleaseNotes.swift "$VERSION" > "$RUNNER_TEMP/release-notes.md"
+
       - name: Install XcodeGen
         run: brew install xcodegen
 
@@ -104,8 +108,7 @@ jobs:
           shasum -a 256 "$dmg" | sed "s|dist/||" > "$dmg.sha256"
           gh release create "$GITHUB_REF_NAME" "$dmg" "$dmg.sha256" \
             --title "Screvia $VERSION" \
-            --generate-notes \
-            --notes-file .github/release-notes.md
+            --notes-file "$RUNNER_TEMP/release-notes.md"
 
       - name: Remove the signing keychain
         if: always()
