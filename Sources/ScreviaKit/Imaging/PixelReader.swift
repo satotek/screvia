@@ -16,6 +16,10 @@ nonisolated struct PixelReader {
         self.image = cgImage
     }
 
+    init(cgImage: CGImage) {
+        image = cgImage
+    }
+
     /// The colour at `point`, a fraction of the image with a top-left
     /// origin, converted to sRGB as the annotation colours are.
     func color(at point: CGPoint) -> AnnotationColor? {

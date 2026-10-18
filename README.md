@@ -28,6 +28,8 @@ app at all.
   or on a pinned image, and copy it
 - Capture the previous area again, and a self-timer of 3, 5 or 10 seconds
   for menus and hover states
+- A loupe while choosing an area: the pixels under the pointer enlarged,
+  with its position, the colour there and the selection's size
 - Global hotkeys for every capture mode, remappable in Preferences
 
 **After the shot**

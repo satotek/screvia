@@ -299,6 +299,8 @@ struct CapturePreferences: View {
         PreferencesRow(L10n.text("preferences.captureOptions")) {
             Toggle(L10n.text("preferences.includeCursor"), isOn: $settings.includeCursor)
             Toggle(L10n.text("preferences.hideDesktopIcons"), isOn: $settings.hideDesktopIcons)
+            Toggle(L10n.text("preferences.showsLoupe"), isOn: $settings.showsLoupe)
+            PreferencesHint(L10n.text("preferences.showsLoupeHint"))
         }
 
         PreferencesRow(L10n.text("preferences.windowCapture")) {

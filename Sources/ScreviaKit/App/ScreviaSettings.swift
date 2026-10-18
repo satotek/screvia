@@ -99,6 +99,7 @@ final class ScreviaSettings: ObservableObject {
         static let includeCursor = "includeCursor"
         static let downscaleRetina = "downscaleRetina"
         static let hideDesktopIcons = "hideDesktopIcons"
+        static let showsLoupe = "showsLoupe"
         static let textJoinLines = "textJoinLines"
         static let textLanguage = "textLanguage"
         static let historyLimit = "historyLimit"
@@ -215,6 +216,12 @@ final class ScreviaSettings: ObservableObject {
         didSet { defaults.set(hideDesktopIcons, forKey: Key.hideDesktopIcons) }
     }
 
+    /// Shows the enlarged pixels, position and size beside the pointer
+    /// while choosing an area.
+    @Published var showsLoupe: Bool {
+        didSet { defaults.set(showsLoupe, forKey: Key.showsLoupe) }
+    }
+
     /// Joins recognized lines into one paragraph, for text that was wrapped
     /// only by the layout it was captured from.
     @Published var textJoinLines: Bool {
@@ -264,6 +271,7 @@ final class ScreviaSettings: ObservableObject {
         includeCursor = defaults.object(forKey: Key.includeCursor) as? Bool ?? false
         downscaleRetina = defaults.object(forKey: Key.downscaleRetina) as? Bool ?? false
         hideDesktopIcons = defaults.object(forKey: Key.hideDesktopIcons) as? Bool ?? false
+        showsLoupe = defaults.object(forKey: Key.showsLoupe) as? Bool ?? true
         textJoinLines = defaults.object(forKey: Key.textJoinLines) as? Bool ?? false
         textLanguage = TextLanguage(rawValue: defaults.string(forKey: Key.textLanguage) ?? "") ?? .automatic
         let storedLimit = defaults.object(forKey: Key.historyLimit) as? Int ?? 30
@@ -316,6 +324,7 @@ final class ScreviaSettings: ObservableObject {
         includeCursor = false
         downscaleRetina = false
         hideDesktopIcons = false
+        showsLoupe = true
         textJoinLines = false
         textLanguage = .automatic
         historyLimit = 30

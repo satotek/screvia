@@ -39,6 +39,11 @@ unknown stored enum values falling back instead of crashing,
 `styleOptions` clamping negative geometry, and `reset` persisting rather than
 only changing memory.
 
+**`SelectionLoupeTests`** — the loupe mapping a point to the pixel under it
+counted from the top, keeping that pixel in the middle at the screen's edge,
+reading its colour from the still of the screen, and sitting below and right
+of the pointer unless that would leave the screen.
+
 **`CaptureHistoryStoreTests`** — newest-first ordering, path-standardized
 deduplication, the 30-entry cap and a lower one, removal, session scoping, pruning entries
 whose file is gone, and decoding history written before capture kinds existed.

@@ -4,7 +4,7 @@ final class AreaSelectionController {
     private var windows: [SelectionWindow] = []
     private var completion: ((CGRect, NSScreen) -> Void)?
 
-    func start(completion: @escaping (CGRect, NSScreen) -> Void) {
+    func start(showsLoupe: Bool = true, completion: @escaping (CGRect, NSScreen) -> Void) {
         guard !NSScreen.screens.isEmpty else {
             return
         }
@@ -13,6 +13,13 @@ final class AreaSelectionController {
 
         windows = NSScreen.screens.map { screen in
             let selectionView = AreaSelectionView(frame: NSRect(origin: .zero, size: screen.frame.size))
+            // Taken before the overlay appears, which would darken it.
+            selectionView.loupe = showsLoupe ? Self.loupe(for: screen) : nil
+            // So the crosshair and loupe show before the pointer first moves.
+            let mouse = NSEvent.mouseLocation
+            if screen.frame.contains(mouse) {
+                selectionView.showPointer(at: CGPoint(x: mouse.x - screen.frame.minX, y: mouse.y - screen.frame.minY))
+            }
             selectionView.onSelection = { [weak self] selection in
                 self?.finish(selection: selection, on: screen)
             }
@@ -63,6 +70,19 @@ final class AreaSelectionController {
         windows = []
         completion = nil
     }
+
+    /// A still of `screen` for the loupe, or nil without permission to
+    /// record the screen, where asking now would interrupt the selection.
+    private static func loupe(for screen: NSScreen) -> SelectionLoupe? {
+        guard
+            CGPreflightScreenCaptureAccess(),
+            let displayID = ScreenUtilities.displayID(for: screen),
+            let image = CGDisplayCreateImage(displayID)
+        else {
+            return nil
+        }
+        return SelectionLoupe(screenImage: image, screenSize: screen.frame.size)
+    }
 }
 
 private final class SelectionWindow: NSWindow {
@@ -73,6 +93,7 @@ private final class SelectionWindow: NSWindow {
 private final class AreaSelectionView: NSView {
     var onSelection: ((CGRect) -> Void)?
     var onCancel: (() -> Void)?
+    var loupe: SelectionLoupe?
 
     private var startPoint: CGPoint?
     private var currentPoint: CGPoint?
@@ -99,6 +120,7 @@ private final class AreaSelectionView: NSView {
 
         guard let selection = selectionRect else {
             drawCrosshair(at: cursorPoint)
+            drawLoupe(selectionSize: nil)
             return
         }
 
@@ -127,6 +149,14 @@ private final class AreaSelectionView: NSView {
             y: selection.maxY + 10 < bounds.maxY ? selection.maxY + 8 : selection.minY - labelSize.height - 8
         )
         dimensions.draw(at: labelOrigin, withAttributes: attributes)
+        drawLoupe(selectionSize: selection.size)
+    }
+
+    private func drawLoupe(selectionSize: CGSize?) {
+        guard let loupe, let cursorPoint else {
+            return
+        }
+        loupe.draw(at: cursorPoint, in: bounds, selectionSize: selectionSize)
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -163,6 +193,11 @@ private final class AreaSelectionView: NSView {
         super.keyDown(with: event)
     }
 
+    func showPointer(at point: CGPoint) {
+        cursorPoint = point
+        needsDisplay = true
+    }
+
     override func mouseMoved(with event: NSEvent) {
         cursorPoint = convert(event.locationInWindow, from: nil)
         needsDisplay = true
@@ -185,6 +220,17 @@ private final class AreaSelectionView: NSView {
         guard let point else {
             return
         }
+
+        // Faint guides across the whole screen, to line the first corner up
+        // with what is on it, then the pointer's own cross.
+        let guides = NSBezierPath()
+        guides.move(to: CGPoint(x: bounds.minX, y: point.y))
+        guides.line(to: CGPoint(x: bounds.maxX, y: point.y))
+        guides.move(to: CGPoint(x: point.x, y: bounds.minY))
+        guides.line(to: CGPoint(x: point.x, y: bounds.maxY))
+        NSColor.white.withAlphaComponent(0.28).setStroke()
+        guides.lineWidth = 1
+        guides.stroke()
 
         let path = NSBezierPath()
         path.move(to: CGPoint(x: point.x - 12, y: point.y))

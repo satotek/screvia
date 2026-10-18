@@ -145,7 +145,7 @@ final class CaptureCoordinator: ObservableObject {
     func captureArea() {
         let controller = AreaSelectionController()
         areaSelectionController = controller
-        controller.start { [weak self] selection, screen in
+        controller.start(showsLoupe: settings.showsLoupe) { [weak self] selection, screen in
             guard let self else {
                 return
             }
@@ -201,7 +201,7 @@ final class CaptureCoordinator: ObservableObject {
     func captureText() {
         let controller = AreaSelectionController()
         areaSelectionController = controller
-        controller.start { [weak self] selection, screen in
+        controller.start(showsLoupe: settings.showsLoupe) { [weak self] selection, screen in
             guard let self else {
                 return
             }

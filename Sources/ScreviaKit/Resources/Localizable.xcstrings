@@ -3745,6 +3745,38 @@
         }
       }
     },
+    "preferences.showsLoupe": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show a loupe while choosing an area"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "範囲を選ぶときにルーペを表示"
+          }
+        }
+      }
+    },
+    "preferences.showsLoupeHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enlarges the pixels under the pointer, with its position, the colour there and the selection’s size."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ポインタの下のピクセルを拡大し、位置・色・選択範囲のサイズを表示します。"
+          }
+        }
+      }
+    },
     "preferences.startup": {
       "localizations": {
         "en": {
@@ -3917,6 +3949,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Esc でキャンセル"
+          }
+        }
+      }
+    },
+    "selection.position": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d, %d"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d, %d"
           }
         }
       }
