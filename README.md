@@ -51,13 +51,14 @@ app at all.
 - Colour, fill, line width and shadow; text in a box, outlined or plain, at
   any size and in a standard, rounded, serif or monospaced design, wrapping
   in a box you drag out, with the last style remembered
-- Select, move, resize, duplicate and delete annotations with any tool, as
-  in ShareX; double-click text to change it
+- Select, move, resize, duplicate and delete annotations with any tool;
+  double-click text to change it
 - The colour under the pointer, copied with Tab as HEX, CSS or Swift code; an
   eyedropper that picks a point or an area's average; the size Save writes;
   and the zoom against the image's own size
 - The app shows in the Dock and ⌘-Tab while the editor is open
-- Blur and pixelate for redaction, and crop, all drawn by the same renderer as
+- Blur and pixelate for redaction, a smart eraser that covers something
+  with the colour around it, and crop, all drawn by the same renderer as
   the saved image, so what you see is what gets saved
 - Open any image, not only captures: from the clipboard, a file, a drop on the
   menu bar icon, or Finder's Open With

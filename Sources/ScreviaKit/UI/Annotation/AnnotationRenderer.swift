@@ -62,6 +62,9 @@ nonisolated enum AnnotationRenderer {
         case .highlight:
             context.setFillColor(CGColor(srgbRed: 1, green: 0.84, blue: 0, alpha: 0.35))
             context.fill(rect)
+        case .eraser:
+            context.setFillColor((style.fillColor ?? .white).cgColor)
+            context.fill(rect)
         case .text:
             drawText(
                 annotation.text ?? "",

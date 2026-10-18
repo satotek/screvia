@@ -58,6 +58,16 @@ final class AnnotationRendererTests: XCTestCase {
         XCTAssertEqual(pixel(of: flattened, x: 30, y: 120).b, 255, "bottom-left should be untouched")
     }
 
+    func testAnEraserCoversWithItsColour() {
+        var annotation = Annotation(tool: .eraser, start: CGPoint(x: 0, y: 0), end: CGPoint(x: 0.5, y: 0.5))
+        annotation.style.fillColor = .black
+
+        let flattened = AnnotationRenderer.flatten(threeTimesImage(), document: AnnotationDocument(annotations: [annotation]))
+
+        XCTAssertEqual(pixel(of: flattened, x: 30, y: 30).r, 0, "covered")
+        XCTAssertEqual(pixel(of: flattened, x: 240, y: 120).r, 255, "untouched")
+    }
+
     func testAnUnannotatedImageIsReturnedAsIs() {
         let image = threeTimesImage()
 

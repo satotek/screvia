@@ -35,6 +35,34 @@ final class PixelReaderTests: XCTestCase {
         XCTAssertEqual(try reader().averageColor(in: CGRect(x: 0, y: 0, width: 1, height: 0.2))?.hexString, "#FF0000")
     }
 
+    /// Grey with a black block in the middle: around the block is grey, not
+    /// the block's own black, which is what the eraser must cover it with.
+    func testTheColourAroundAnAreaIgnoresWhatIsInsideIt() throws {
+        let cgImage = TestImages.cgImage(width: 40, height: 40) { y in (128, 128, 128) }
+        let context = try XCTUnwrap(CGContext(
+            data: nil, width: 40, height: 40, bitsPerComponent: 8, bytesPerRow: 0,
+            space: CGColorSpace(name: CGColorSpace.sRGB)!,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ))
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: 40, height: 40))
+        context.setFillColor(CGColor(gray: 0, alpha: 1))
+        context.fill(CGRect(x: 10, y: 10, width: 20, height: 20))
+        let reader = PixelReader(cgImage: try XCTUnwrap(context.makeImage()))
+
+        let around = try XCTUnwrap(reader.colorAround(CGRect(x: 0.25, y: 0.25, width: 0.5, height: 0.5)))
+
+        XCTAssertEqual(around.red * 255, 128, accuracy: 3)
+        XCTAssertEqual(around.blue * 255, 128, accuracy: 3)
+    }
+
+    /// An area against the image's edge reads only the sides inside it.
+    func testTheColourAroundAnAreaAtTheEdgeUsesTheSidesThatExist() throws {
+        let around = try XCTUnwrap(try reader().colorAround(CGRect(x: 0, y: 0, width: 1, height: 0.25)))
+
+        // Only the strip below the red band lies in the image, and it is blue.
+        XCTAssertEqual(around.hexString, "#0000FF")
+    }
+
     func testColourCodes() {
         let color = AnnotationColor(red: 17 / 255, green: 123 / 255, blue: 251 / 255)
 

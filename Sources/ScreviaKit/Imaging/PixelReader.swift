@@ -175,6 +175,44 @@ nonisolated extension PixelReader {
     }
 }
 
+nonisolated extension PixelReader {
+    /// The average colour just outside `area`, a part of the image in
+    /// fractions with a top-left origin: what surrounds it, for the smart
+    /// eraser to cover it with. The ring is a few pixels wide, and only its
+    /// parts inside the image count.
+    func colorAround(_ area: CGRect, ringWidth: Int = 3) -> AnnotationColor? {
+        let width = CGFloat(image.width)
+        let height = CGFloat(image.height)
+        let box = CGRect(x: area.minX * width, y: area.minY * height, width: area.width * width, height: area.height * height).integral
+        let ring = CGFloat(ringWidth)
+        let bounds = CGRect(x: 0, y: 0, width: width, height: height)
+        let strips = [
+            CGRect(x: box.minX - ring, y: box.minY - ring, width: box.width + 2 * ring, height: ring),
+            CGRect(x: box.minX - ring, y: box.maxY, width: box.width + 2 * ring, height: ring),
+            CGRect(x: box.minX - ring, y: box.minY, width: ring, height: box.height),
+            CGRect(x: box.maxX, y: box.minY, width: ring, height: box.height),
+        ].map { $0.intersection(bounds) }.filter { !$0.isEmpty }
+
+        // Each strip averaged on its own, then weighted by its size.
+        var total = (red: 0.0, green: 0.0, blue: 0.0, weight: 0.0)
+        for strip in strips {
+            let fraction = CGRect(x: strip.minX / width, y: strip.minY / height, width: strip.width / width, height: strip.height / height)
+            guard let color = averageColor(in: fraction) else {
+                continue
+            }
+            let weight = Double(strip.width * strip.height)
+            total.red += color.red * weight
+            total.green += color.green * weight
+            total.blue += color.blue * weight
+            total.weight += weight
+        }
+        guard total.weight > 0 else {
+            return nil
+        }
+        return AnnotationColor(red: total.red / total.weight, green: total.green / total.weight, blue: total.blue / total.weight)
+    }
+}
+
 /// How a picked colour is written when copied: the forms Shottr and design
 /// tools offer, for pasting into CSS, Swift or a design tool.
 nonisolated enum ColorCodeFormat: String, CaseIterable, Identifiable {

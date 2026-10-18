@@ -401,6 +401,38 @@
         }
       }
     },
+    "annotation.eraser": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Smart Eraser"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "スマート消しゴム"
+          }
+        }
+      }
+    },
+    "annotation.eraser.usage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag over something on a plain background to cover it with the colour around it."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無地の背景にあるものをドラッグすると、周りの色で塗りつぶして消します。"
+          }
+        }
+      }
+    },
     "annotation.eyedropperHelp": {
       "localizations": {
         "en": {

@@ -28,6 +28,9 @@ struct AnnotationCanvas: View {
     /// Gets the area the eyedropper picked from, in annotation space: empty
     /// for a click, which picks the one point at its origin.
     let onPickColor: (CGRect) -> Void
+    /// The colour around an area in annotation space, which the smart
+    /// eraser covers it with.
+    let colorAround: (CGRect) -> AnnotationColor?
 
     /// What the current pointer drag is doing, decided when it starts.
     private enum DragAction {
@@ -509,6 +512,7 @@ struct AnnotationCanvas: View {
             selection = nil
             onRecordUndo(before)
         case let .moving(original, before):
+            recolorEraser(original.id)
             if document != before {
                 onRecordUndo(before)
             } else if original.tool.hasText, isDoubleClick(on: original.id) {
@@ -520,7 +524,8 @@ struct AnnotationCanvas: View {
             let size = AnnotationSpace.rect(area, in: layout.imageRect).size
             // A few points of drift is still a click.
             onPickColor(max(size.width, size.height) < 4 ? CGRect(origin: start, size: .zero) : area)
-        case let .resizing(_, _, before), let .aiming(_, before):
+        case let .resizing(original, _, before), let .aiming(original, before):
+            recolorEraser(original.id)
             if document != before {
                 onRecordUndo(before)
             }
@@ -563,8 +568,24 @@ struct AnnotationCanvas: View {
                 selectedTool = .select
                 return
             }
-            add(Annotation(tool: selectedTool, start: start, end: end, style: style).squared(imageSize: imageSize, from: start))
+            var annotation = Annotation(tool: selectedTool, start: start, end: end, style: style)
+                .squared(imageSize: imageSize, from: start)
+            if annotation.tool == .eraser {
+                annotation.style.fillColor = colorAround(annotation.bounds)
+            }
+            add(annotation)
         }
+    }
+
+    /// A moved or resized eraser takes the colour around its new place.
+    private func recolorEraser(_ id: UUID) {
+        guard
+            let index = annotations.firstIndex(where: { $0.id == id }),
+            annotations[index].tool == .eraser
+        else {
+            return
+        }
+        document.annotations[index].style.fillColor = colorAround(annotations[index].bounds)
     }
 
     private func add(_ annotation: Annotation) {

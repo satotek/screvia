@@ -101,7 +101,8 @@ struct AnnotationEditorView: View {
                 onHover: { point in
                     hoverColor = point.flatMap { shown.reader?.color(at: $0) }
                 },
-                onPickColor: pickColor(in:)
+                onPickColor: pickColor(in:),
+                colorAround: { shown.reader?.colorAround($0) }
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(nsColor: .underPageBackgroundColor))
@@ -169,7 +170,11 @@ struct AnnotationEditorView: View {
         guard let selectedAnnotation else {
             return
         }
-        let copy = selectedAnnotation.duplicated().moved(by: CGVector(dx: 0.02, dy: 0.02), within: document.crop)
+        var copy = selectedAnnotation.duplicated().moved(by: CGVector(dx: 0.02, dy: 0.02), within: document.crop)
+        if copy.tool == .eraser {
+            // Sitting elsewhere, it covers with the colour around it there.
+            copy.style.fillColor = shown.reader?.colorAround(copy.bounds) ?? copy.style.fillColor
+        }
         change { $0.annotations.append(copy) }
         selection = copy.id
     }

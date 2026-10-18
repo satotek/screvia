@@ -14,6 +14,10 @@ nonisolated enum AnnotationTool: String, Codable, CaseIterable, Identifiable {
     case step
     case blur
     case pixelate
+    /// Covers what is under it with the colour around it, for removing
+    /// something from a plain background. The colour is read from the
+    /// image's pixels just outside its edge.
+    case eraser
     case magnifier
     /// A picture pasted or inserted. Not on the toolbar: it is placed by
     /// Paste and Insert Image, not drawn.
@@ -53,6 +57,8 @@ nonisolated enum AnnotationTool: String, Codable, CaseIterable, Identifiable {
             return "eye.slash"
         case .pixelate:
             return "square.grid.3x3"
+        case .eraser:
+            return "eraser"
         case .magnifier:
             return "plus.magnifyingglass"
         case .image:

@@ -87,7 +87,8 @@ cropped image at full resolution, filled heads and heads at both ends, a
 bent arrow drawn through its bend, rounded corners, a dragged-out text box
 keeping its width and growing down, each font design being its own font,
 an inserted picture drawn in its box, export turning the original,
-resize scaling points and pixels, and a margin growing the canvas.
+resize scaling points and pixels, a margin growing the canvas, and the
+smart eraser covering with its colour.
 
 **`ImageOrientationTests`** — turns and flips composing into one
 orientation that shows each point where the changes one by one would, four
@@ -100,8 +101,9 @@ and zoom growing the scrollable content.
 
 **`PixelReaderTests`** — the eyedropper reading the full image from the
 top, the far edge staying inside, an area averaging its sRGB values rather
-than light, each colour code format, and Auto Crop finding what is inside a
-plain border.
+than light, each colour code format, Auto Crop finding what is inside a
+plain border, and the colour around an area ignoring what is inside it and,
+at the image's edge, the sides that are not there.
 
 **`HistoryThumbnailLoaderTests`** — thumbnail sizing and cache-key
 distinctness, including a file replaced at the same path.
