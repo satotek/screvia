@@ -6,6 +6,8 @@ version cannot be released until its section is written.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-19
+
 ### Added
 
 - A loupe beside the pointer while choosing an area: the pixels under it
@@ -116,7 +118,8 @@ version cannot be released until its section is written.
 - Releases signed with the same certificate every time, so updating keeps
   the Screen Recording and Accessibility permissions.
 
-[Unreleased]: https://github.com/satotek/screvia/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/satotek/screvia/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/satotek/screvia/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/satotek/screvia/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/satotek/screvia/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/satotek/screvia/compare/v0.1.1...v0.2.0
