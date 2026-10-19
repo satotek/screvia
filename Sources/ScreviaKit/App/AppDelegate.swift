@@ -41,11 +41,13 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         // A shortcut pressed with the hub open captures the hub too, as
         // someone documenting Screvia would want. The hub otherwise closes
         // at the first click on the selection overlay, before the capture.
+        // Once the screen is read it has done its part and closes; left
+        // open, it looked as if the capture were still going on.
         captureCoordinator.onShortcutCaptureBegan = { [weak self] in
             self?.capturePopover?.behavior = .applicationDefined
         }
         captureCoordinator.onShortcutCaptureEnded = { [weak self] in
-            self?.capturePopover?.behavior = .transient
+            self?.closeCaptureHub()
         }
         captureCoordinator.start()
         updater.start()
