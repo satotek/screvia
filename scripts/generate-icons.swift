@@ -62,7 +62,48 @@ func drawLayers(_ c: CGContext) {
     c.fillPath()
 }
 
+/// D, the one shipped: the app icon's brackets around its arrow, so the
+/// menu bar and the Dock show the same mark.
+func drawBracketsArrow(_ c: CGContext) {
+    c.setLineWidth(stroke)
+    c.setLineCap(.round)
+    c.setLineJoin(.round)
+    c.setStrokeColor(NSColor.black.cgColor)
+
+    let inset: CGFloat = 1.8
+    let arm: CGFloat = 4.2
+    let lo = inset, hi = side - inset
+    let corners: [(CGPoint, CGPoint, CGPoint)] = [
+        (CGPoint(x: lo, y: hi - arm), CGPoint(x: lo, y: hi), CGPoint(x: lo + arm, y: hi)),
+        (CGPoint(x: hi - arm, y: hi), CGPoint(x: hi, y: hi), CGPoint(x: hi, y: hi - arm)),
+        (CGPoint(x: hi, y: lo + arm), CGPoint(x: hi, y: lo), CGPoint(x: hi - arm, y: lo)),
+        (CGPoint(x: lo + arm, y: lo), CGPoint(x: lo, y: lo), CGPoint(x: lo, y: lo + arm))
+    ]
+    for (a, b, d) in corners {
+        c.move(to: a)
+        c.addLine(to: b)
+        c.addLine(to: d)
+    }
+    c.strokePath()
+
+    // The arrow, from lower left to upper right, with a filled head.
+    let tail = CGPoint(x: 5.8, y: 5.8)
+    let tip = CGPoint(x: 12.6, y: 12.6)
+    let neck = CGPoint(x: 10.4, y: 10.4)
+    c.setLineWidth(1.9)
+    c.move(to: tail)
+    c.addLine(to: neck)
+    c.strokePath()
+    c.setFillColor(NSColor.black.cgColor)
+    c.move(to: tip)
+    c.addLine(to: CGPoint(x: 8.2, y: 11.7))
+    c.addLine(to: CGPoint(x: 11.7, y: 8.2))
+    c.closePath()
+    c.fillPath()
+}
+
 let designs: [(String, (CGContext) -> Void)] = [
+    ("brackets-arrow", drawBracketsArrow),
     ("brackets", drawBrackets),
     ("region", drawRegion),
     ("layers", drawLayers)

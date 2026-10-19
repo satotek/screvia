@@ -10,7 +10,8 @@ version cannot be released until its section is written.
 
 - Pressing a capture shortcut again while choosing an area or window no
   longer leaves a second overlay on screen that could not be closed.
-- The menu bar shows Screvia's own icon again, instead of a stand-in.
+- The menu bar shows Screvia's own icon, redrawn to match the app icon,
+  instead of a stand-in.
 - The capture hub closes once a shortcut capture taken with it open is
   done, instead of staying on screen as if the capture were still going.
 - Copying colours with Tab several times in a row no longer crashes the

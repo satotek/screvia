@@ -242,7 +242,9 @@ container on macOS 26 and reads as visibly oversized; the previous icon had
 that problem and an opaque background as well.
 
 The menu bar glyph is separate: `Sources/ScreviaKit/Resources/MenuBarIcon.pdf`,
-explored with `scripts/generate-icons.swift`.
+the app icon's brackets and arrow as an 18-point template image, drawn by
+`scripts/generate-icons.swift` (the `brackets-arrow` design) alongside the
+alternatives that were tried.
 
 ## Troubleshooting
 
