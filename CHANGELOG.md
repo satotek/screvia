@@ -6,6 +6,12 @@ version cannot be released until its section is written.
 
 ## [Unreleased]
 
+### Fixed
+
+- Pressing a capture shortcut again while choosing an area or window no
+  longer leaves a second overlay on screen that could not be closed.
+- The menu bar shows Screvia's own icon again, instead of a stand-in.
+
 ### Changed
 
 - A full-screen or area capture taken with its shortcut while the capture

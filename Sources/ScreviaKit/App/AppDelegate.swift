@@ -65,22 +65,15 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     private static func menuBarImage() -> NSImage? {
         // Deliberately not Bundle.module: SwiftPM's generated accessor calls
         // fatalError when the resource bundle is missing, which would turn a
-        // missing icon into a launch crash. Locate the bundle by hand so the
-        // fallback below can actually run.
-        let candidates = [
-            Bundle.main.resourceURL,
-            Bundle.main.bundleURL.appendingPathComponent("Screvia_ScreviaKit.bundle/Resources"),
-            Bundle.main.bundleURL.appendingPathComponent(
-                "Contents/Resources/Screvia_ScreviaKit.bundle/Resources"
-            )
-        ].compactMap { $0?.appendingPathComponent("MenuBarIcon.pdf") }
-
-        for url in candidates where FileManager.default.fileExists(atPath: url.path) {
-            if let image = NSImage(contentsOf: url) {
-                image.isTemplate = true
-                image.accessibilityDescription = "Screvia"
-                return image
-            }
+        // missing icon into a launch crash. ScreviaBundle finds the bundle
+        // and asks it for the file, rather than guessing a path inside it:
+        // the bundle keeps its files in Contents/Resources, and a guessed
+        // path without Contents left the menu bar on the fallback symbol.
+        if let url = ScreviaBundle.resources.url(forResource: "MenuBarIcon", withExtension: "pdf"),
+           let image = NSImage(contentsOf: url) {
+            image.isTemplate = true
+            image.accessibilityDescription = "Screvia"
+            return image
         }
 
         Log.ui.error("MenuBarIcon.pdf missing from the bundle; falling back to an SF Symbol")
