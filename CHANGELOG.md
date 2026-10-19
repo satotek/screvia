@@ -6,6 +6,8 @@ version cannot be released until its section is written.
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-10-20
+
 ### Fixed
 
 - Pressing a capture shortcut again while choosing an area or window no
@@ -140,7 +142,8 @@ version cannot be released until its section is written.
 - Releases signed with the same certificate every time, so updating keeps
   the Screen Recording and Accessibility permissions.
 
-[Unreleased]: https://github.com/satotek/screvia/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/satotek/screvia/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/satotek/screvia/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/satotek/screvia/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/satotek/screvia/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/satotek/screvia/compare/v0.2.0...v0.3.0
