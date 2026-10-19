@@ -30,6 +30,12 @@ struct CaptureHubView: View {
     let onQuit: () -> Void
 
     @State private var selectedDisplayID: UInt32?
+    /// The delay chosen while the hub is open. `captureDelay` is the value
+    /// when it opened, and nothing redraws the hub when the setting
+    /// changes, so the button would keep showing the old one.
+    @State private var chosenDelay: Int?
+
+    private var delay: Int { chosenDelay ?? captureDelay }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -148,7 +154,7 @@ struct CaptureHubView: View {
             )
             .help(shortcutHelp(L10n.text("preferences.captureLastArea"), for: .captureLastArea))
             Menu {
-                Picker(L10n.text("app.timer"), selection: Binding(get: { captureDelay }, set: { onCaptureDelayChange($0) })) {
+                Picker(L10n.text("app.timer"), selection: Binding(get: { delay }, set: { chosenDelay = $0; onCaptureDelayChange($0) })) {
                     ForEach(ScreviaSettings.captureDelayChoices, id: \.self) { seconds in
                         Text(seconds == 0 ? L10n.text("app.timerOff") : L10n.format("app.timerSeconds", seconds))
                             .tag(seconds)
@@ -160,8 +166,8 @@ struct CaptureHubView: View {
                 // shows before the next capture waits for it.
                 ToolLabel(
                     symbol: "timer",
-                    title: captureDelay == 0 ? L10n.text("app.timer") : L10n.format("app.timerSeconds", captureDelay),
-                    accented: captureDelay != 0
+                    title: delay == 0 ? L10n.text("app.timer") : L10n.format("app.timerSeconds", delay),
+                    accented: delay != 0
                 )
             }
             .menuStyle(.button)

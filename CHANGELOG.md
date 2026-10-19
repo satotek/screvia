@@ -13,6 +13,8 @@ version cannot be released until its section is written.
 - The menu bar shows Screvia's own icon again, instead of a stand-in.
 - Copying colours with Tab several times in a row no longer crashes the
   app.
+- The capture hub's timer button shows a newly chosen delay at once,
+  rather than only after the hub is opened again.
 
 ### Changed
 
