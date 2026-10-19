@@ -34,6 +34,13 @@ final class CaptureCoordinator: ObservableObject {
     /// Shows the self-timer's remaining seconds, and nil when it is done.
     var onCountdown: ((Int?) -> Void)?
 
+    /// Bracket a full-screen or area capture started by a shortcut: called
+    /// before anything appears on screen, and again once the screen has
+    /// been read or the selection cancelled. Lets the capture hub stay open
+    /// in between, so a shortcut can capture the hub itself.
+    var onShortcutCaptureBegan: (() -> Void)?
+    var onShortcutCaptureEnded: (() -> Void)?
+
     @Published private(set) var captureHistory: [CaptureHistoryEntry]
 
     init(settings: ScreviaSettings) {
@@ -92,9 +99,11 @@ final class CaptureCoordinator: ObservableObject {
 
             switch action {
             case .captureFullScreen:
-                self.captureFullScreen()
+                self.onShortcutCaptureBegan?()
+                self.captureFullScreen(onScreenRead: self.onShortcutCaptureEnded)
             case .captureArea:
-                self.captureArea()
+                self.onShortcutCaptureBegan?()
+                self.captureArea(onScreenRead: self.onShortcutCaptureEnded)
             case .captureWindow:
                 self.captureWindow()
             case .captureScroll:
@@ -115,10 +124,13 @@ final class CaptureCoordinator: ObservableObject {
         ScreenUtilities.displayInfos()
     }
 
-    func captureFullScreen(displayID: UInt32? = nil) {
+    /// `onScreenRead` runs once the screen has been captured, or at once if
+    /// it cannot be.
+    func captureFullScreen(displayID: UInt32? = nil, onScreenRead: (() -> Void)? = nil) {
         guard let screen = displayID.flatMap(ScreenUtilities.screen(for:))
             ?? ScreenUtilities.screenAtMouse()
             ?? NSScreen.screens.first else {
+            onScreenRead?()
             ErrorPresenter.present(CaptureService.CaptureError.noScreenAvailable)
             return
         }
@@ -127,8 +139,10 @@ final class CaptureCoordinator: ObservableObject {
         afterDelay { [weak self] in
             self?.withDesktopHidden { [weak self] in
                 guard let self else {
+                    onScreenRead?()
                     return
                 }
+                defer { onScreenRead?() }
                 do {
                     let image = try self.captureService.captureMainDisplay(
                         on: screen,
@@ -142,28 +156,33 @@ final class CaptureCoordinator: ObservableObject {
         }
     }
 
-    func captureArea() {
+    /// `onScreenRead` runs once the area has been captured, or when the
+    /// selection is cancelled.
+    func captureArea(onScreenRead: (() -> Void)? = nil) {
         let controller = AreaSelectionController()
         areaSelectionController = controller
-        controller.start(showsLoupe: settings.showsLoupe) { [weak self] selection, screen in
+        controller.start(showsLoupe: settings.showsLoupe, onCancel: onScreenRead) { [weak self] selection, screen in
             guard let self else {
+                onScreenRead?()
                 return
             }
 
             self.areaSelectionController = nil
             self.rememberArea(selection, on: screen)
             self.afterDelay { [weak self] in
-                self?.captureArea(selection, on: screen)
+                self?.captureArea(selection, on: screen, onScreenRead: onScreenRead)
             }
         }
     }
 
-    private func captureArea(_ selection: CGRect, on screen: NSScreen) {
+    private func captureArea(_ selection: CGRect, on screen: NSScreen, onScreenRead: (() -> Void)? = nil) {
         let app = Self.sourceAppName()
         withDesktopHidden { [weak self] in
             guard let self else {
+                onScreenRead?()
                 return
             }
+            defer { onScreenRead?() }
             do {
                 let image = try self.captureService.capture(
                     selection: selection,

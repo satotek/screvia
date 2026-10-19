@@ -38,6 +38,15 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         captureCoordinator.onCountdown = { [weak self] remaining in
             self?.showCountdown(remaining)
         }
+        // A shortcut pressed with the hub open captures the hub too, as
+        // someone documenting Screvia would want. The hub otherwise closes
+        // at the first click on the selection overlay, before the capture.
+        captureCoordinator.onShortcutCaptureBegan = { [weak self] in
+            self?.capturePopover?.behavior = .applicationDefined
+        }
+        captureCoordinator.onShortcutCaptureEnded = { [weak self] in
+            self?.capturePopover?.behavior = .transient
+        }
         captureCoordinator.start()
         updater.start()
 

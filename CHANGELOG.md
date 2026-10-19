@@ -6,6 +6,11 @@ version cannot be released until its section is written.
 
 ## [Unreleased]
 
+### Changed
+
+- A full-screen or area capture taken with its shortcut while the capture
+  hub is open now includes the hub, so Screvia can capture itself.
+
 ## [0.5.0] - 2026-10-19
 
 ### Added

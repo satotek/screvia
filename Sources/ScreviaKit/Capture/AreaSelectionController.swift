@@ -3,13 +3,20 @@ import AppKit
 final class AreaSelectionController {
     private var windows: [SelectionWindow] = []
     private var completion: ((CGRect, NSScreen) -> Void)?
+    private var onCancel: (() -> Void)?
 
-    func start(showsLoupe: Bool = true, completion: @escaping (CGRect, NSScreen) -> Void) {
+    func start(
+        showsLoupe: Bool = true,
+        onCancel: (() -> Void)? = nil,
+        completion: @escaping (CGRect, NSScreen) -> Void
+    ) {
         guard !NSScreen.screens.isEmpty else {
+            onCancel?()
             return
         }
 
         self.completion = completion
+        self.onCancel = onCancel
 
         windows = NSScreen.screens.map { screen in
             let selectionView = AreaSelectionView(frame: NSRect(origin: .zero, size: screen.frame.size))
@@ -62,6 +69,7 @@ final class AreaSelectionController {
         windows.forEach { $0.orderOut(nil) }
         windows = []
         self.completion = nil
+        onCancel = nil
         completion(selection, screen)
     }
 
@@ -69,6 +77,9 @@ final class AreaSelectionController {
         windows.forEach { $0.orderOut(nil) }
         windows = []
         completion = nil
+        let onCancel = onCancel
+        self.onCancel = nil
+        onCancel?()
     }
 
     /// A still of `screen` for the loupe, or nil without permission to
