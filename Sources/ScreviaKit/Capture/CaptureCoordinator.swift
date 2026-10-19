@@ -97,6 +97,9 @@ final class CaptureCoordinator: ObservableObject {
                 return
             }
 
+            // Before the hub is told a capture began: taking down an older
+            // selection reports that one as ended.
+            self.cancelSelection()
             switch action {
             case .captureFullScreen:
                 self.onShortcutCaptureBegan?()
@@ -159,9 +162,14 @@ final class CaptureCoordinator: ObservableObject {
     /// `onScreenRead` runs once the area has been captured, or when the
     /// selection is cancelled.
     func captureArea(onScreenRead: (() -> Void)? = nil) {
+        cancelSelection()
         let controller = AreaSelectionController()
         areaSelectionController = controller
-        controller.start(showsLoupe: settings.showsLoupe, onCancel: onScreenRead) { [weak self] selection, screen in
+        let onCancel = { [weak self] in
+            self?.areaSelectionController = nil
+            onScreenRead?()
+        }
+        controller.start(showsLoupe: settings.showsLoupe, onCancel: onCancel) { [weak self] selection, screen in
             guard let self else {
                 onScreenRead?()
                 return
@@ -196,6 +204,16 @@ final class CaptureCoordinator: ObservableObject {
         }
     }
 
+    /// Takes down a selection overlay still on screen. Without this a second
+    /// shortcut stacked a new overlay over the old one, which, its controller
+    /// gone, nothing could finish or close.
+    private func cancelSelection() {
+        areaSelectionController?.cancel()
+        areaSelectionController = nil
+        windowSelectionController?.cancel()
+        windowSelectionController = nil
+    }
+
     private func rememberArea(_ selection: CGRect, on screen: NSScreen) {
         if let displayID = ScreenUtilities.displayID(for: screen) {
             lastArea = (selection, displayID)
@@ -218,9 +236,13 @@ final class CaptureCoordinator: ObservableObject {
     /// Captures an area and opens it in a window that shows its text, to
     /// copy all of it or, with Live Text, just a part.
     func captureText() {
+        cancelSelection()
         let controller = AreaSelectionController()
         areaSelectionController = controller
-        controller.start(showsLoupe: settings.showsLoupe) { [weak self] selection, screen in
+        controller.start(
+            showsLoupe: settings.showsLoupe,
+            onCancel: { [weak self] in self?.areaSelectionController = nil }
+        ) { [weak self] selection, screen in
             guard let self else {
                 return
             }
@@ -303,6 +325,7 @@ final class CaptureCoordinator: ObservableObject {
     }
 
     func captureWindow() {
+        cancelSelection()
         let controller = WindowSelectionController()
         windowSelectionController = controller
         controller.start { [weak self] selectedWindow, screen in
@@ -338,6 +361,7 @@ final class CaptureCoordinator: ObservableObject {
     }
 
     func captureScroll() {
+        cancelSelection()
         let controller = WindowSelectionController()
         windowSelectionController = controller
         controller.start(hint: L10n.text("selection.scrollWindowHint")) { [weak self] selectedWindow, screen in
