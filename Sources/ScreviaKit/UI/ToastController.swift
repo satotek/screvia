@@ -12,6 +12,11 @@ final class ToastController {
         panel?.orderOut(nil)
 
         let hosting = NSHostingView(rootView: ToastView(message: message, symbol: symbol))
+        // Measured once here. Left to size the panel itself, the hosting
+        // view kept re-measuring while toasts replaced each other, as Tab
+        // pressed over several colours does, until AppKit aborted with too
+        // many constraint passes.
+        hosting.sizingOptions = []
         let size = hosting.fittingSize
         let panel = NSPanel(
             contentRect: NSRect(origin: .zero, size: size),
