@@ -24,6 +24,7 @@ struct CaptureHubView: View {
     /// The version a scheduled check found, until the user looks at it.
     let availableUpdate: String?
     let onCheckForUpdates: () -> Void
+    let isScreenRecordingGranted: Bool
     let onOpenScreenRecordingSettings: () -> Void
     let onRevealFolder: () -> Void
     let onQuit: () -> Void
@@ -34,9 +35,8 @@ struct CaptureHubView: View {
         VStack(alignment: .leading, spacing: 0) {
             header
             captureModes
-            captureExtras
+            tools
             displayPicker
-            editSources
             recentCaptureSection
             footer
         }
@@ -73,8 +73,8 @@ struct CaptureHubView: View {
                 Button(L10n.text("about.menuTitle"), systemImage: "info.circle", action: onOpenAbout)
                 Button(L10n.text("licenses.title"), systemImage: "building.columns", action: onOpenLicenses)
             } label: {
-                Image(systemName: "line.3.horizontal")
-                    .font(.system(size: 12, weight: .medium))
+                Image(systemName: "ellipsis.circle")
+                    .font(.system(size: 13))
             }
             .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)
@@ -87,6 +87,8 @@ struct CaptureHubView: View {
         .padding(.bottom, 10)
     }
 
+    /// Area first and always picked out, as the mode used most; the others
+    /// stay quiet until hovered, so no tile looks chosen when none is.
     private var captureModes: some View {
         LazyVGrid(
             columns: [
@@ -96,18 +98,18 @@ struct CaptureHubView: View {
             spacing: 6
         ) {
             CaptureModeTile(
+                title: L10n.text("app.area"),
+                shortcut: shortcutLabel(for: .captureArea),
+                symbol: ShortcutAction.captureArea.symbol,
+                accented: true,
+                action: onCaptureArea
+            )
+            CaptureModeTile(
                 title: L10n.text("app.fullScreen"),
                 shortcut: shortcutLabel(for: .captureFullScreen),
                 symbol: ShortcutAction.captureFullScreen.symbol,
                 accented: false,
                 action: { onCaptureFullScreen(selectedDisplayID) }
-            )
-            CaptureModeTile(
-                title: L10n.text("app.area"),
-                shortcut: shortcutLabel(for: .captureArea),
-                symbol: ShortcutAction.captureArea.symbol,
-                accented: false,
-                action: onCaptureArea
             )
             CaptureModeTile(
                 title: L10n.text("app.window"),
@@ -120,30 +122,31 @@ struct CaptureHubView: View {
                 title: L10n.text("app.scroll"),
                 shortcut: shortcutLabel(for: .captureScroll),
                 symbol: ShortcutAction.captureScroll.symbol,
-                accented: true,
+                accented: false,
                 action: onCaptureScroll
             )
         }
         .padding(.horizontal, 14)
-        .padding(.bottom, 14)
+        .padding(.bottom, 8)
     }
 
-    /// Capture modes that need no tile of their own, and the self-timer.
-    private var captureExtras: some View {
+    /// The smaller capture modes, the self-timer and the editor for images
+    /// Screvia did not capture, as one row of equal buttons. Their full
+    /// names are in the tooltips.
+    private var tools: some View {
         HStack(spacing: 2) {
-            FooterButton(
+            ToolButton(
                 symbol: ShortcutAction.captureText.symbol,
                 title: L10n.text("app.captureText"),
                 action: onCaptureText
             )
             .help(shortcutHelp(L10n.text("preferences.captureText"), for: .captureText))
-            FooterButton(
+            ToolButton(
                 symbol: ShortcutAction.captureLastArea.symbol,
-                title: L10n.text("app.captureLastArea"),
+                title: L10n.text("hub.lastArea"),
                 action: onCaptureLastArea
             )
             .help(shortcutHelp(L10n.text("preferences.captureLastArea"), for: .captureLastArea))
-            Spacer()
             Menu {
                 Picker(L10n.text("app.timer"), selection: Binding(get: { captureDelay }, set: { onCaptureDelayChange($0) })) {
                     ForEach(ScreviaSettings.captureDelayChoices, id: \.self) { seconds in
@@ -153,42 +156,31 @@ struct CaptureHubView: View {
                 }
                 .pickerStyle(.inline)
             } label: {
-                // Styled like FooterButton; a borderless menu would draw its
-                // label in the default control font instead.
-                Label(
-                    captureDelay == 0 ? L10n.text("app.timer") : L10n.format("app.timerSeconds", captureDelay),
-                    systemImage: "timer"
+                // The set delay in place of the name, so a timer left on
+                // shows before the next capture waits for it.
+                ToolLabel(
+                    symbol: "timer",
+                    title: captureDelay == 0 ? L10n.text("app.timer") : L10n.format("app.timerSeconds", captureDelay),
+                    accented: captureDelay != 0
                 )
-                .font(.system(size: 11))
-                .foregroundStyle(captureDelay == 0 ? Color.secondary : ScreviaTheme.accent)
-                .padding(.horizontal, 7)
-                .padding(.vertical, 4)
-                .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             }
             .menuStyle(.button)
             .buttonStyle(.plain)
             .menuIndicator(.hidden)
-            .fixedSize()
+            .frame(maxWidth: .infinity)
             .help(L10n.text("app.timerHelp"))
+            ToolButton(symbol: "photo", title: L10n.text("hub.openImage"), action: onOpenImage)
+                .help(L10n.text("import.openImage"))
+            ToolButton(symbol: "doc.on.clipboard", title: L10n.text("hub.clipboard"), action: onEditClipboard)
+                .help(L10n.text("import.fromClipboard"))
         }
         .padding(.horizontal, 10)
-        .padding(.bottom, 8)
+        .padding(.bottom, 12)
     }
 
     private func shortcutHelp(_ title: String, for action: ShortcutAction) -> String {
         let shortcut = shortcutLabel(for: action)
         return shortcut.isEmpty ? title : "\(title)  \(shortcut)"
-    }
-
-    /// The editor for images Screvia did not capture.
-    private var editSources: some View {
-        HStack(spacing: 2) {
-            FooterButton(symbol: "photo", title: L10n.text("import.openImage"), action: onOpenImage)
-            FooterButton(symbol: "doc.on.clipboard", title: L10n.text("import.fromClipboard"), action: onEditClipboard)
-            Spacer()
-        }
-        .padding(.horizontal, 10)
-        .padding(.bottom, 10)
     }
 
     /// Reads the user's current binding so the popover never disagrees with the
@@ -246,16 +238,11 @@ struct CaptureHubView: View {
             }
 
             if history.isEmpty {
-                HStack(spacing: 8) {
-                    Image(systemName: "clock.arrow.circlepath")
-                        .foregroundStyle(ScreviaTheme.accent)
-                    Text(L10n.text("app.noRecentCaptures"))
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                    Spacer(minLength: 0)
-                }
-                .padding(10)
-                .background(ScreviaTheme.surface, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                // A line rather than a box: until something is captured
+                // there is nothing here worth the space.
+                Text(L10n.text("app.noRecentCaptures"))
+                    .font(.system(size: 11))
+                    .foregroundStyle(.tertiary)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
@@ -274,7 +261,7 @@ struct CaptureHubView: View {
             }
         }
         .padding(.horizontal, 14)
-        .padding(.bottom, 14)
+        .padding(.bottom, 12)
     }
 
     private var footer: some View {
@@ -285,12 +272,61 @@ struct CaptureHubView: View {
 
             HStack(spacing: 2) {
                 FooterButton(symbol: "folder", title: L10n.text("app.folder"), action: onRevealFolder)
-                FooterButton(symbol: "lock.shield", title: L10n.text("app.access"), action: onOpenScreenRecordingSettings)
+                // Only when something is wrong: once granted, the setting
+                // has nothing more to offer from here.
+                if !isScreenRecordingGranted {
+                    FooterButton(
+                        symbol: "exclamationmark.triangle.fill",
+                        title: L10n.text("hub.allowScreenRecording"),
+                        tint: .orange,
+                        action: onOpenScreenRecordingSettings
+                    )
+                }
                 Spacer()
                 FooterButton(symbol: "power", title: L10n.text("app.quit"), action: onQuit)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
+        }
+    }
+}
+
+/// A shortcut such as "⌃⇧4" split into its keys, one keycap each.
+nonisolated enum ShortcutKeys {
+    private static let modifiers: Set<Character> = ["⌃", "⌥", "⇧", "⌘", "🌐"]
+
+    static func split(_ shortcut: String) -> [String] {
+        var keys: [String] = []
+        var rest = Substring(shortcut)
+        while let first = rest.first, modifiers.contains(first) {
+            keys.append(String(first))
+            rest = rest.dropFirst()
+        }
+        if !rest.isEmpty {
+            keys.append(String(rest))
+        }
+        return keys
+    }
+}
+
+private struct Keycaps: View {
+    let shortcut: String
+    let tint: Color
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(Array(ShortcutKeys.split(shortcut).enumerated()), id: \.offset) { _, key in
+                Text(key)
+                    .font(ScreviaTheme.keycapFont)
+                    .foregroundStyle(tint)
+                    .frame(minWidth: 11)
+                    .padding(.horizontal, 3)
+                    .padding(.vertical, 1)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 4, style: .continuous)
+                            .strokeBorder(tint.opacity(0.45), lineWidth: 0.5)
+                    }
+            }
         }
     }
 }
@@ -304,31 +340,29 @@ private struct CaptureModeTile: View {
 
     @State private var isHovering = false
 
+    private var background: Color {
+        if accented {
+            return ScreviaTheme.accent.opacity(isHovering ? 0.24 : 0.16)
+        }
+        return isHovering ? ScreviaTheme.surfaceHover : ScreviaTheme.surface
+    }
+
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 7) {
+            VStack(spacing: 5) {
                 Image(systemName: symbol)
                     .font(.system(size: 16, weight: .regular))
-                    .foregroundStyle(isHovering || accented ? ScreviaTheme.accent : Color.primary.opacity(0.75))
+                    .foregroundStyle(accented || isHovering ? ScreviaTheme.accent : Color.primary.opacity(0.75))
                 Text(title)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.primary)
-                Text(shortcut)
-                    .font(ScreviaTheme.keycapFont)
-                    .foregroundStyle(.tertiary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
-            .background(
-                isHovering ? ScreviaTheme.surfaceHover : ScreviaTheme.surface,
-                in: RoundedRectangle(cornerRadius: 10, style: .continuous)
-            )
-            .overlay {
-                if accented {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .strokeBorder(ScreviaTheme.accent.opacity(0.22), lineWidth: 1)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(accented ? ScreviaTheme.accent : Color.primary)
+                if !shortcut.isEmpty {
+                    Keycaps(shortcut: shortcut, tint: accented ? ScreviaTheme.accent : Color.secondary)
                 }
             }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 9)
+            .background(background, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -460,6 +494,7 @@ private struct RecentCaptureCard: View {
 private struct FooterButton: View {
     let symbol: String
     let title: String
+    var tint: Color?
     let action: () -> Void
 
     @State private var isHovering = false
@@ -468,7 +503,7 @@ private struct FooterButton: View {
         Button(action: action) {
             Label(title, systemImage: symbol)
                 .font(.system(size: 11))
-                .foregroundStyle(isHovering ? Color.primary : Color.secondary)
+                .foregroundStyle(tint ?? (isHovering ? Color.primary : Color.secondary))
                 .padding(.horizontal, 7)
                 .padding(.vertical, 4)
                 .background(
@@ -478,6 +513,54 @@ private struct FooterButton: View {
                 .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
         .buttonStyle(.plain)
+        .onHover { isHovering = $0 }
+    }
+}
+
+private struct ToolButton: View {
+    let symbol: String
+    let title: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            ToolLabel(symbol: symbol, title: title, accented: false)
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+    }
+}
+
+/// An icon over a short name, shared by the tool buttons and the timer's
+/// menu so the five line up.
+private struct ToolLabel: View {
+    let symbol: String
+    let title: String
+    let accented: Bool
+
+    @State private var isHovering = false
+
+    var body: some View {
+        VStack(spacing: 4) {
+            // A fixed height, as symbols differ in theirs and would
+            // otherwise push their names out of line.
+            Image(systemName: symbol)
+                .font(.system(size: 14))
+                .foregroundStyle(accented ? ScreviaTheme.accent : (isHovering ? Color.primary : Color.primary.opacity(0.75)))
+                .frame(height: 18)
+            Text(title)
+                .font(.system(size: 10))
+                .foregroundStyle(accented ? ScreviaTheme.accent : (isHovering ? Color.primary : Color.secondary))
+                .lineLimit(1)
+                .fixedSize()
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 6)
+        .background(
+            isHovering ? ScreviaTheme.surface : Color.clear,
+            in: RoundedRectangle(cornerRadius: 7, style: .continuous)
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
         .onHover { isHovering = $0 }
     }
 }
@@ -506,6 +589,7 @@ private struct FooterButton: View {
         onOpenLicenses: {},
         availableUpdate: nil,
         onCheckForUpdates: {},
+        isScreenRecordingGranted: true,
         onOpenScreenRecordingSettings: {},
         onRevealFolder: {},
         onQuit: {}
@@ -535,6 +619,7 @@ private struct FooterButton: View {
         onOpenLicenses: {},
         availableUpdate: nil,
         onCheckForUpdates: {},
+        isScreenRecordingGranted: true,
         onOpenScreenRecordingSettings: {},
         onRevealFolder: {},
         onQuit: {}

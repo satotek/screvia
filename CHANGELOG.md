@@ -10,6 +10,10 @@ version cannot be released until its section is written.
 
 - A full-screen or area capture taken with its shortcut while the capture
   hub is open now includes the hub, so Screvia can capture itself.
+- The capture hub is tidier: area capture comes first and stands out,
+  shortcuts show as keys, the smaller tools sit in one even row with the
+  timer's delay on its button, and the permissions button appears only
+  while Screen Recording is not allowed.
 
 ## [0.5.0] - 2026-10-19
 

@@ -1089,22 +1089,6 @@
         }
       }
     },
-    "app.access": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Access"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "権限"
-          }
-        }
-      }
-    },
     "app.add": {
       "localizations": {
         "en": {
@@ -1197,22 +1181,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ を撮影"
-          }
-        }
-      }
-    },
-    "app.captureLastArea": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Previous Area"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "前回の範囲"
           }
         }
       }
@@ -2653,6 +2621,70 @@
           "stringUnit": {
             "state": "translated",
             "value": "TIFF"
+          }
+        }
+      }
+    },
+    "hub.allowScreenRecording": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow Screen Recording"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画面収録を許可"
+          }
+        }
+      }
+    },
+    "hub.clipboard": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "貼り付け"
+          }
+        }
+      }
+    },
+    "hub.lastArea": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last Area"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前回"
+          }
+        }
+      }
+    },
+    "hub.openImage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開く"
           }
         }
       }
