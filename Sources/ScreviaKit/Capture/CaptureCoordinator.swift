@@ -183,23 +183,102 @@ final class CaptureCoordinator: ObservableObject {
     /// `onScreenRead` runs once the area has been captured, or when the
     /// selection is cancelled.
     func captureArea(onScreenRead: (() -> Void)? = nil) {
-        cancelSelection()
-        let controller = AreaSelectionController()
-        areaSelectionController = controller
-        let onCancel = { [weak self] in
-            self?.areaSelectionController = nil
-            onScreenRead?()
-        }
-        controller.start(showsLoupe: settings.showsLoupe, onCancel: onCancel) { [weak self] selection, screen in
+        let app = Self.sourceAppName()
+        // The self-timer is there to wait for the screen to change, which a
+        // still taken now would not show.
+        selectArea(freezing: settings.captureDelay == 0, onCancel: { onScreenRead?() }) { [weak self] selection, screen, frozen in
             guard let self else {
                 onScreenRead?()
                 return
             }
+            guard let frozen else {
+                self.afterDelay { [weak self] in
+                    self?.captureArea(selection, on: screen, onScreenRead: onScreenRead)
+                }
+                return
+            }
+            defer { onScreenRead?() }
+            do {
+                let image = try self.captureService.capture(
+                    selection: selection,
+                    of: frozen.still,
+                    screenSize: screen.frame.size,
+                    cursor: frozen.cursor
+                )
+                self.finishCapture(image, on: screen, app: app)
+            } catch {
+                ErrorPresenter.present(error)
+            }
+        }
+    }
 
-            self.areaSelectionController = nil
-            self.rememberArea(selection, on: screen)
-            self.afterDelay { [weak self] in
-                self?.captureArea(selection, on: screen, onScreenRead: onScreenRead)
+    /// A screen as it was when a selection began.
+    private struct FrozenScreen {
+        let still: CGImage
+        let cursor: CursorSnapshot?
+    }
+
+    /// Asks for an area. With `freezing`, it is chosen on stills of the
+    /// screens taken first, and `completion` gets the still of the chosen
+    /// screen to crop: whatever closes once the overlay takes the pointer,
+    /// like a menu bar app's menu, is then still in the capture. Without
+    /// permission to record the screen, or if a still fails, the area is
+    /// chosen on the live screen and `completion` gets nil.
+    private func selectArea(
+        freezing: Bool,
+        onCancel: @escaping () -> Void,
+        completion: @escaping (CGRect, NSScreen, FrozenScreen?) -> Void
+    ) {
+        cancelSelection()
+        let controller = AreaSelectionController()
+        areaSelectionController = controller
+
+        let select = { [weak self] (frozen: [CGDirectDisplayID: FrozenScreen]) in
+            // Another selection began, or this one was cancelled, while the
+            // stills were being taken.
+            guard let self, self.areaSelectionController === controller else {
+                onCancel()
+                return
+            }
+            controller.start(
+                showsLoupe: self.settings.showsLoupe,
+                stills: frozen.mapValues(\.still),
+                onCancel: { [weak self] in
+                    self?.areaSelectionController = nil
+                    onCancel()
+                }
+            ) { [weak self] selection, screen in
+                self?.areaSelectionController = nil
+                self?.rememberArea(selection, on: screen)
+                completion(selection, screen, ScreenUtilities.displayID(for: screen).flatMap { frozen[$0] })
+            }
+        }
+
+        guard freezing, CGPreflightScreenCaptureAccess() else {
+            select([:])
+            return
+        }
+        let cursors = NSScreen.screens.compactMap { screen in
+            ScreenUtilities.displayID(for: screen).map { ($0, cursorSnapshot(on: screen)) }
+        }
+        let hidesIcons = settings.hideDesktopIcons
+        if hidesIcons {
+            desktopCover.show()
+        }
+        Task { [weak self] in
+            if hidesIcons {
+                try? await Task.sleep(for: .milliseconds(150))
+            }
+            var frozen: [CGDirectDisplayID: FrozenScreen] = [:]
+            for (displayID, cursor) in cursors {
+                if let still = try? await CaptureService.screenImage(displayID: displayID) {
+                    frozen[displayID] = FrozenScreen(still: still, cursor: cursor)
+                }
+            }
+            select(frozen)
+            // The overlay shows the stills, taken with the cover up.
+            if hidesIcons {
+                self?.desktopCover.hide()
             }
         }
     }
@@ -362,18 +441,23 @@ final class CaptureCoordinator: ObservableObject {
     /// Captures an area and opens it in a window that shows its text, to
     /// copy all of it or, with Live Text, just a part.
     func captureText() {
-        cancelSelection()
-        let controller = AreaSelectionController()
-        areaSelectionController = controller
-        controller.start(
-            showsLoupe: settings.showsLoupe,
-            onCancel: { [weak self] in self?.areaSelectionController = nil }
-        ) { [weak self] selection, screen in
+        selectArea(freezing: true, onCancel: {}) { [weak self] selection, screen, frozen in
             guard let self else {
                 return
             }
-            self.areaSelectionController = nil
-            self.rememberArea(selection, on: screen)
+            if let frozen {
+                do {
+                    let image = try self.captureService.capture(
+                        selection: selection,
+                        of: frozen.still,
+                        screenSize: screen.frame.size
+                    )
+                    self.showText(in: image)
+                } catch {
+                    ErrorPresenter.present(error)
+                }
+                return
+            }
 
             Task { [weak self] in
                 do {

@@ -74,14 +74,25 @@ nonisolated struct CaptureService {
 
     func capture(selection: CGRect, on screen: NSScreen, cursor: CursorSnapshot? = nil) async throws -> NSImage {
         try requireScreenCaptureAccess()
+        let displayImage = try await displayImage(for: screen, cursor: cursor)
+        return try Self.crop(displayImage, to: selection, screenSize: screen.frame.size)
+    }
 
-        let screenBounds = CGRect(origin: .zero, size: screen.frame.size)
+    /// `selection` of a still of the whole screen taken earlier, with the
+    /// pointer as it was then drawn in when one is given.
+    func capture(selection: CGRect, of still: CGImage, screenSize: CGSize, cursor: CursorSnapshot? = nil) throws -> NSImage {
+        let displayImage = cursor.map {
+            $0.drawn(onto: still, pixelsPerPoint: CGFloat(still.width) / max(screenSize.width, 1))
+        } ?? still
+        return try Self.crop(displayImage, to: selection, screenSize: screenSize)
+    }
+
+    private static func crop(_ displayImage: CGImage, to selection: CGRect, screenSize: CGSize) throws -> NSImage {
+        let screenBounds = CGRect(origin: .zero, size: screenSize)
         let clippedSelection = selection.intersection(screenBounds)
         guard clippedSelection.width > 1, clippedSelection.height > 1 else {
             throw CaptureError.cropFailed
         }
-
-        let displayImage = try await displayImage(for: screen, cursor: cursor)
 
         let pixelsPerPointX = CGFloat(displayImage.width) / screenBounds.width
         let pixelsPerPointY = CGFloat(displayImage.height) / screenBounds.height

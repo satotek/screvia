@@ -7,11 +7,14 @@ final class AreaSelectionController {
 
     /// `hint` is shown at the top of each screen. With
     /// `selectsScreenOnClick`, a click without a drag selects the whole
-    /// screen it is on instead of cancelling.
+    /// screen it is on instead of cancelling. A screen with a still in
+    /// `stills` shows that still under the overlay instead of what is live
+    /// on it, so the selection is made on the screen as it was.
     func start(
         showsLoupe: Bool = true,
         hint: String? = nil,
         selectsScreenOnClick: Bool = false,
+        stills: [CGDirectDisplayID: CGImage] = [:],
         onCancel: (() -> Void)? = nil,
         completion: @escaping (CGRect, NSScreen) -> Void
     ) {
@@ -27,6 +30,10 @@ final class AreaSelectionController {
             let selectionView = AreaSelectionView(frame: NSRect(origin: .zero, size: screen.frame.size))
             selectionView.hint = hint
             selectionView.selectsScreenOnClick = selectsScreenOnClick
+            let still = ScreenUtilities.displayID(for: screen).flatMap { stills[$0] }
+            if let still, showsLoupe {
+                selectionView.loupe = SelectionLoupe(screenImage: still, screenSize: screen.frame.size)
+            }
             // So the crosshair and loupe show before the pointer first moves.
             let mouse = NSEvent.mouseLocation
             if screen.frame.contains(mouse) {
@@ -41,7 +48,7 @@ final class AreaSelectionController {
 
             let selectionWindow = SelectionWindow(
                 contentRect: screen.frame,
-                styleMask: [.borderless],
+                styleMask: [.borderless, .nonactivatingPanel],
                 backing: .buffered,
                 defer: false
             )
@@ -50,18 +57,23 @@ final class AreaSelectionController {
             selectionWindow.hasShadow = false
             selectionWindow.level = .screenSaver
             selectionWindow.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-            selectionWindow.contentView = selectionView
+            selectionWindow.contentView = still.map { Self.frozenBackground($0, under: selectionView) } ?? selectionView
             selectionWindow.isReleasedWhenClosed = false
+            // A panel's default; it would hide the overlay whenever Screvia
+            // is not the active app, which is now most of the time.
+            selectionWindow.hidesOnDeactivate = false
             return selectionWindow
         }
 
-        NSApp.activate(ignoringOtherApps: true)
+        // Not activating Screvia leaves the app underneath active, so a
+        // menu bar app's popover stays open to be captured; it closes
+        // as soon as its app resigns active.
         windows.forEach { $0.orderFrontRegardless() }
         if let activeWindow = windows.first(where: { window in
             window.frame.contains(NSEvent.mouseLocation)
         }) ?? windows.first {
             activeWindow.makeKeyAndOrderFront(nil)
-            activeWindow.makeFirstResponder(activeWindow.contentView)
+            activeWindow.makeFirstResponder(Self.selectionView(in: activeWindow))
         }
         if showsLoupe {
             loadLoupes()
@@ -79,7 +91,8 @@ final class AreaSelectionController {
         let overlays = windows.map(\.windowNumber)
         for window in windows {
             guard
-                let view = window.contentView as? AreaSelectionView,
+                let view = Self.selectionView(in: window),
+                view.loupe == nil,
                 let screen = window.screen,
                 let displayID = ScreenUtilities.displayID(for: screen)
             else {
@@ -94,6 +107,24 @@ final class AreaSelectionController {
                 view.needsDisplay = true
             }
         }
+    }
+
+    /// A view showing `still` with `selectionView` over it. The selection
+    /// view clears the selected area to show what is under it, here the
+    /// still rather than the live screen.
+    private static func frozenBackground(_ still: CGImage, under selectionView: AreaSelectionView) -> NSView {
+        let background = NSView(frame: selectionView.frame)
+        background.wantsLayer = true
+        background.layer?.contents = still
+        background.layer?.contentsGravity = .resize
+        selectionView.autoresizingMask = [.width, .height]
+        background.addSubview(selectionView)
+        return background
+    }
+
+    private static func selectionView(in window: NSWindow) -> AreaSelectionView? {
+        window.contentView as? AreaSelectionView
+            ?? window.contentView?.subviews.lazy.compactMap { $0 as? AreaSelectionView }.first
     }
 
     private func finish(selection: CGRect, on screen: NSScreen) {
@@ -119,7 +150,7 @@ final class AreaSelectionController {
     }
 }
 
-private final class SelectionWindow: NSWindow {
+private final class SelectionWindow: NSPanel {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
 }
@@ -136,6 +167,10 @@ private final class AreaSelectionView: NSView {
     private var cursorPoint: CGPoint?
 
     override var acceptsFirstResponder: Bool { true }
+
+    // Screvia is not active while selecting, and the first click is the
+    // selection's first corner.
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     override func updateTrackingAreas() {
         trackingAreas.forEach(removeTrackingArea)

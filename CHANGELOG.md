@@ -18,6 +18,14 @@ version cannot be released until its section is written.
 
 - Screvia now needs macOS 15 or later.
 
+### Fixed
+
+- An area capture can include a menu bar app's open menu. The screen now
+  freezes when the selection begins, like the built-in screenshot tool,
+  and the capture is cut from that still, so a menu that closes at the
+  first click is still in it. Capture Text works the same way. With the
+  self-timer set, the area is still captured live once it runs out.
+
 ## [0.5.1] - 2026-10-20
 
 ### Fixed
