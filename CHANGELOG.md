@@ -6,6 +6,8 @@ version cannot be released until its section is written.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-25
+
 ### Added
 
 - Screen recording. Press ⌃⇧9 or choose Record Screen in the menu bar,
@@ -26,10 +28,10 @@ version cannot be released until its section is written.
 ### Fixed
 
 - An area capture can include a menu bar app's open menu. The screen now
-  freezes when the selection begins, like the built-in screenshot tool,
-  and the capture is cut from that still, so a menu that closes at the
-  first click is still in it. Capture Text works the same way. With the
-  self-timer set, the area is still captured live once it runs out.
+  freezes when the selection begins and the capture is cut from that
+  still, so a menu that closes at the first click is still in it.
+  Capture Text works the same way. With the self-timer set, the area is
+  still captured live once it runs out.
 
 ## [0.5.1] - 2026-10-20
 
@@ -167,7 +169,8 @@ version cannot be released until its section is written.
 - Releases signed with the same certificate every time, so updating keeps
   the Screen Recording and Accessibility permissions.
 
-[Unreleased]: https://github.com/satotek/screvia/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/satotek/screvia/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/satotek/screvia/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/satotek/screvia/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/satotek/screvia/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/satotek/screvia/compare/v0.3.0...v0.4.0
