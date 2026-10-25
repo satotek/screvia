@@ -315,6 +315,8 @@ struct CapturePreferences: View {
             Toggle(L10n.text("preferences.hideDesktopIcons"), isOn: $settings.hideDesktopIcons)
             Toggle(L10n.text("preferences.showsLoupe"), isOn: $settings.showsLoupe)
             PreferencesHint(L10n.text("preferences.showsLoupeHint"))
+            Toggle(L10n.text("preferences.usesSystemAreaSelection"), isOn: $settings.usesSystemAreaSelection)
+            PreferencesHint(L10n.text("preferences.usesSystemAreaSelectionHint"))
         }
 
         PreferencesRow(L10n.text("preferences.windowCapture")) {

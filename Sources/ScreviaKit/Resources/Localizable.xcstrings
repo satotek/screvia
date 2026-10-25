@@ -4257,6 +4257,38 @@
         }
       }
     },
+    "preferences.usesSystemAreaSelection": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose areas with the built-in screenshot tool"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "範囲の選択に macOS 標準のスクリーンショットを使う"
+          }
+        }
+      }
+    },
+    "preferences.usesSystemAreaSelectionHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Areas are chosen as with ⌘⇧4, with nothing frozen: open menus stay open and Space switches to picking a window. The loupe and Capture Last Area are not available then."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⌘⇧4 と同じ操作で範囲を選び、画面は固定されません。開いているメニューはそのまま残り、Space でウィンドウの選択に切り替えられます。ルーペと「前回の範囲をキャプチャ」は使えません。"
+          }
+        }
+      }
+    },
     "preferences.windowCapture": {
       "localizations": {
         "en": {

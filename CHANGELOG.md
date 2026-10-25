@@ -13,6 +13,11 @@ version cannot be released until its section is written.
   the shortcut again. The recording is saved as an MP4 in the capture
   folder and opens in a window to trim it, save it as a looping GIF, copy
   it or show it in the Finder.
+- A setting to choose areas with the built-in screenshot tool instead of
+  Screvia's own overlay, for area captures and Capture Text. Open menus
+  stay open and are captured live, and Space switches to picking a
+  window, as with ⌘⇧4; the loupe and Capture Last Area are not available
+  then.
 
 ### Changed
 

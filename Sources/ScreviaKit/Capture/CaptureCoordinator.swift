@@ -183,6 +183,12 @@ final class CaptureCoordinator: ObservableObject {
     /// `onScreenRead` runs once the area has been captured, or when the
     /// selection is cancelled.
     func captureArea(onScreenRead: (() -> Void)? = nil) {
+        guard !settings.usesSystemAreaSelection else {
+            captureWithSystemTool(onScreenRead: onScreenRead) { [weak self] image, screen, app in
+                self?.finishCapture(image, on: screen, app: app)
+            }
+            return
+        }
         let app = Self.sourceAppName()
         // The self-timer is there to wait for the screen to change, which a
         // still taken now would not show.
@@ -208,6 +214,39 @@ final class CaptureCoordinator: ObservableObject {
                 self.finishCapture(image, on: screen, app: app)
             } catch {
                 ErrorPresenter.present(error)
+            }
+        }
+    }
+
+    /// Chooses an area with macOS's own screenshot tool and hands
+    /// `capture` the image. The tool says nothing of where the area was,
+    /// so the screen is the one under the pointer once it is done, and
+    /// there is no area to capture again later.
+    private func captureWithSystemTool(
+        onScreenRead: (() -> Void)? = nil,
+        capture: @escaping (NSImage, NSScreen, String?) -> Void
+    ) {
+        cancelSelection()
+        let app = Self.sourceAppName()
+        let includeCursor = settings.includeCursor
+        let includeWindowShadow = settings.includeWindowShadow
+        afterDelay { [weak self] in
+            self?.withDesktopHidden {
+                defer { onScreenRead?() }
+                do {
+                    guard
+                        let image = try await SystemAreaCapture.capture(
+                            includeCursor: includeCursor,
+                            includeWindowShadow: includeWindowShadow
+                        ),
+                        let screen = ScreenUtilities.screenAtMouse() ?? NSScreen.screens.first
+                    else {
+                        return
+                    }
+                    capture(image, screen, app)
+                } catch {
+                    ErrorPresenter.present(error)
+                }
             }
         }
     }
@@ -441,6 +480,12 @@ final class CaptureCoordinator: ObservableObject {
     /// Captures an area and opens it in a window that shows its text, to
     /// copy all of it or, with Live Text, just a part.
     func captureText() {
+        guard !settings.usesSystemAreaSelection else {
+            captureWithSystemTool { [weak self] image, _, _ in
+                self?.showText(in: image)
+            }
+            return
+        }
         selectArea(freezing: true, onCancel: {}) { [weak self] selection, screen, frozen in
             guard let self else {
                 return

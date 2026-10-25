@@ -100,6 +100,7 @@ final class ScreviaSettings: ObservableObject {
         static let downscaleRetina = "downscaleRetina"
         static let hideDesktopIcons = "hideDesktopIcons"
         static let showsLoupe = "showsLoupe"
+        static let usesSystemAreaSelection = "usesSystemAreaSelection"
         static let textJoinLines = "textJoinLines"
         static let textLanguage = "textLanguage"
         static let historyLimit = "historyLimit"
@@ -222,6 +223,12 @@ final class ScreviaSettings: ObservableObject {
         didSet { defaults.set(showsLoupe, forKey: Key.showsLoupe) }
     }
 
+    /// Leaves choosing the area of an area capture to macOS's own
+    /// screenshot tool, which can take it without closing open menus.
+    @Published var usesSystemAreaSelection: Bool {
+        didSet { defaults.set(usesSystemAreaSelection, forKey: Key.usesSystemAreaSelection) }
+    }
+
     /// Joins recognized lines into one paragraph, for text that was wrapped
     /// only by the layout it was captured from.
     @Published var textJoinLines: Bool {
@@ -272,6 +279,7 @@ final class ScreviaSettings: ObservableObject {
         downscaleRetina = defaults.object(forKey: Key.downscaleRetina) as? Bool ?? false
         hideDesktopIcons = defaults.object(forKey: Key.hideDesktopIcons) as? Bool ?? false
         showsLoupe = defaults.object(forKey: Key.showsLoupe) as? Bool ?? true
+        usesSystemAreaSelection = defaults.object(forKey: Key.usesSystemAreaSelection) as? Bool ?? false
         textJoinLines = defaults.object(forKey: Key.textJoinLines) as? Bool ?? false
         textLanguage = TextLanguage(rawValue: defaults.string(forKey: Key.textLanguage) ?? "") ?? .automatic
         let storedLimit = defaults.object(forKey: Key.historyLimit) as? Int ?? 30
@@ -325,6 +333,7 @@ final class ScreviaSettings: ObservableObject {
         downscaleRetina = false
         hideDesktopIcons = false
         showsLoupe = true
+        usesSystemAreaSelection = false
         textJoinLines = false
         textLanguage = .automatic
         historyLimit = 30

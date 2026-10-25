@@ -40,6 +40,7 @@ final class ScreviaSettingsTests: XCTestCase {
         XCTAssertEqual(settings.cornerRadius, 16)
         XCTAssertFalse(settings.shadowEnabled)
         XCTAssertTrue(settings.showsLoupe)
+        XCTAssertFalse(settings.usesSystemAreaSelection)
     }
 
     func testDefaultSaveDirectoryIsAScreviaFolder() {
@@ -79,6 +80,7 @@ final class ScreviaSettingsTests: XCTestCase {
         settings.downscaleRetina = true
         settings.hideDesktopIcons = true
         settings.showsLoupe = false
+        settings.usesSystemAreaSelection = true
         settings.textJoinLines = true
         settings.textLanguage = .english
         settings.historyLimit = 100
@@ -109,6 +111,7 @@ final class ScreviaSettingsTests: XCTestCase {
         XCTAssertTrue(reloaded.downscaleRetina)
         XCTAssertTrue(reloaded.hideDesktopIcons)
         XCTAssertFalse(reloaded.showsLoupe)
+        XCTAssertTrue(reloaded.usesSystemAreaSelection)
         XCTAssertTrue(reloaded.textJoinLines)
         XCTAssertEqual(reloaded.textLanguage, .english)
         XCTAssertEqual(reloaded.historyLimit, 100)
@@ -219,6 +222,7 @@ final class ScreviaSettingsTests: XCTestCase {
         settings.saveToFile = false
         settings.historyLimit = 50
         settings.showsLoupe = false
+        settings.usesSystemAreaSelection = true
 
         settings.reset()
 
@@ -236,6 +240,7 @@ final class ScreviaSettingsTests: XCTestCase {
         XCTAssertEqual(settings.padding, 0)
         XCTAssertFalse(settings.shadowEnabled)
         XCTAssertTrue(settings.showsLoupe)
+        XCTAssertFalse(settings.usesSystemAreaSelection)
     }
 
     func testResetIsPersistedRatherThanOnlyInMemory() {
