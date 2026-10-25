@@ -6,7 +6,7 @@ let package = Package(
     name: "Screvia",
     defaultLocalization: "en",
     platforms: [
-        .macOS(.v14)
+        .macOS(.v15)
     ],
     products: [
         // The Screvia.xcodeproj app target (see project.yml) depends on

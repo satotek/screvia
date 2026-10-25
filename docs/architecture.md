@@ -83,6 +83,11 @@ CaptureProcessingPipeline  actor — ImageProcessor + ImageStore off the main ac
 CaptureCoordinator         history, thumbnail, editor, clipboard
 ```
 
+Still captures read the whole display with `SCScreenshotManager` and crop
+it; the area is never passed to ScreenCaptureKit. The overlay is off the
+screen by then. The loupe's still, taken while the overlay is up, excludes
+the overlay windows instead.
+
 `CaptureProcessingPipeline` is an `actor` for two reasons: it keeps image
 encoding off the main actor so the UI does not stutter on a large capture, and
 it serializes writes so two hotkeys pressed together cannot race while picking
@@ -103,6 +108,27 @@ canvas is the only large allocation left in memory.
 
 Because the events are posted globally, this path needs Accessibility
 permission on top of Screen Recording.
+
+### Screen recording
+
+`ScreenRecorder` hands a display, and for an area its `sourceRect`, to an
+`SCStream` with an `SCRecordingOutput` (macOS 15), which encodes H.264 to
+MP4 by itself: no frame passes through Screvia. That is the reason macOS 15
+is the minimum. The pointer is always recorded, whatever the setting for
+stills, and there is no audio.
+
+The recording is written to a temporary folder and moved to the capture
+folder, named by the file name template, once it stops; saving is never
+off for recordings, since a video has no clipboard to fall back on. It does
+not join the capture history, which holds images.
+
+`RecordingWindowController` then shows it in an `AVPlayerView`, whose own
+trimming bar does the trimming; confirming it re-encodes the chosen part
+over the saved file (`VideoExport.trim`), so the cut lands on the frame
+rather than a keyframe. `VideoExport.gif` samples 15 frames a second with
+`AVAssetImageGenerator`, at zero tolerance so keyframes do not repeat, and
+writes a looping GIF with ImageIO beside the video. The arithmetic of both,
+and of the source rectangle, is in `RecordingMath` and tested there.
 
 ## UI conventions
 

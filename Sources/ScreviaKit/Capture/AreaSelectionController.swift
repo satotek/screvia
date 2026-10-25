@@ -5,8 +5,13 @@ final class AreaSelectionController {
     private var completion: ((CGRect, NSScreen) -> Void)?
     private var onCancel: (() -> Void)?
 
+    /// `hint` is shown at the top of each screen. With
+    /// `selectsScreenOnClick`, a click without a drag selects the whole
+    /// screen it is on instead of cancelling.
     func start(
         showsLoupe: Bool = true,
+        hint: String? = nil,
+        selectsScreenOnClick: Bool = false,
         onCancel: (() -> Void)? = nil,
         completion: @escaping (CGRect, NSScreen) -> Void
     ) {
@@ -20,8 +25,8 @@ final class AreaSelectionController {
 
         windows = NSScreen.screens.map { screen in
             let selectionView = AreaSelectionView(frame: NSRect(origin: .zero, size: screen.frame.size))
-            // Taken before the overlay appears, which would darken it.
-            selectionView.loupe = showsLoupe ? Self.loupe(for: screen) : nil
+            selectionView.hint = hint
+            selectionView.selectsScreenOnClick = selectsScreenOnClick
             // So the crosshair and loupe show before the pointer first moves.
             let mouse = NSEvent.mouseLocation
             if screen.frame.contains(mouse) {
@@ -58,6 +63,37 @@ final class AreaSelectionController {
             activeWindow.makeKeyAndOrderFront(nil)
             activeWindow.makeFirstResponder(activeWindow.contentView)
         }
+        if showsLoupe {
+            loadLoupes()
+        }
+    }
+
+    /// Gives each screen's overlay a still of that screen for the loupe,
+    /// taken without the overlays, which would darken it. It arrives a
+    /// moment after the overlay; until then the crosshair shows alone.
+    private func loadLoupes() {
+        // Without permission, asking now would interrupt the selection.
+        guard CGPreflightScreenCaptureAccess() else {
+            return
+        }
+        let overlays = windows.map(\.windowNumber)
+        for window in windows {
+            guard
+                let view = window.contentView as? AreaSelectionView,
+                let screen = window.screen,
+                let displayID = ScreenUtilities.displayID(for: screen)
+            else {
+                continue
+            }
+            let screenSize = screen.frame.size
+            Task {
+                guard let image = try? await CaptureService.screenImage(displayID: displayID, excludingWindows: overlays) else {
+                    return
+                }
+                view.loupe = SelectionLoupe(screenImage: image, screenSize: screenSize)
+                view.needsDisplay = true
+            }
+        }
     }
 
     private func finish(selection: CGRect, on screen: NSScreen) {
@@ -81,19 +117,6 @@ final class AreaSelectionController {
         self.onCancel = nil
         onCancel?()
     }
-
-    /// A still of `screen` for the loupe, or nil without permission to
-    /// record the screen, where asking now would interrupt the selection.
-    private static func loupe(for screen: NSScreen) -> SelectionLoupe? {
-        guard
-            CGPreflightScreenCaptureAccess(),
-            let displayID = ScreenUtilities.displayID(for: screen),
-            let image = CGDisplayCreateImage(displayID)
-        else {
-            return nil
-        }
-        return SelectionLoupe(screenImage: image, screenSize: screen.frame.size)
-    }
 }
 
 private final class SelectionWindow: NSWindow {
@@ -105,6 +128,8 @@ private final class AreaSelectionView: NSView {
     var onSelection: ((CGRect) -> Void)?
     var onCancel: (() -> Void)?
     var loupe: SelectionLoupe?
+    var hint: String?
+    var selectsScreenOnClick = false
 
     private var startPoint: CGPoint?
     private var currentPoint: CGPoint?
@@ -128,6 +153,7 @@ private final class AreaSelectionView: NSView {
 
         NSColor.black.withAlphaComponent(0.42).setFill()
         bounds.fill()
+        drawHint()
 
         guard let selection = selectionRect else {
             drawCrosshair(at: cursorPoint)
@@ -163,6 +189,18 @@ private final class AreaSelectionView: NSView {
         drawLoupe(selectionSize: selection.size)
     }
 
+    private func drawHint() {
+        guard let hint else {
+            return
+        }
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 13, weight: .medium),
+            .foregroundColor: NSColor.white.withAlphaComponent(0.92)
+        ]
+        let size = hint.size(withAttributes: attributes)
+        hint.draw(at: CGPoint(x: bounds.midX - size.width / 2, y: bounds.maxY - 64), withAttributes: attributes)
+    }
+
     private func drawLoupe(selectionSize: CGSize?) {
         guard let loupe, let cursorPoint else {
             return
@@ -190,7 +228,11 @@ private final class AreaSelectionView: NSView {
         cursorPoint = point
         currentPoint = point
         guard let selection = selectionRect, selection.width > 2, selection.height > 2 else {
-            onCancel?()
+            if selectsScreenOnClick {
+                onSelection?(bounds)
+            } else {
+                onCancel?()
+            }
             return
         }
         onSelection?(selection)

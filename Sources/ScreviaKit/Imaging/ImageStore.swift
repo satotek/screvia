@@ -70,13 +70,7 @@ nonisolated struct ImageStore {
 
         let baseName = baseName
             ?? FileNameTemplate(FileNameTemplate.standard).render(date: Date(), app: nil, counter: 0)
-        var destination = directory.appendingPathComponent("\(baseName).\(format.fileExtension)")
-        var suffix = 2
-
-        while FileManager.default.fileExists(atPath: destination.path) {
-            destination = directory.appendingPathComponent("\(baseName)-\(suffix).\(format.fileExtension)")
-            suffix += 1
-        }
+        let destination = Self.availableURL(in: directory, baseName: baseName, fileExtension: format.fileExtension)
 
         try imageData.write(to: destination, options: .atomic)
         // The path stays private: it contains the user's home directory.
@@ -228,5 +222,19 @@ private nonisolated extension ImageFormat {
         case .tiff:
             return .tiff
         }
+    }
+}
+
+extension ImageStore {
+    /// `baseName.fileExtension` in `directory`, or `baseName-2` and so on
+    /// when that is taken.
+    nonisolated static func availableURL(in directory: URL, baseName: String, fileExtension: String) -> URL {
+        var destination = directory.appendingPathComponent("\(baseName).\(fileExtension)")
+        var suffix = 2
+        while FileManager.default.fileExists(atPath: destination.path) {
+            destination = directory.appendingPathComponent("\(baseName)-\(suffix).\(fileExtension)")
+            suffix += 1
+        }
+        return destination
     }
 }

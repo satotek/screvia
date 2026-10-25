@@ -30,6 +30,8 @@ is the list of releases, to check for updates, and only if you allow it.
   for menus and hover states
 - A loupe while choosing an area: the pixels under the pointer enlarged,
   with its position, the colour there and the selection's size
+- Screen recording: drag out an area or click a screen, record it to MP4,
+  stop from the menu bar, then trim it or save it as a looping GIF
 - Global hotkeys for every capture mode, remappable in Preferences
 
 **After the shot**
@@ -104,7 +106,7 @@ they are installed, and need no trip to Privacy & Security.
 
 ## Requirements
 
-- macOS 14 or later, on Apple silicon or Intel
+- macOS 15 or later, on Apple silicon or Intel
 - Xcode 27+ and Swift 6 to build
 - [XcodeGen][xcodegen] (`brew install xcodegen`) to generate `Screvia.xcodeproj`
 - Screen Recording permission; Accessibility permission is additionally

@@ -96,7 +96,7 @@ jobs:
           echo "version $shown, build $build"
           # Sparkle compares build numbers, not versions, to find a newer one.
           echo "BUILD=$build" >> "$GITHUB_ENV"
-          # Intel Macs still run macOS 14, the minimum.
+          # Intel Macs still run macOS 15, the minimum.
           archs=$(lipo -archs .build/Screvia.app/Contents/MacOS/Screvia)
           for arch in arm64 x86_64; do
             case " $archs " in

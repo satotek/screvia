@@ -8,6 +8,7 @@ enum ShortcutAction: CaseIterable {
     case captureScroll
     case captureText
     case captureLastArea
+    case recordScreen
 
     var shortcutName: KeyboardShortcuts.Name {
         switch self {
@@ -23,6 +24,8 @@ enum ShortcutAction: CaseIterable {
             return .captureText
         case .captureLastArea:
             return .captureLastArea
+        case .recordScreen:
+            return .recordScreen
         }
     }
 
@@ -42,6 +45,8 @@ enum ShortcutAction: CaseIterable {
             return "text.viewfinder"
         case .captureLastArea:
             return "arrow.counterclockwise"
+        case .recordScreen:
+            return "record.circle"
         }
     }
 
@@ -59,6 +64,8 @@ enum ShortcutAction: CaseIterable {
             return L10n.text("preferences.captureText")
         case .captureLastArea:
             return L10n.text("preferences.captureLastArea")
+        case .recordScreen:
+            return L10n.text("preferences.recordScreen")
         }
     }
 }
@@ -90,6 +97,10 @@ extension KeyboardShortcuts.Name {
     static let captureLastArea = Self(
         "captureLastArea",
         initial: .init(.eight, modifiers: [.control, .shift])
+    )
+    static let recordScreen = Self(
+        "recordScreen",
+        initial: .init(.nine, modifiers: [.control, .shift])
     )
 }
 

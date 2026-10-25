@@ -18,6 +18,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     private let updater = SoftwareUpdater()
     private var statusItem: NSStatusItem?
     private var capturePopover: NSPopover?
+    private var recordingTimer: Timer?
 
     public func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -37,6 +38,9 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
 
         captureCoordinator.onCountdown = { [weak self] remaining in
             self?.showCountdown(remaining)
+        }
+        captureCoordinator.onRecordingChange = { [weak self] start in
+            self?.showRecording(since: start)
         }
         // A shortcut pressed with the hub open captures the hub too, as
         // someone documenting Screvia would want. The hub otherwise closes
@@ -143,6 +147,11 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let button = statusItem?.button else {
             return
         }
+        // While recording, the icon is the stop button.
+        if captureCoordinator.isRecording {
+            captureCoordinator.stopRecording()
+            return
+        }
 
         if let capturePopover, capturePopover.isShown {
             capturePopover.performClose(nil)
@@ -185,6 +194,11 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
                 onCaptureLastArea: { [weak self] in
                     self?.closeCaptureHub {
                         self?.captureCoordinator.captureLastArea()
+                    }
+                },
+                onRecordScreen: { [weak self] in
+                    self?.closeCaptureHub {
+                        self?.captureCoordinator.recordScreen()
                     }
                 },
                 captureDelay: settings.captureDelay,
@@ -274,6 +288,44 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             button.title = ""
             button.imagePosition = .imageOnly
             statusItem.length = NSStatusItem.squareLength
+        }
+    }
+
+    /// A recording's elapsed time beside a stop symbol in place of the
+    /// icon, which stops the recording when clicked; nil puts the icon back.
+    private func showRecording(since start: Date?) {
+        recordingTimer?.invalidate()
+        recordingTimer = nil
+        guard let statusItem, let button = statusItem.button else {
+            return
+        }
+        guard let start else {
+            button.image = Self.menuBarImage()
+            button.attributedTitle = NSAttributedString()
+            button.imagePosition = .imageOnly
+            button.toolTip = nil
+            statusItem.length = NSStatusItem.squareLength
+            return
+        }
+
+        statusItem.length = NSStatusItem.variableLength
+        let stop = NSImage(systemSymbolName: "stop.circle.fill", accessibilityDescription: L10n.text("recording.stop"))
+        stop?.isTemplate = true
+        button.image = stop
+        button.imagePosition = .imageLeading
+        button.toolTip = L10n.text("recording.stop")
+        let update: @MainActor () -> Void = {
+            // Monospaced digits, so the item does not jitter as they change.
+            button.attributedTitle = NSAttributedString(
+                string: " " + RecordingMath.elapsedLabel(Date().timeIntervalSince(start)),
+                attributes: [.font: NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)]
+            )
+        }
+        update()
+        recordingTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+            MainActor.assumeIsolated {
+                update()
+            }
         }
     }
 

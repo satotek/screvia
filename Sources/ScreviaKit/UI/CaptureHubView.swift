@@ -10,6 +10,7 @@ struct CaptureHubView: View {
     let onCaptureScroll: () -> Void
     let onCaptureText: () -> Void
     let onCaptureLastArea: () -> Void
+    let onRecordScreen: () -> Void
     let captureDelay: Int
     let onCaptureDelayChange: (Int) -> Void
     let onEditHistory: (CaptureHistoryEntry) -> Void
@@ -95,6 +96,7 @@ struct CaptureHubView: View {
 
     /// Area first and always picked out, as the mode used most; the others
     /// stay quiet until hovered, so no tile looks chosen when none is.
+    @ViewBuilder
     private var captureModes: some View {
         LazyVGrid(
             columns: [
@@ -132,6 +134,14 @@ struct CaptureHubView: View {
                 action: onCaptureScroll
             )
         }
+        .padding(.horizontal, 14)
+        .padding(.bottom, 6)
+
+        RecordTile(
+            title: L10n.text("hub.record"),
+            shortcut: shortcutLabel(for: .recordScreen),
+            action: onRecordScreen
+        )
         .padding(.horizontal, 14)
         .padding(.bottom, 8)
     }
@@ -378,6 +388,43 @@ private struct CaptureModeTile: View {
     }
 }
 
+/// Recording, as one wide row under the capture modes: a different kind of
+/// capture, so it does not take a place among the stills.
+private struct RecordTile: View {
+    let title: String
+    let shortcut: String
+    let action: () -> Void
+
+    @State private var isHovering = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: ShortcutAction.recordScreen.symbol)
+                    .font(.system(size: 14, weight: .regular))
+                    .foregroundStyle(.red.opacity(isHovering ? 1 : 0.85))
+                Text(title)
+                    .font(.system(size: 12, weight: .medium))
+                Spacer()
+                if !shortcut.isEmpty {
+                    Keycaps(shortcut: shortcut, tint: .secondary)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                isHovering ? ScreviaTheme.surfaceHover : ScreviaTheme.surface,
+                in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovering = $0 }
+        .animation(.easeOut(duration: 0.12), value: isHovering)
+        .help(L10n.text("hub.recordHelp"))
+    }
+}
+
 private struct DisplayChip: View {
     let title: String
     let isSelected: Bool
@@ -582,6 +629,7 @@ private struct ToolLabel: View {
         onCaptureScroll: {},
         onCaptureText: {},
         onCaptureLastArea: {},
+        onRecordScreen: {},
         captureDelay: 0,
         onCaptureDelayChange: { _ in },
         onEditHistory: { _ in },
@@ -612,6 +660,7 @@ private struct ToolLabel: View {
         onCaptureScroll: {},
         onCaptureText: {},
         onCaptureLastArea: {},
+        onRecordScreen: {},
         captureDelay: 0,
         onCaptureDelayChange: { _ in },
         onEditHistory: { _ in },

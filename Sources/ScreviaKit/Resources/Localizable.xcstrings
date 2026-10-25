@@ -2449,6 +2449,22 @@
         }
       }
     },
+    "error.exportFailed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The video could not be saved."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "動画を保存できませんでした。"
+          }
+        }
+      }
+    },
     "error.imageEncodingFailed": {
       "localizations": {
         "en": {
@@ -2525,6 +2541,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "画像の中に文字が見つかりませんでした。"
+          }
+        }
+      }
+    },
+    "error.recordingFailed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The recording could not be made."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "録画できませんでした。"
           }
         }
       }
@@ -2685,6 +2717,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "開く"
+          }
+        }
+      }
+    },
+    "hub.record": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Record Screen"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画面を録画"
+          }
+        }
+      }
+    },
+    "hub.recordHelp": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Record an area or a whole screen; stop from the menu bar"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "範囲か画面全体を録画します。メニューバーから停止します"
           }
         }
       }
@@ -3809,6 +3873,22 @@
         }
       }
     },
+    "preferences.recordScreen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Record Screen"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画面を録画"
+          }
+        }
+      }
+    },
     "preferences.reset": {
       "localizations": {
         "en": {
@@ -4209,6 +4289,182 @@
         }
       }
     },
+    "recording.copied": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video copied"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "動画をコピーしました"
+          }
+        }
+      }
+    },
+    "recording.copy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy Video"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "動画をコピー"
+          }
+        }
+      }
+    },
+    "recording.gifSaved": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved as GIF"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GIF を保存しました"
+          }
+        }
+      }
+    },
+    "recording.gifWidth": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GIF width"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GIF の幅"
+          }
+        }
+      }
+    },
+    "recording.originalSize": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Original"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "原寸"
+          }
+        }
+      }
+    },
+    "recording.reveal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show in Finder"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finder で表示"
+          }
+        }
+      }
+    },
+    "recording.saveGIF": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save as GIF"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GIF で保存"
+          }
+        }
+      }
+    },
+    "recording.saving": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saving…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存中…"
+          }
+        }
+      }
+    },
+    "recording.stop": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop Recording"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "録画を停止"
+          }
+        }
+      }
+    },
+    "recording.trim": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trim…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "トリミング…"
+          }
+        }
+      }
+    },
+    "recording.widthPixels": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%ld px"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%ld px"
+          }
+        }
+      }
+    },
     "selection.cancelHint": {
       "localizations": {
         "en": {
@@ -4237,6 +4493,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "%d, %d"
+          }
+        }
+      }
+    },
+    "selection.recordHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag to record an area, or click to record the whole screen. Esc cancels."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ドラッグで範囲を、クリックで画面全体を録画します。Esc で取り消し"
           }
         }
       }

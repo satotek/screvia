@@ -65,7 +65,7 @@ print("""
       <pubDate>\(dateFormatter.string(from: Date()))</pubDate>
       <sparkle:version>\(build)</sparkle:version>
       <sparkle:shortVersionString>\(escaped(version))</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
       <link>\(repository)/releases/tag/v\(escaped(version))</link>
       <description sparkle:format="markdown"><![CDATA[
 \(notes.trimmingCharacters(in: .whitespacesAndNewlines))

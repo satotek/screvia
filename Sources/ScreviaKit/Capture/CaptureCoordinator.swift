@@ -23,6 +23,8 @@ final class CaptureCoordinator: ObservableObject {
     private let toastController = ToastController()
     private let textCaptureController = TextCaptureWindowController()
     private let desktopCover = DesktopCover()
+    private let recorder = ScreenRecorder()
+    private let recordingWindowController = RecordingWindowController()
 
     private var areaSelectionController: AreaSelectionController?
     private var windowSelectionController: WindowSelectionController?
@@ -41,6 +43,11 @@ final class CaptureCoordinator: ObservableObject {
     var onShortcutCaptureBegan: (() -> Void)?
     var onShortcutCaptureEnded: (() -> Void)?
 
+    /// When the running recording started, and nil once it stops.
+    var onRecordingChange: ((Date?) -> Void)?
+
+    var isRecording: Bool { recorder.isRecording }
+
     @Published private(set) var captureHistory: [CaptureHistoryEntry]
 
     init(settings: ScreviaSettings) {
@@ -51,6 +58,9 @@ final class CaptureCoordinator: ObservableObject {
         let editArchive = editArchive
         Task {
             await editArchive.pruneInBackground()
+        }
+        recorder.onStoppedBySystem = { [weak self] in
+            self?.stopRecording()
         }
     }
 
@@ -78,16 +88,19 @@ final class CaptureCoordinator: ObservableObject {
 
     /// Runs a display capture with the desktop icons covered when the user
     /// asks for it. The cover needs a frame on screen before the capture.
-    private func withDesktopHidden(_ capture: @escaping () -> Void) {
-        guard settings.hideDesktopIcons else {
-            capture()
-            return
+    private func withDesktopHidden(_ capture: @escaping () async -> Void) {
+        let hidesIcons = settings.hideDesktopIcons
+        if hidesIcons {
+            desktopCover.show()
         }
-        desktopCover.show()
         Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(150))
-            capture()
-            self?.desktopCover.hide()
+            if hidesIcons {
+                try? await Task.sleep(for: .milliseconds(150))
+            }
+            await capture()
+            if hidesIcons {
+                self?.desktopCover.hide()
+            }
         }
     }
 
@@ -115,6 +128,14 @@ final class CaptureCoordinator: ObservableObject {
                 self.captureText()
             case .captureLastArea:
                 self.captureLastArea()
+            case .recordScreen:
+                // The same shortcut stops a recording, which has no
+                // window of its own to stop it from.
+                if self.isRecording {
+                    self.stopRecording()
+                } else {
+                    self.recordScreen()
+                }
             }
         }
     }
@@ -147,7 +168,7 @@ final class CaptureCoordinator: ObservableObject {
                 }
                 defer { onScreenRead?() }
                 do {
-                    let image = try self.captureService.captureMainDisplay(
+                    let image = try await self.captureService.captureMainDisplay(
                         on: screen,
                         cursor: self.cursorSnapshot(on: screen)
                     )
@@ -192,12 +213,117 @@ final class CaptureCoordinator: ObservableObject {
             }
             defer { onScreenRead?() }
             do {
-                let image = try self.captureService.capture(
+                let image = try await self.captureService.capture(
                     selection: selection,
                     on: screen,
                     cursor: self.cursorSnapshot(on: screen)
                 )
                 self.finishCapture(image, on: screen, app: app)
+            } catch {
+                ErrorPresenter.present(error)
+            }
+        }
+    }
+
+    // MARK: - Recording
+
+    /// Where a recording is written while it runs, before it is named and
+    /// moved to the capture folder.
+    private static var recordingDirectory: URL {
+        FileManager.default.temporaryDirectory.appending(path: "Screvia-recordings", directoryHint: .isDirectory)
+    }
+
+    /// Asks for an area, or a click for the whole screen, then records it
+    /// until stopped from the menu bar or the shortcut.
+    func recordScreen() {
+        guard !isRecording else {
+            return
+        }
+        cancelSelection()
+        guard ScreenRecordingPermission.isGranted else {
+            ErrorPresenter.present(CaptureService.CaptureError.screenRecordingPermissionRequired)
+            ScreenRecordingPermission.request()
+            return
+        }
+        let controller = AreaSelectionController()
+        areaSelectionController = controller
+        controller.start(
+            showsLoupe: settings.showsLoupe,
+            hint: L10n.text("selection.recordHint"),
+            selectsScreenOnClick: true,
+            onCancel: { [weak self] in self?.areaSelectionController = nil }
+        ) { [weak self] selection, screen in
+            guard let self else {
+                return
+            }
+            self.areaSelectionController = nil
+            self.afterDelay { [weak self] in
+                self?.startRecording(selection, on: screen)
+            }
+        }
+    }
+
+    private func startRecording(_ selection: CGRect, on screen: NSScreen) {
+        guard let displayID = ScreenUtilities.displayID(for: screen) else {
+            ErrorPresenter.present(CaptureService.CaptureError.noScreenAvailable)
+            return
+        }
+        let screenSize = screen.frame.size
+        let wholeScreen = selection.size == screenSize
+        let sourceRect = wholeScreen ? nil : RecordingMath.sourceRect(selection: selection, screenSize: screenSize)
+        let url = Self.recordingDirectory.appending(path: "\(UUID().uuidString).mp4")
+
+        Task { [weak self] in
+            guard let self else {
+                return
+            }
+            do {
+                try FileManager.default.createDirectory(at: Self.recordingDirectory, withIntermediateDirectories: true)
+                // The pointer is what a viewer follows in a recording, so it
+                // is always in, whatever the setting for still captures.
+                try await self.recorder.start(displayID: displayID, sourceRect: sourceRect, showsCursor: true, to: url)
+                self.onRecordingChange?(Date())
+            } catch {
+                ErrorPresenter.present(error)
+            }
+        }
+    }
+
+    /// Ends the recording, moves it to the capture folder under the file
+    /// name template, and opens it to trim or turn into a GIF.
+    func stopRecording() {
+        guard isRecording else {
+            return
+        }
+        onRecordingChange?(nil)
+        // The capture folder even with saving turned off: a video cannot
+        // go to the clipboard instead, and the window opened next needs a
+        // file to trim, convert and copy.
+        let directory = settings.saveDirectoryURL
+        let baseName = settings.nextFileName(app: nil)
+        let playSound = settings.playSound
+
+        Task { [weak self] in
+            guard let self else {
+                return
+            }
+            do {
+                let recording = try await self.recorder.stop()
+                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                let destination = ImageStore.availableURL(in: directory, baseName: baseName, fileExtension: "mp4")
+                try FileManager.default.moveItem(at: recording, to: destination)
+                // ScreenCaptureKit writes the file readable by its owner
+                // alone; captures are saved readable by all, as usual.
+                try? FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: destination.path)
+                if playSound {
+                    NSSound(named: NSSound.Name("Tink"))?.play()
+                }
+                await self.recordingWindowController.show(
+                    videoURL: destination,
+                    onNotice: { [weak self] message, symbol in
+                        self?.toastController.show(message, symbol: symbol)
+                    }
+                )
             } catch {
                 ErrorPresenter.present(error)
             }
@@ -249,11 +375,15 @@ final class CaptureCoordinator: ObservableObject {
             self.areaSelectionController = nil
             self.rememberArea(selection, on: screen)
 
-            do {
-                let image = try self.captureService.capture(selection: selection, on: screen)
-                self.showText(in: image)
-            } catch {
-                ErrorPresenter.present(error)
+            Task { [weak self] in
+                do {
+                    guard let image = try await self?.captureService.capture(selection: selection, on: screen) else {
+                        return
+                    }
+                    self?.showText(in: image)
+                } catch {
+                    ErrorPresenter.present(error)
+                }
             }
         }
     }

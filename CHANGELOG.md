@@ -6,6 +6,18 @@ version cannot be released until its section is written.
 
 ## [Unreleased]
 
+### Added
+
+- Screen recording. Press ⌃⇧9 or choose Record Screen in the menu bar,
+  drag out an area or click a screen, and stop from the menu bar or with
+  the shortcut again. The recording is saved as an MP4 in the capture
+  folder and opens in a window to trim it, save it as a looping GIF, copy
+  it or show it in the Finder.
+
+### Changed
+
+- Screvia now needs macOS 15 or later.
+
 ## [0.5.1] - 2026-10-20
 
 ### Fixed

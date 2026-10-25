@@ -9,7 +9,7 @@ name: Screvia
 options:
   bundleIdPrefix: dev.satotek
   deploymentTarget:
-    macOS: "14.0"
+    macOS: "15.0"
   createIntermediateGroups: true
   generateEmptyDirectories: true
   # Becomes LastUpgradeCheck. Raise it only together with the settings below,

@@ -10,9 +10,7 @@ nonisolated struct WindowCaptureSession {
         let contentFilter = SCContentFilter(desktopIndependentWindow: window)
         let configuration = SCStreamConfiguration()
         configuration.showsCursor = includeCursor
-        if #available(macOS 14.2, *) {
-            configuration.includeChildWindows = true
-        }
+        configuration.includeChildWindows = true
         configuration.ignoreShadowsSingleWindow = !includeShadow
         configuration.width = max(
             1,
@@ -68,23 +66,13 @@ nonisolated struct CaptureService {
         }
     }
 
-    // The only method here that reads the mouse location, so the only one
-    // pinned to the main actor; the rest are callable from anywhere.
-    @MainActor
-    func captureMainDisplay() throws -> NSImage {
-        guard let screen = ScreenUtilities.screenAtMouse() ?? NSScreen.screens.first else {
-            throw CaptureError.noScreenAvailable
-        }
-
-        return try captureMainDisplay(on: screen)
-    }
-
-    func captureMainDisplay(on screen: NSScreen, cursor: CursorSnapshot? = nil) throws -> NSImage {
+    func captureMainDisplay(on screen: NSScreen, cursor: CursorSnapshot? = nil) async throws -> NSImage {
         try requireScreenCaptureAccess()
-        return try captureFullDisplay(for: screen, cursor: cursor)
+        let image = try await displayImage(for: screen, cursor: cursor)
+        return NSImage(cgImage: image, size: screen.frame.size)
     }
 
-    func capture(selection: CGRect, on screen: NSScreen, cursor: CursorSnapshot? = nil) throws -> NSImage {
+    func capture(selection: CGRect, on screen: NSScreen, cursor: CursorSnapshot? = nil) async throws -> NSImage {
         try requireScreenCaptureAccess()
 
         let screenBounds = CGRect(origin: .zero, size: screen.frame.size)
@@ -93,9 +81,7 @@ nonisolated struct CaptureService {
             throw CaptureError.cropFailed
         }
 
-        guard let displayImage = displayImage(for: screen, cursor: cursor) else {
-            throw CaptureError.displayImageUnavailable
-        }
+        let displayImage = try await displayImage(for: screen, cursor: cursor)
 
         let pixelsPerPointX = CGFloat(displayImage.width) / screenBounds.width
         let pixelsPerPointY = CGFloat(displayImage.height) / screenBounds.height
@@ -155,27 +141,34 @@ nonisolated struct CaptureService {
         return WindowCaptureSession(window: window, includeShadow: includeShadow)
     }
 
-    private func captureFullDisplay(for screen: NSScreen, cursor: CursorSnapshot?) throws -> NSImage {
-        guard let image = displayImage(for: screen, cursor: cursor) else {
-            throw CaptureError.displayImageUnavailable
-        }
-
-        return NSImage(cgImage: image, size: screen.frame.size)
-    }
-
     /// The whole screen, with the pointer drawn in when one is given: the
     /// display image itself never contains it.
-    private func displayImage(for screen: NSScreen, cursor: CursorSnapshot? = nil) -> CGImage? {
-        guard
-            let screenNumber = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber,
-            let image = CGDisplayCreateImage(CGDirectDisplayID(screenNumber.uint32Value))
-        else {
-            return nil
+    private func displayImage(for screen: NSScreen, cursor: CursorSnapshot? = nil) async throws -> CGImage {
+        guard let screenNumber = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else {
+            throw CaptureError.displayImageUnavailable
         }
+        let image = try await Self.screenImage(displayID: CGDirectDisplayID(screenNumber.uint32Value))
         guard let cursor, screen.frame.width > 0 else {
             return image
         }
         return cursor.drawn(onto: image, pixelsPerPoint: CGFloat(image.width) / screen.frame.width)
+    }
+
+    /// Everything on a display at its full resolution, except the windows
+    /// numbered in `excludingWindows` and the pointer.
+    static func screenImage(displayID: CGDirectDisplayID, excludingWindows: [Int] = []) async throws -> CGImage {
+        let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+        guard let display = content.displays.first(where: { $0.displayID == displayID }) else {
+            throw CaptureError.displayImageUnavailable
+        }
+        let excluded = content.windows.filter { excludingWindows.contains(Int($0.windowID)) }
+        let filter = SCContentFilter(display: display, excludingWindows: excluded)
+        let configuration = SCStreamConfiguration()
+        let scale = CGFloat(filter.pointPixelScale)
+        configuration.width = max(1, Int(filter.contentRect.width * scale))
+        configuration.height = max(1, Int(filter.contentRect.height * scale))
+        configuration.showsCursor = false
+        return try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration)
     }
 
     private func requireScreenCaptureAccess() throws {
